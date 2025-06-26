@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.1](https://github.com/cds-snc/ai-answers/compare/v1.10.0...v1.10.1) (2025-06-26)
+
+
+### Bug Fixes
+
+* enhance sentence count handling in AI messages and improve feedb… ([8a5dab1](https://github.com/cds-snc/ai-answers/commit/8a5dab1db081fd1ee369f3373c6bdfd16f03633f))
+* enhance sentence count handling in AI messages and improve feedback component integration ([c4a8298](https://github.com/cds-snc/ai-answers/commit/c4a829873fac0754ebfac1963ccc42e490447748))
+
 ## [1.10.0](https://github.com/cds-snc/ai-answers/compare/v1.9.0...v1.10.0) (2025-06-26)
 
 
