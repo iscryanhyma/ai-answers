@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.10.0](https://github.com/cds-snc/ai-answers/compare/v1.9.0...v1.10.0) (2025-06-26)
+
+
+### Features
+
+* refactor chat fetching to use aggregation for improved interact… ([d730377](https://github.com/cds-snc/ai-answers/commit/d73037753a64848e6733e0f6ac2e0aa130d8109a))
+* refactor chat fetching to use aggregation for improved interaction handling ([805be26](https://github.com/cds-snc/ai-answers/commit/805be26af1ba6a253391cc03abf829cf33d162cf))
+
+
+### Bug Fixes
+
+* ensure date is always returned as ISO string in public evaluatio… ([f1c056e](https://github.com/cds-snc/ai-answers/commit/f1c056e9a70e31e95b5929079b55f8e5063095fa))
+* ensure date is always returned as ISO string in public evaluation list ([b8f0bfe](https://github.com/cds-snc/ai-answers/commit/b8f0bfe5e9d4c274d84dc6feb74f562b3a635184))
+
 ## [1.9.0](https://github.com/cds-snc/ai-answers/compare/v1.8.1...v1.9.0) (2025-06-26)
 
 
