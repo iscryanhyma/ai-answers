@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.3](https://github.com/cds-snc/ai-answers/compare/v1.10.2...v1.10.3) (2025-06-27)
+
+
+### Bug Fixes
+
+* simplify chat fetching by removing aggregation and enhancing interaction filtering ([c7353a1](https://github.com/cds-snc/ai-answers/commit/c7353a1ca82cb53c01d25aefdd47e3ddabc47e41))
+* streamline context lookup for filtered interactions and enhance date handling ([0184188](https://github.com/cds-snc/ai-answers/commit/018418861f2f6a615989f23e8fd4bbb0f3914db1))
+* update health check URL to use dynamic port and add shell option… ([40efcfb](https://github.com/cds-snc/ai-answers/commit/40efcfb99866d86af977db478eb8258b5984b7d8))
+
 ## [1.10.2](https://github.com/cds-snc/ai-answers/compare/v1.10.1...v1.10.2) (2025-06-27)
 
 
