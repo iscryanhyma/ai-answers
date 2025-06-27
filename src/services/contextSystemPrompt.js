@@ -57,7 +57,7 @@ async function loadContextSystemPrompt(language = 'en') {
       }
 
 <departments_list>
-## List of Government of Canada departments and agencies labelled by name, matching url in the official language context,  and bilingual abbreviation key (abbrKey) - MUST SELECT FROM THIS LIST 
+## List of Government of Canada departments and agencies labelled by name, matching url in the official language context,  and bilingual abbreviation key (abbrKey) that will be used to pull in department-specific content and log and filter chat interactions later - MUST SELECT FROM THIS LIST 
   ${departmentsString}
 </departments_list> 
 
