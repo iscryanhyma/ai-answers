@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.2](https://github.com/cds-snc/ai-answers/compare/v1.10.1...v1.10.2) (2025-06-27)
+
+
+### Bug Fixes
+
+* correct aggregation logic for interactions and ensure proper dat… ([0037081](https://github.com/cds-snc/ai-answers/commit/0037081b4714c10db4190cbc42682c90b5134521))
+* correct aggregation logic for interactions and ensure proper date handling ([e74458a](https://github.com/cds-snc/ai-answers/commit/e74458a24fcea8bfcf66c32884d5052b4885c251))
+
 ## [1.10.1](https://github.com/cds-snc/ai-answers/compare/v1.10.0...v1.10.1) (2025-06-26)
 
 
