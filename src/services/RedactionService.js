@@ -285,7 +285,7 @@ class RedactionService {
         description: 'Long number sequences like credit card numbers with negative lookbehind to exclude dollar amounts'
       },
       {
-        pattern: /(?<=\b(name\s+is|nom\s+est|name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi,
+        pattern: /(?<=\b(name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi,
         description: 'Name patterns in EN/FR'
       },
       {
