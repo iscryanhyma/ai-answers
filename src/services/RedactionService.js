@@ -285,10 +285,6 @@ class RedactionService {
         description: 'Long number sequences like credit card numbers with negative lookbehind to exclude dollar amounts'
       },
       {
-        pattern: /(?<=\b(name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi,
-        description: 'Name patterns in EN/FR'
-      },
-      {
         pattern: /\d+\s+([A-Za-z]+\s+){1,3}(Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Lane|Ln|Way|Parkway|Pkwy|Square|Sq|Terrace|Ter|Place|Pl|circle|cir|Loop)\b/gi,
         description: 'Street addresses'
       },
@@ -316,28 +312,29 @@ class RedactionService {
         pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{3}\b/g,
         description: 'Canadian SIN (Social Insurance Number)'
       },
-      {
-        // Common name prefixes pattern
-        pattern: /\b(Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|Prof\.?|Sir|Madam|Lady|Monsieur|Madame|Mademoiselle|Docteur|Professeur)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g,
-        description: 'Names with prefixes'
-      },
+      // NAME DETECTION PATTERNS - Grouped together for easier maintenance
       {
         // Names in "My name is..." format
         pattern: /\b(?:my name is|je m'appelle|je me nomme|my name's)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
         description: 'Names in introduction phrases'
       },
-      // {
-        // Capitalized names (2-3 words)
-        // pattern: /\b([A-Z][a-z]{1,20}(?:\s+[A-Z][a-z]{1,20}){1,2})\b(?!\s+(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Drive|Dr|Court|Ct|Lane|Ln|Way|Parkway|Pkwy|Square|Sq|Terrace|Ter|Place|Pl|Circle|Cir|Loop))\b/g,
-        // description: 'Capitalized names (2-3 words, not followed by street type)'
-      // },
-      // {
-      //   // Names in greeting patterns
-      //   pattern: /\b(?:Dear|Hello|Hi|Bonjour|Cher|Chère|Salut)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
-      //   description: 'Names in greeting patterns'
-      // },
       {
-        // // Names in signature patterns
+        // Names with prefixes (Mr., Mrs., Dr., etc.)
+        pattern: /\b(Mr\.?|Mrs\.?|Ms\.?|Miss|Dr\.?|Prof\.?|Sir|Madam|Lady|Monsieur|Madame|Mademoiselle|Docteur|Professeur)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g,
+        description: 'Names with prefixes'
+      },
+      {
+        // Names in "name:" or "nom:" format
+        pattern: /(?<=\b(name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi,
+        description: 'Name patterns in EN/FR'
+      },
+      {
+        // Names in "name [Name]" format (missing "is" - common for non-English speakers)
+        pattern: /\b(?:name|nom)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
+        description: 'Names in incomplete introduction phrases'
+      },
+      {
+        // Names in signature patterns
         // pattern: /\b(?:Sincerely|Regards|Best|Cheers|Cordialement|Sincèrement|Amicalement)\s*,\s*\n*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
         // description: 'Names in signature patterns'
       }
