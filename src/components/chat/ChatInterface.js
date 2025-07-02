@@ -30,6 +30,7 @@ const ChatInterface = ({
   lang,
   extractSentences,
   chatId,
+  readOnly = false,
 }) => {
   // Add safeT helper function
   const safeT = useCallback(
@@ -163,11 +164,20 @@ const ChatInterface = ({
   // TOOD is there a difference between paragraphs and sentrences?
   const getLastMessageSentenceCount = () => {
     const lastAiMessage = messages.filter((m) => m.sender === 'ai').pop();
-    if (lastAiMessage && lastAiMessage.interaction && lastAiMessage.interaction.answer && lastAiMessage.interaction.answer.paragraphs && lastAiMessage.interaction.answer.paragraphs.length > 0) {
-      return lastAiMessage.interaction.answer.paragraphs.reduce(
-        (count, paragraph) => count + extractSentences(paragraph).length,
-        0
-      );
+    if (
+      lastAiMessage &&
+      lastAiMessage.interaction &&
+      lastAiMessage.interaction.answer
+    ) {
+      const answer = lastAiMessage.interaction.answer;
+      if (answer.paragraphs && Array.isArray(answer.paragraphs) && answer.paragraphs.length > 0) {
+        return answer.paragraphs.reduce(
+          (count, paragraph) => count + extractSentences(paragraph).length,
+          0
+        );
+      } else if (answer.content) {     
+        return extractSentences(answer.content).length;
+      }
     }
     return 1;
   };
@@ -312,17 +322,41 @@ const ChatInterface = ({
                   </>
                 )}
                 
-                {message.id === messages[messages.length - 1].id &&
+                {/* Show feedback in review mode for all answers/interactions that do not have expertFeedback */}
+                {readOnly &&
+                  message.sender === 'ai' &&
+                  !message.error &&
+                  message.interaction &&
+                  caches &&
+                  message.interaction.answer.answerType !== 'question' &&
+                  !message.interaction.expertFeedback && (
+                    <FeedbackComponent
+                      lang={lang}
+                      sentenceCount={getLastMessageSentenceCount()}
+                      sentences={extractSentences(message.interaction.answer.content) || []}
+                      chatId={chatId}
+                      userMessageId={message.id}
+                      showSkipButton={false}
+                      onSkip={focusTextarea}
+                      skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
+                    />
+                  )}
+
+                {/* Only show feedback for the last message if not in review mode */}
+                {!readOnly &&
+                  message.id === messages[messages.length - 1].id &&
                   showFeedback &&
                   !message.error &&
                   message.interaction.answer.answerType !== 'question' && (
                     <FeedbackComponent
                       lang={lang}
                       sentenceCount={getLastMessageSentenceCount()}
+                      sentences={message.interaction.answer.paragraphs
+                        ? message.interaction.answer.paragraphs.flatMap(paragraph => extractSentences(paragraph))
+                        : []}
                       chatId={chatId}
                       userMessageId={message.id}
-                      // Add the new props for the skip button
-                      showSkipButton={turnCount < MAX_CONVERSATION_TURNS && !isLoading}
+                      showSkipButton={!readOnly && turnCount < MAX_CONVERSATION_TURNS && !isLoading}
                       onSkip={focusTextarea}
                       skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
                     />
@@ -350,7 +384,7 @@ const ChatInterface = ({
           </>
         )}
 
-        {turnCount >= MAX_CONVERSATION_TURNS && (
+        {!readOnly && turnCount >= MAX_CONVERSATION_TURNS && (
           <div key="limit-reached" className="message ai">
             <div className="limit-reached-message">
               <p>{safeT('homepage.chat.messages.limitReached', { count: MAX_CONVERSATION_TURNS })}</p>
@@ -362,7 +396,7 @@ const ChatInterface = ({
         )}
       </div>
 
-      {turnCount < MAX_CONVERSATION_TURNS && (
+      {!readOnly && turnCount < MAX_CONVERSATION_TURNS && (
         <div className="input-area mt-200">
           {!isLoading && (
             <form className="mrgn-tp-xl mrgn-bttm-lg">
