@@ -1,20 +1,11 @@
 import { MongoMemoryServer } from "mongodb-memory-server";
-import { spawn } from "child_process";
-import getPort from "get-port";
-import { existsSync } from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
 async function start() {
-  const mongod = await MongoMemoryServer.create();
+  const mongod = await MongoMemoryServer.create({
+    instance: { port: 27017 }
+  });
   const uri = mongod.getUri();
-
-  // Pick a random port for the server
-  const port = await getPort();
-
   console.log("In-memory MongoDB started at:", uri);
+
   console.log("Starting server on port:", port);
 
   // Detect Codespaces environment and set API URL accordingly
