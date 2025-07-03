@@ -328,11 +328,11 @@ class RedactionService {
         pattern: /(?<=\b(name:|nom:)\s+)([A-Za-z]+(?:\s+[A-Za-z]+)?)\b/gi,
         description: 'Name patterns in EN/FR'
       },
-      {
-        // Names in "name [Name]" format (missing "is" - common for non-English speakers)
-        pattern: /\b(?:name|nom)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
-        description: 'Names in incomplete introduction phrases'
-      },
+      // REMOVED: Names in "name [Name]" format pattern - was too broad and caught legitimate questions about name changes
+      // {
+      //   pattern: /\b(?:name|nom)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
+      //   description: 'Names in incomplete introduction phrases'
+      // },
       {
         // Names in signature patterns
         // pattern: /\b(?:Sincerely|Regards|Best|Cheers|Cordialement|Sincèrement|Amicalement)\s*,\s*\n*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/gi,
