@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.4](https://github.com/cds-snc/ai-answers/compare/v1.10.3...v1.10.4) (2025-07-03)
+
+
+### Bug Fixes
+
+* final-tweak ([4c3a2ef](https://github.com/cds-snc/ai-answers/commit/4c3a2efd5f2bc4f075e03f1278455b4e2484dd8e))
+* generic name pattern removed ([2c7cece](https://github.com/cds-snc/ai-answers/commit/2c7cecec34be4b56f14e5fb27d82b69eefd81ce3))
+* name-patterns ([e8b8dbc](https://github.com/cds-snc/ai-answers/commit/e8b8dbc4d2ccc2776846b79e06d321efa74deaaa))
+
 ## [1.10.3](https://github.com/cds-snc/ai-answers/compare/v1.10.2...v1.10.3) (2025-06-27)
 
 
