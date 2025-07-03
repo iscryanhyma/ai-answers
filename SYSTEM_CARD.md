@@ -135,7 +135,7 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 
 ### Known Issues
 - **Department Detection**: May occasionally misidentify relevant departments
-- **Citation Accuracy**: URLs may become outdated as government sites change
+- **Citation Accuracy**: URLs in prompts may become outdated as government sites change
 - **Complex Scenarios**: Multi-step processes may require multiple interactions
 
 ## Administrative Features and Management

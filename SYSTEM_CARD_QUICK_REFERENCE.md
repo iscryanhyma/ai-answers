@@ -14,7 +14,7 @@ A specialized AI assistant for Government of Canada websites that provides accur
 
 ## Safety & Privacy
 - ✅ **PII Protection**: Most personal information is blocked from being sent to AI or logged
-- ✅ **Content Filtering**: Blocks inappropriate content and threats
+- ✅ **Content Filtering**: Blocks inappropriate content and threats and manipulation 
 - ✅ **Rate Limiting**: 3 questions per session
 - ✅ **Character Limits**: 750 characters per question
 
