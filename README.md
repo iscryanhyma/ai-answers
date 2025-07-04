@@ -1,9 +1,47 @@
-# Ai Answers application for canada.ca 
+# AI Answers - Government of Canada AI Assistant
 
-A React-based AI chat application that provides answers designed and sourced exclusively from and for Government of Canada websites. Built to assist users navigating Canada.ca and other government services.
+## System Card
 
+### Overview
+AI Answers is a specialized AI chat application designed exclusively for Government of Canada websites (Canada.ca and gc.ca domains). It provides accurate, brief answers to user questions about government services, programs, and information, with proper citations to official government sources.
 
-## Status 
+### Purpose & Scope
+- **Primary Function**: Assist users navigating Canada.ca and other government services
+- **Target Users**: Canadian citizens, residents, and visitors seeking government information
+- **Content Scope**: Government of Canada services, programs, benefits, and official information only
+- **Language Support**: Full bilingual support (English/French) with official language compliance
+
+### Key Capabilities
+- **Context-Aware Responses**: Uses referral URLs and department detection to provide relevant answers
+- **Citation System**: Every answer includes verified links to official government sources
+- **Privacy Protection**: Automatic PII redaction and content filtering
+- **Accessibility**: Screen reader tested and WCAG compliant
+- **Evaluation-Driven**: Continuous improvement through user feedback and automated evaluation
+
+### Technical Architecture
+- **Frontend**: React-based chat interface with Canada.ca design system
+- **Backend**: Node.js microservices with prompt-chaining architecture
+- **AI Services**: Azure OpenAI GPT models (production) / OpenAI GPT models (staging)
+- **Database**: AWS DocumentDB (production) / MongoDB Atlas (staging)
+- **Deployment**: AWS ECS with Terraform infrastructure as code
+
+### Safety & Compliance
+- **Content Filtering**: Blocks inappropriate content, threats, and manipulation attempts
+- **Rate Limiting**: 3 questions per session to prevent abuse
+- **Character Limits**: 750 character limit per question
+- **PII Protection**: No personal information sent to AI services or logged
+- **Official Languages**: Compliant with Canadian official languages requirements
+
+### Current Status
+- **Environment**: Preparing for public pilot
+- **Deployment**: Production environment at ai-answers.alpha.canada.ca
+- **Evaluation**: Ongoing user feedback collection and response scoring
+
+---
+
+## Detailed Documentation
+
+### Status 
 
 - preparing for public pilot 
 
