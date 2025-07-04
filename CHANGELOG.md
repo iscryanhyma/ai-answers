@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.5](https://github.com/cds-snc/ai-answers/compare/v1.10.4...v1.10.5) (2025-07-04)
+
+
+### Bug Fixes
+
+* missed prompts ([928cbc5](https://github.com/cds-snc/ai-answers/commit/928cbc564ff08845459f58e58cef061a09907338))
+* update docs add system card ([829f558](https://github.com/cds-snc/ai-answers/commit/829f55815e90dff29e945713318c6595cd1cbce9))
+
 ## [1.10.4](https://github.com/cds-snc/ai-answers/compare/v1.10.3...v1.10.4) (2025-07-03)
 
 
