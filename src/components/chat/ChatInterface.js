@@ -306,6 +306,16 @@ const ChatInterface = ({
                       }
                     >
                       {message.text}
+                      {message.searchUrl && (
+                        <>
+                          <br />
+                          {safeT('homepage.chat.messages.shortQueryDetails')}
+                          <br />
+                          <a href={message.searchUrl}>
+                            {safeT('homepage.chat.messages.shortQuerySearch')}
+                          </a>
+                        </>
+                      )}
                     </p>
                   </div>
                 ) : (
