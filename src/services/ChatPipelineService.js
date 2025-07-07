@@ -80,9 +80,10 @@ export const ChatPipelineService = {
     }
 
     // Do redaction but don't display status
-    await ChatPipelineService.processRedaction(userMessage, lang);
+    const { redactedText, redactedItems } = await ChatPipelineService.processRedaction(userMessage, lang);
     await LoggingService.info(chatId, 'Starting pipeline with data:', {
       userMessage,
+      redactedText,
       lang,
       department,
       referringUrl,
@@ -188,6 +189,7 @@ export const ChatPipelineService = {
       answer: answer,
       context: context,
       question: userMessage,
+      redactedText: redactedText, // Return redacted text for UI display
       citationUrl: finalCitationUrl,
       confidenceRating: confidenceRating,
     };
@@ -214,6 +216,9 @@ export const ChatPipelineService = {
     if (hasBlockedContent) {
       throw new RedactionError('Blocked content detected', redactedText, redactedItems);
     }
+    
+    // Return the redacted text for UI display
+    return { redactedText, redactedItems };
   },
 };
 
