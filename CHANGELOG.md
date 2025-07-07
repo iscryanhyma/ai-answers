@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.6](https://github.com/cds-snc/ai-answers/compare/v1.10.5...v1.10.6) (2025-07-07)
+
+
+### Bug Fixes
+
+* add-emoji-stripping-to-redactionService ([fc6a8c3](https://github.com/cds-snc/ai-answers/commit/fc6a8c3788668193c9c73cf04f2d5ad8452664de))
+
 ## [1.10.5](https://github.com/cds-snc/ai-answers/compare/v1.10.4...v1.10.5) (2025-07-04)
 
 
