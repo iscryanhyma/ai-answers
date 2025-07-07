@@ -37,6 +37,19 @@ const sendStatusUpdate = (onStatusUpdate, status) => {
   }
 };
 
+// Helper function to count words in a string
+const countWords = (text) => {
+  if (!text || typeof text !== 'string') return 0;
+  const words = text.trim().split(/\s+/);
+  // Stop counting after 4 words for efficiency
+  return Math.min(words.length, 4);
+};
+
+// Helper function to check if query is too short
+const isShortQuery = (wordCount) => {
+  return wordCount <= 2;
+};
+
 export const ChatPipelineService = {
   processResponse: async (
     chatId,
@@ -55,6 +68,16 @@ export const ChatPipelineService = {
     
     // Send updated status (displaying "Assessing question")
     sendStatusUpdate(onStatusUpdate, PipelineStatus.MODERATING_QUESTION);
+
+    // Check for short queries before redaction (only for first question in session)
+    if (conversationHistory.length === 0) {
+      const wordCount = countWords(userMessage);
+      if (isShortQuery(wordCount)) {
+        // Generate search URL using the same logic as redaction fallback
+        const searchUrl = urlToSearch.generateFallbackSearchUrl(lang, userMessage, department, translationF);
+        throw new ShortQueryValidation('Short query detected', userMessage, searchUrl.fallbackUrl);
+      }
+    }
 
     // Do redaction but don't display status
     await ChatPipelineService.processRedaction(userMessage, lang);
@@ -200,5 +223,14 @@ export class RedactionError extends Error {
     this.name = 'RedactionError';
     this.redactedText = redactedText;
     this.redactedItems = redactedItems;
+  }
+}
+
+export class ShortQueryValidation extends Error {
+  constructor(message, userMessage, searchUrl) {
+    super(message);
+    this.name = 'ShortQueryValidation';
+    this.userMessage = userMessage;
+    this.searchUrl = searchUrl;
   }
 }

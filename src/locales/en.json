@@ -145,7 +145,10 @@
         "needClarification": "Requires clarification...",
         "yourQuestionWas": "Your question was:",
         "yourAnswerIs": "Your answer is:",
-        "warning": "Warning:"
+        "warning": "Warning:",
+        "shortQueryMessage": "Your short query wasn't sent to the AI service because it didn't contain enough details.",
+        "shortQueryDetails": "Ask again with more details, or to search, use this link made with your query:",
+        "shortQuerySearch": " Canada.ca search"
       },
       "citation": {
         "confidence": "Confidence:",

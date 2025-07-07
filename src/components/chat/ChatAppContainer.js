@@ -3,7 +3,7 @@ import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
-import { ChatPipelineService, RedactionError } from '../../services/ChatPipelineService.js';
+import { ChatPipelineService, RedactionError, ShortQueryValidation } from '../../services/ChatPipelineService.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 // Utility functions go here, before the component
@@ -283,6 +283,28 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
               text: error.redactedText.includes('XXX') 
                 ? safeT('homepage.chat.messages.privateContent')
                 : safeT('homepage.chat.messages.blockedContent'),
+              sender: 'system',
+              error: true
+            }
+          ]);
+          clearInput();
+          setIsLoading(false);
+          return;
+        } else if (error instanceof ShortQueryValidation) {
+          // Remove the user message that was added before the error
+          setMessages(prevMessages => prevMessages.slice(0, -1));
+          
+          // Decrement turn count since this was caught after it was incremented
+          setTurnCount(prev => prev - 1);
+          
+          // Display short query message (will be filtered out of conversation history)
+          const shortQueryMessageId = messageIdCounter.current++;
+          setMessages(prevMessages => [
+            ...prevMessages,
+            {
+              id: shortQueryMessageId,
+              text: safeT('homepage.chat.messages.shortQueryMessage'),
+              searchUrl: error.searchUrl,
               sender: 'system',
               error: true
             }
