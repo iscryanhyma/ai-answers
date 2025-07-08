@@ -28,7 +28,7 @@ AI Answers is a specialized AI chat application designed exclusively for Governm
 ### Safety & Compliance
 - **Content Filtering**: Blocks inappropriate content, threats, and manipulation attempts
 - **Rate Limiting**: 3 questions per session to prevent abuse
-- **Character Limits**: 750 character limit per question
+- **Character Limits**: 400 character limit per question
 - **PI Protection**: No personal information sent to AI services or logged
 - **Official Languages**: Compliant with Canadian official languages requirements
 
@@ -242,7 +242,7 @@ Blocks four categories of inappropriate content:
 ### Guardrails for security
 
 - Manipulative words and phrases are redacted and the user is warned that the question was not sent to the AI service
-- Character limit (750) to prevent prompt injection and overuse - this is not a general AI service but rather an aid for users having trouble deriving the answer for their situation on Canada.ca and other gc.ca sites
+- Character limit (400) to prevent prompt injection and overuse - this is not a general AI service but rather an aid for users having trouble deriving the answer for their situation on Canada.ca and other gc.ca sites
 - Rate limiting: 3 questions per session to both prevent manipulation and overuse
 - Ideas here: https://www.guardrailsai.com/ and https://github.com/guardrails-ai/guardrails
 
