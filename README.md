@@ -3,33 +3,33 @@
 ## System Card
 
 ### Overview
-AI Answers is a specialized AI chat application designed exclusively for Government of Canada websites (Canada.ca and gc.ca domains). It provides accurate, brief answers to user questions about government services, programs, and information, with proper citations to official government sources.
+AI Answers is a specialized AI chat application designed exclusively for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single citation to an official government source or next step of their task. An extensive Admin interface supports  evaluation, metrics, user management, and logging views.
 
 ### Purpose & Scope
-- **Primary Function**: Assist users navigating Canada.ca and other government services
-- **Target Users**: Canadian citizens, residents, and visitors seeking government information
+- **Primary Function**: Assist users with questions about government services and programs.
+- **Target Users**: visitors to Canada.ca
 - **Content Scope**: Government of Canada services, programs, benefits, and official information only
-- **Language Support**: Full bilingual support (English/French) with official language compliance
+- **Language Support**: Full official language support (English/French) and answers in most user languages (indigenous languages in the future)
 
 ### Key Capabilities
 - **Context-Aware Responses**: Uses referral URLs and department detection to provide relevant answers
-- **Citation System**: Every answer includes verified links to official government sources
-- **Privacy Protection**: Automatic PII redaction and content filtering
+- **Citation System**: Every answer includes a single verified link to a federal government page
+- **Privacy Protection**: Automatic PI redaction and content filtering 
 - **Accessibility**: Screen reader tested and WCAG compliant
-- **Evaluation-Driven**: Continuous improvement through user feedback and automated evaluation
+- **Evaluation-Driven**: Continuous improvement through expert and automated evaluation
 
 ### Technical Architecture
 - **Frontend**: React-based chat interface with Canada.ca design system
 - **Backend**: Node.js microservices with prompt-chaining architecture
-- **AI Services**: Azure OpenAI GPT models (production) / OpenAI GPT models (staging)
-- **Database**: AWS DocumentDB (production) / MongoDB Atlas (staging)
-- **Deployment**: AWS ECS with Terraform infrastructure as code
+- **AI Services**: Azure OpenAI GPT models (production), initial development testing with Anthropic Claude models
+- **Database**: AWS DocumentDB (production) 
+- **Deployment**: Azure cloud
 
 ### Safety & Compliance
 - **Content Filtering**: Blocks inappropriate content, threats, and manipulation attempts
 - **Rate Limiting**: 3 questions per session to prevent abuse
 - **Character Limits**: 750 character limit per question
-- **PII Protection**: No personal information sent to AI services or logged
+- **PI Protection**: No personal information sent to AI services or logged
 - **Official Languages**: Compliant with Canadian official languages requirements
 
 ### Current Status
@@ -56,7 +56,7 @@ AI Answers is a specialized AI chat application designed exclusively for Governm
 - scenarios address top user issues, top task issues and general GC instructions for the AI service to answer the question accurately and provide a citation url for all answers sourced from canada.ca or gc.ca sites.
 - takes advantage of canada.ca interaction patterns and support - e.g. if a wizard is already in place, direct the user to answer those questions rather than having the AI service attempt to answer. AI services aren't optimized for layers of question logic and aren't effective for that purpose.
 - since GC pages are added and updated frequently, the AI agent uses the downloadWebPage tool to read the page if it identifies a new, updated or unfamiliar url (from the search results, the contextual scenario and update files, or the referral url)
-- PI is redacted programmatically in the code, no PI is sent to the AI service or logged into the database. When PII is detected in the user question, the user is alerted that the question will not be sent to the AI service to protect their privacy, and that they should ask the question without private personal details.
+- PI is redacted programmatically in the code, no PI is sent to the AI service or logged into the database. When PI is detected in the user question, the user is alerted that the question will not be sent to the AI service to protect their privacy, and that they should ask the question without private personal details.
 - Threats,manipulation and obscenity redaction is also in place. Similar to PI, the user is alerted that the question will not be sent to the AI service, and that they should ask the question differently. Usability testing of this feature showed users were successful at understanding the instructions and asking the question without specific threat words.
 
 ### Official languages support
@@ -72,17 +72,28 @@ AI Answers is a specialized AI chat application designed exclusively for Governm
 
 - original design was tested with two AI service providers for exploration of strengths and weaknesses of different models
 - On this repo, only OpenAI GPT latest model is currently supported 
-- Failover was in place, to switch to the other AI service if one fails - with only one service, will need to pull product out of service when ai performance is degraded or down
+- Failover was in place, to switch to the other AI service if one fails - with only one service, will need to pull product out of service when ai performance is degraded or down. Setting to turn it off and display a message is provided in the Admin interface. 
 - Prompt caching implemented to improve response quality and speed
 - Temperature set to 0 for more deterministic responses for both models
 - Conversation history management - pass conversation history to AI service for context in 'message' field
 - Enhanced citation handling - the AI calls a tool to check if the citation url is valid and if not, finds another url, finally failing to a search link if no url is found
 - System prompts optimized for 2025 model compatibility
 
-### Evaluation-driven design to eventually achieve 100% answer accuracy
-- Evaluation system to score AI responses and provide feedback for continuous improvement and underlay automated AI evals from embeddings of previous ratings
-- Evaluation input of csv files generated from user feedback questions to score AI responses
-- Good source of learning about this methodology is: https://www.ycombinator.com/library/Lg-why-vertical-llm-agents-are-the-new-1-billion-saas-opportunities
+### Innovative evaluation-driven design to target >95% answer accuracy
+- **Expert Evaluation System**: 
+  - **In-App Evaluation**: Experts evaluate questions within the actual app interface, in the same view as a user would experience
+  - **Flexible Evaluation**: Experts can enter their own questions or use existing chat IDs to evaluate user conversations
+  - **Sentence-Level Scoring**: Each sentence in AI responses is scored individually (100/80/0 points) with detailed explanations logged and embedded into the database for use by the AI
+  - **Citation Rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)
+  - **Weighted Total Score**: 75% sentence scores + 25% citation score for comprehensive quality assessment
+  - **Embedding Generation**: Expert feedback creates embeddings that enable automated AI evaluations for similar questions
+  - **Future Enhancement**: These embeddings will soon assist in answering questions quickly and accurately
+- **Separate Public User Feedback**: 
+  - **Simple Interface**: "Was this helpful?" with Yes/No options for all users
+  - **Detailed Follow-up**: Single question asking why they clicked Yes or No with specific reason options
+  - **Positive Reasons**: No call needed, no visit needed, saved time, other
+  - **Negative Reasons**: Irrelevant, confusing, not detailed enough, not what they wanted, other
+
 
 ### Accessibility features tested with screenreader users
 - usability sessions were held with people who rely on a range of screenreader assistive technologies to identify improvements that met their needs
@@ -91,91 +102,132 @@ AI Answers is a specialized AI chat application designed exclusively for Governm
 
 ## Microservices prompt-chaining architecture and Chain of Thought
 
-- prompt-chaining architecture to improve response quality and speed [see diagram](#microservices-prompt-chaining-architecture-diagram)
-- Chain of Thought - the answer service is designed to output a set of preliminary checks to help it derive an answer, for example it translates and outputs the user question in English if the question is in another langauge, gathers possible citation urls from urls it collects from the context service and system prompt scenarios and updates etc.
-  References:
+- **Prompt-chaining architecture** to improve response quality and speed [see diagram](#microservices-prompt-chaining-architecture-diagram)
+- **LangChain React Agents** for both context and answer generation with tool integration
+- **Chain of Thought** - the answer service outputs preliminary checks to help derive answers, including:
+  - Translation of non-English questions to English
+  - Gathering possible citation URLs from context service and system prompts
+  - Department and topic analysis
+  - Content verification and validation
+- **Agentic Tool Usage** - AI agents can autonomously use specialized tools for enhanced responses
+- **Multi-Provider Support** - Azure OpenAI (production), OpenAI, and Anthropic Claude models
 
+References:
 * https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/chain-prompt
 * https://www.deeplearning.ai/the-batch/agentic-design-patterns-part-5-multi-agent-collaboration/
 
 ## Agentic tool use
 
-The application uses several specialized tools to enhance AI interactions:
+The application uses LangChain React Agents with specialized tools to enhance AI interactions:
 
-1. Canada.ca Search Tool (`canadaCaSearch.js`) - called before the Context AI service to supply it with a set of search results
+### Core Tools
 
+1. **Canada.ca Search Tool** (`canadaCaContextSearch.js`) - Used by context agents for government content search
    - Performs searches on Canada.ca websites
    - Supports both English and French queries
    - Returns top 3 search results with summaries and links
    - Uses Playwright for dynamic content loading
 
-2. URL Status Checker (`checkURL.js`) - if needed, called by the AI answer service to check the citation url
+2. **Google Context Search Tool** (`googleContextSearch.js`) - Alternative search provider for broader context
+   - Integrates with Google Custom Search API
+   - Provides extended web search capabilities
+   - Returns formatted results with titles, links, and summaries
+   - Used for additional context gathering
 
+3. **URL Status Checker** (`checkURL.js`) - Called by answer agents to validate citation URLs
    - Verifies if URLs are active and accessible
    - Handles redirects and HTTPS certificates
    - Used to validate citation URLs before including them in responses
 
-3. Context Search Tool (`contextSearch.js`) - optionally called before the Context AI service to supply it with a set of search results
-
-   - Integrates with Google Custom Search API
-   - Provides broader web search capabilities
-   - Returns formatted results with titles, links, and summaries
-   - Used for additional context gathering
-
-4. Web Page Downloader (`downloadWebPage.js`) - if needed, called by the AI answer service to read a new, updated or unfamiliar page
+4. **Web Page Downloader** (`downloadWebPage.js`) - Critical for accuracy, called by answer agents
    - Downloads and parses web page content
    - Preserves link structures and formatting
    - Focuses on extracting main content
-   - Used to gather detailed information from citation URLs
+   - Used for new, updated, or unfamiliar pages to ensure current information
 
-These tools work together to ensure accurate information retrieval, URL validation, and content verification for AI responses.
+5. **Context Agent Tool** (`contextAgentTool.js`) - Coordinates context generation
+   - Integrates search results with context analysis
+   - Coordinates between search tools and context agents
+   - Manages department and topic detection
 
-#### 1. Context AI service
+### Tool Integration
 
-The context service uses the user question, the selected language and the referral url if available to derive the department and department url from the [`department-structure.js`](src/services/systemPrompt/departments_EN.js) file for Canada.ca. The context service is run from the [`ContextSystem.js`](src/services/contextSystemPrompt.js) file which loads the department structure files and contains the instructions for the selected AI service on how to derive the context from the user question.
+- **LangChain React Agents** automatically decide when to use tools based on the question
+- **Tool Tracking** - All tool usage is logged and tracked for analysis
+- **Fallback Mechanisms** - Tools have built-in retry and fallback logic
+- **Rate Limiting** - Search tools include rate limiting to respect API limits
 
-- The [`(src/services/contextService.js)`](src/services/contextService.js) is the first service to be called in the prompt-chaining architecture.
-- The referring URL input field in the Options expand/collapse section of the chat interface is a temporary testing phase solution because there are no AI buttons on any live web pages that can pass a url parameter yet. Referring url can also be passed from the query tag on the call of the application.
+These tools work together through the agent system to ensure accurate information retrieval, URL validation, and content verification for AI responses.
 
-- Context service uses a small light AI model (Anthropic Haiku or GPT-4o Mini) to evaluate the question to determine the department most likely to have content related to the question - it uses the department and agency list of names and urls (pulled from Canada.ca) to get the full name, abbreviation and url.
-  Output: department and department url if found
+#### 1. Context AI Service
 
-#### 2. Answer service
+The context service uses LangChain React Agents to analyze user questions and determine relevant departments. It integrates with search tools and uses the [`contextSystemPrompt.js`](src/services/contextSystemPrompt.js) file which loads department structure files and contains instructions for context derivation.
 
-Input: user message with department context from context service, search results, and referral url (from referral url input field or from query tag on the call of the application). Uses selected AI service.
-Output: answer and citation url if provided (no citation url if the user question is not about Government of Canada services)
-Loading department-specific context:
+- **Context API** (`api/openai/openai-context.js`, `api/azure/azure-context.js`) - Handles context generation requests
+- **Context Agent** (`agents/AgentService.js`) - LangChain React Agent with tool integration
+- **Context Tool** (`agents/tools/contextAgentTool.js`) - Coordinates search and context analysis
+- **Referring URL** - Can be passed via query parameters or input field for testing
+- **Model Selection** - Uses smaller models (GPT-4o Mini) for efficient context analysis
+- **Output**: Bilingual department abbreviation and department URL if found
 
-- The scenarios-all.js file is always loaded - it contains the general scenarios that apply to all departments.
-- The department-specific scenarios and updates files are loaded if they exist for the department selected by the context service - they contain scenarios and examples created and managed by the department. They are located in context folders in the [`src/services/systemPrompt/`](src/services/systemPrompt/) folder.
-- This ensures we always have the general scenarios as a base, with department-specific scenarios added when available.
+#### 2. Answer AI Service
 
-#### 3. AI service manager
+**Input**: User message with department context, search results, and referral URL  
+**Output**: Answer and citation URL (no citation if question is not about Government of Canada services)
 
-Manage API keys, endpoints and batches for each AI service
+**Department-Specific Context Loading**:
+- `scenarios-all.js` - Always loaded with general scenarios for all departments
+- Department-specific scenarios and updates files loaded if available
+- Located in context folders within [`src/services/systemPrompt/`](src/services/systemPrompt/)
+- Ensures general scenarios as base with department-specific additions
 
-#### 4. Feedback manager
+**Answer API** (`api/openai/openai-message.js`, `api/azure/azure-message.js`) - Handles answer generation requests  
+**Answer Agent** (`agents/AgentService.js`) - LangChain React Agent with tool integration
 
-If user feedback is provided, (eg. user clicks Good or Needs Improvement) a score is generated for the AI response and stored in the database. For 'Needs Improvement', each sentence of the AI response is scored separately (checkboxes appear for the correct number of sentences), and the citation is assigned a score as well. A total score is generated by averaging the scores of the sentences, weighted to 75% and the citation score to 25%.
+#### 3. AI Service Manager
 
-#### 5. Database service
+**Model Configuration** (`config/ai-models.js`) - Manages API keys, endpoints, and model configurations for each AI service
+- **Azure OpenAI** (production) - GPT-4 and GPT-4o Mini models
+- **OpenAI** - GPT-4.1 and GPT-4o models  
+- **Anthropic** - Claude Sonnet and Haiku models
 
-Log all interactions to database
-Output:logs of every interaction, with all data for that conversation including feedback scores, associated with a chat ID
+#### 4. Feedback System
 
-#### 6. TODO Evaluation service
+**Expert Evaluation System**: 
+- Experts evaluate questions within the actual app interface
+- Can enter their own questions or evaluate existing conversations by chat ID
+- Sentence-level scoring (100/80/0 points) with detailed explanations
+- Citation rating (25/20/0 points) for accuracy and relevance
+- Weighted total score: 75% sentence scores + 25% citation score
+- Creates embeddings for automated AI evaluations
 
-Input: questions and correct citation and answers from evaluation file
-Output: answers and citations from current system and selected model and model version - send to scoring AI service
-References: https://platform.openai.com/docs/guides/evals and https://github.com/anthropics/evals and https://www.giskard.ai/glossary/llm-evaluation
+**Public User Feedback**: 
+- Simple "Was this helpful?" interface with Yes/No options
+- Follow-up questions with specific reason options
+- Completely separate from expert evaluation process
+
+#### 5. Database Service
+
+**MongoDB Atlas Integration** - Logs all interactions with complete conversation data
+- **Interaction Logging** - Every conversation with feedback scores
+- **Chat ID Association** - All data linked to specific chat sessions
+- **Data Export** - CSV/JSON export capabilities for analysis
+
+#### 6. Evaluation Service
+
+**Automated Evaluation** (`services/EvaluationService.js`) - Processes evaluation batches
+- **Input**: Questions with correct citations and answers from evaluation files
+- **Output**: Answers and citations from current system and selected model
+- **Scoring**: Automated evaluation against ground truth
+- **References**: OpenAI Evals, Anthropic Evals, Giskard evaluation frameworks
 
 ### Privacy Protection
 
-- PII (Personally Identifiable Information) safeguards:
+- PI (Personal Information) safeguards:
   - Basic redaction for name patterns in English and French - uses same algorithm from [feedback tool](https://github.com/alpha-canada-ca/feedback-viewer/blob/master/src/main/java/ca/gc/tbs/service/ContentService.java)
   - Pattern detection for numbers like phone numbers, SIN or account numbers, and email/mailing addresses also uses the feedback tool algorithm
-- All redaction happens in our code - no PII or threats, manipulation or obscenity gets logged into the database and no PII is sent to an AI service
-- User is warned that the question will not be sent to the AI service to protect their privacy if it contains PII - appropriate messages are displayed to the user
+- All redaction happens in our code - no PI or threats, manipulation or obscenity gets logged into the database and no PI is sent to an AI service
+- User is warned that the question will not be sent to the AI service to protect their privacy if it contains PI - appropriate messages are displayed to the user
 
 ### Content Filtering and redaction
 
@@ -202,16 +254,22 @@ Blocks four categories of inappropriate content:
 - Chat-logs API endpoint to retrieve logs from the database
 - External database entry viewer
 - CSV/JSON export capabilities for:
-  - User feedback
+  - Expert feedback (sentence-level evaluations)
+  - Public feedback (helpful/not helpful responses)
   - Evaluation data
   - Tagged response sentences
 
 ### User Interface - a series of usability tests have been identifying and resolving UX issues as we go
 
-- Feedback collection system
-  - Feedback suppression for clarifying questions
-  - Structured response collection
-- User survey integration via Qualtrics
+- **Expert Feedback System**: 
+  - In-app evaluation interface for admin/partner users
+  - Experts can enter their own questions or evaluate existing user conversations by chat ID
+  - Sentence-level scoring interface with individual sentence and citation rating
+  - Weighted scoring system (75% sentences + 25% citation)
+- **Public Feedback System**: 
+  - Simple "Was this helpful?" interface for all users
+  - Follow-up questions with specific reason options
+  - Survey integration via Qualtrics
 - AI service selector
 - Referring URL tracking
 - Expandable options menu
@@ -226,67 +284,89 @@ TODO:contributing guidelines and code of conduct for details on how to participa
 flowchart TB
     User(["User/Browser"])
 
-    subgraph LanguageLayer
-        LangHandler["**Language Handler**<br>- Translations<br>- Locale Management"]
+    subgraph Frontend
+        ChatInterface["**Chat Interface**<br>- React Components<br>- Canada.ca Design System<br>- Accessibility Features"]
+        OptionsPanel["**Options Panel**<br>- AI Service Selection<br>- Search Provider Toggle<br>- Referring URL Input"]
     end
 
     subgraph PreProcessing
-        Redaction["**Redaction Service**<br>- PII Detection<br>- Pattern Matching<br>- Threat Filtering"]
-        SearchService["**Search Service**<br>- Coordinates Search Tools<br>- Prepares Context Data"]
+        Redaction["**Redaction Service**<br>- PI Detection & Redaction<br>- Threat/Manipulation Filtering<br>- Content Moderation"]
+        PipelineService["**Chat Pipeline Service**<br>- Orchestrates Flow<br>- Status Management<br>- Error Handling"]
     end
 
-    subgraph SearchTools
-        SearchTool["**Canada.ca Search**<br>- Website Search<br>- Bilingual Support"]
-        ContextSearch["**Context Search**<br>- Google Custom Search<br>- Extended Context"]
+    subgraph SearchLayer
+        SearchAPI["**Search API**<br>- Coordinates Search Tools<br>- Provider Selection<br>- Rate Limiting"]
+        CanadaSearch["**Canada.ca Search**<br>- Website Search<br>- Bilingual Support<br>- Playwright Scraping"]
+        GoogleSearch["**Google Search**<br>- Custom Search API<br>- Extended Context<br>- Web Results"]
     end
 
     subgraph AI_Services
-        Context["**Context AI Service**<br>- Department Detection<br>- Department URL Analysis<br>(Haiku/GPT-Mini)"]
-        Answer["**Answer AI Service**<br>- Question Processing<br>- Response Generation<br>(Sonnet/GPT-4)"]
+        ContextAPI["**Context API**<br>- Department Detection<br>- URL Analysis<br>- Context Generation"]
+        AnswerAPI["**Answer API**<br>- Question Processing<br>- Response Generation<br>- Citation Handling"]
+    end
+
+    subgraph AgentSystem
+        ContextAgent["**Context Agent**<br>- LangChain React Agent<br>- Tool Integration<br>- Department Analysis"]
+        AnswerAgent["**Answer Agent**<br>- LangChain React Agent<br>- Tool Usage<br>- Response Generation"]
+    end
+
+    subgraph AI_Tools
+        URLChecker["**URL Checker**<br>- Link Validation<br>- Redirect Handling<br>- Certificate Verification"]
+        PageDownloader["**Page Downloader**<br>- Content Extraction<br>- Link Preservation<br>- Dynamic Content"]
+        ContextTool["**Context Tool**<br>- Search Integration<br>- Context Generation<br>- Agent Coordination"]
     end
 
     subgraph ContextSystem
         DeptContext["**Department Context**<br>- Scenarios<br>- Updates<br>- Department-Specific Content"]
-    end
-
-    subgraph AI_Support_Tools
-        URLChecker["**URL Checker**<br>- Link Validation<br>- Redirect Handling"]
-        PageDownloader["**Page Downloader**<br>- Content Extraction<br>- Link Preservation"]
+        SystemPrompts["**System Prompts**<br>- Context Prompts<br>- Answer Prompts<br>- Language Support"]
     end
 
     subgraph Infrastructure
-        AIManager["**AI Service Manager**<br>- API Key Management<br>- Service Selection<br>- Failover Handling"]
-        DB["**Database Service**<br>- MongoDB Atlas<br>- Logging<br>- Data Export"]
-        Eval["**Evaluation Service**<br>- Response Scoring"]
-        Feedback["**Feedback System**<br>- User Feedback Collection<br>- Answer Scoring<br>- Citation Rating"]
+        AIManager["**AI Service Manager**<br>- Model Configuration<br>- Provider Selection<br>- API Key Management"]
+        DB["**Database Service**<br>- MongoDB Atlas<br>- Interaction Logging<br>- Data Export"]
+        Eval["**Evaluation Service**<br>- Response Scoring<br>- Expert Feedback<br>- Automated Eval"]
+        Feedback["**Feedback System**<br>- Public Feedback<br>- Expert Evaluation<br>- Citation Rating"]
+        Logging["**Logging Service**<br>- Server Logging<br>- Client Logging<br>- Tool Tracking"]
     end
-
-    User -->|Question| LangHandler
-    LangHandler -->|Localized Input| Redaction
-    Redaction -->|Sanitized Question| SearchService
-
-    SearchService -->|Search Requests| SearchTools
-    SearchTools -->|Search Results| SearchService
-    SearchService -->|Question + Search Results| Context
-
-    Context -->|Department| DeptContext
-    DeptContext -->|Contextual Data| Answer
-
-    Answer -.->|Tool Requests| AI_Support_Tools
-    AI_Support_Tools -.->|Tool Results| Answer
-
-    AIManager -->|API Keys & Config| Context
-    AIManager -->|API Keys & Config| Answer
-
-    Answer -->|Response| Feedback
-    Feedback -->|Scores & Ratings| DB
-    DB -->|Historical Data| Eval
 
     subgraph AI_Providers
-        Claude["Claude<br>Sonnet/Haiku"]
-        GPT["OpenAI<br>GPT-4/Mini"]
+        Azure["Azure OpenAI<br>GPT-4/GPT-4o Mini"]
+        OpenAI["OpenAI<br>GPT-4.1/GPT-4o"]
+        Anthropic["Anthropic<br>Claude Sonnet/Haiku"]
     end
 
-    Context -->|API Calls| AI_Providers
-    Answer -->|API Calls| AI_Providers
+    User -->|Question| ChatInterface
+    ChatInterface -->|User Input| PipelineService
+    PipelineService -->|Sanitized Input| Redaction
+    Redaction -->|Validated Question| SearchAPI
+
+    SearchAPI -->|Search Request| CanadaSearch
+    SearchAPI -->|Search Request| GoogleSearch
+    CanadaSearch -->|Results| SearchAPI
+    GoogleSearch -->|Results| SearchAPI
+    SearchAPI -->|Search Results| ContextAPI
+
+    ContextAPI -->|Context Request| ContextAgent
+    ContextAgent -->|Tool Call| ContextTool
+    ContextTool -->|Search Integration| SearchAPI
+    ContextAgent -->|Department Info| DeptContext
+    ContextAgent -->|System Prompt| SystemPrompts
+    ContextAgent -->|API Call| AI_Providers
+
+    ContextAPI -->|Context Data| AnswerAPI
+    AnswerAPI -->|Answer Request| AnswerAgent
+    AnswerAgent -->|Tool Call| URLChecker
+    AnswerAgent -->|Tool Call| PageDownloader
+    AnswerAgent -->|System Prompt| SystemPrompts
+    AnswerAgent -->|API Call| AI_Providers
+
+    AnswerAPI -->|Response| Feedback
+    Feedback -->|Scores & Ratings| DB
+    PipelineService -->|Interaction Data| DB
+    Logging -->|Log Data| DB
+    DB -->|Historical Data| Eval
+
+    AIManager -->|Config| ContextAPI
+    AIManager -->|Config| AnswerAPI
+    AIManager -->|Config| AI_Providers
 ```
