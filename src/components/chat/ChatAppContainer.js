@@ -229,7 +229,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         ...prevMessages,
         {
           id: userMessageId,
-          text: userMessage,
+          text: userMessage, // Keep original for now, will be updated with redacted version
           sender: 'user',
           ...(referringUrl.trim() && { referringUrl: referringUrl.trim() })
         }
@@ -250,6 +250,17 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           selectedSearch  // Add this parameter
         );
         clearInput();
+        
+        // Update the user message with the redacted text (emoji-stripped) from pipeline
+        setMessages(prevMessages => {
+          const updatedMessages = [...prevMessages];
+          const lastUserMessage = updatedMessages[updatedMessages.length - 1];
+          if (lastUserMessage && lastUserMessage.sender === 'user') {
+            lastUserMessage.redactedText = interaction.redactedText; // Use redacted text from pipeline
+          }
+          return updatedMessages;
+        });
+        
         // Add the AI response to messages
         setMessages(prevMessages => [...prevMessages, {
           id: aiMessageId,
