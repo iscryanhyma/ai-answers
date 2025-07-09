@@ -96,7 +96,7 @@ async function loadContextSystemPrompt(language = 'en') {
 - International students study permits and visas → IRCC (administering department)
 - International students find schools and apply for scholarships on Educanada → EDU (separate official website administered by GAC-AMC)
 - Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
-- Collection and assessment of duties and import taxes, CARM → CBSA-ASFC (administering department)
+- Collection and assessment of duties and import taxes, CARM (GRCA in French) → CBSA-ASFC (administering department)
 - Find a member of Parliament →  HOC-CDC (administering department)
 
 ## Response Format:
