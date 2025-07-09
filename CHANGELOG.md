@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.10.7](https://github.com/cds-snc/ai-answers/compare/v1.10.6...v1.10.7) (2025-07-09)
+
+
+### Bug Fixes
+
+* character-limit ([494750e](https://github.com/cds-snc/ai-answers/commit/494750ed882087de0bd9fe374ffcad4d066376af))
+* redact-emojis-treat-as-profanity ([77a98b0](https://github.com/cds-snc/ai-answers/commit/77a98b0d444c1156c68c46cc479a93dc66000eea))
+* revert emoji-stripping changes from PR [#229](https://github.com/cds-snc/ai-answers/issues/229) ([8bc7632](https://github.com/cds-snc/ai-answers/commit/8bc7632f7e098fba6cf08f665133d13b3f4a90ce))
+* revert emoji-stripping changes from PR [#229](https://github.com/cds-snc/ai-answers/issues/229) ([33cdb29](https://github.com/cds-snc/ai-answers/commit/33cdb29465b6df4a78795c84ea41d32cc4eadb54))
+* revisions ([d55b074](https://github.com/cds-snc/ai-answers/commit/d55b0743e362e4a2b627b42c07bd8f2845b978f4))
+
 ## [1.10.6](https://github.com/cds-snc/ai-answers/compare/v1.10.5...v1.10.6) (2025-07-07)
 
 
