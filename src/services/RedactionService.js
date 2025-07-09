@@ -346,6 +346,9 @@ class RedactionService {
    * @returns {Array<{pattern: RegExp, type: string}>} Array of pattern objects
    */
   get redactionPatterns() {
+    // Comprehensive emoji regex that covers most emoji ranges including praying hands and other symbols
+    const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{FE00}-\u{FE0F}]|[\u{1F3FB}-\u{1F3FF}]|[\u{1F600}-\u{1F64F}]|[\u{1F650}-\u{1F67F}]|[\u{1F680}-\u{1F6FF}]|[\u{1F700}-\u{1F77F}]|[\u{1F780}-\u{1F7FF}]|[\u{1F800}-\u{1F8FF}]|[\u{1F900}-\u{1F9FF}]|[\u{1FA00}-\u{1FA6F}]|[\u{1FA70}-\u{1FAFF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{FE00}-\u{FE0F}]|[\u{1F3FB}-\u{1F3FF}]|[\u{1F9B0}-\u{1F9B3}]|[\u{1F9B4}-\u{1F9B5}]|[\u{1F9B6}-\u{1F9B7}]|[\u{1F9B8}-\u{1F9B9}]|[\u{1F9BA}-\u{1F9BB}]|[\u{1F9BC}-\u{1F9BD}]|[\u{1F9BE}-\u{1F9BF}]|[\u{1F9C0}-\u{1F9C1}]|[\u{1F9C2}-\u{1F9C3}]|[\u{1F9C4}-\u{1F9C5}]|[\u{1F9C6}-\u{1F9C7}]|[\u{1F9C8}-\u{1F9C9}]|[\u{1F9CA}-\u{1F9CB}]|[\u{1F9CC}-\u{1F9CD}]|[\u{1F9CE}-\u{1F9CF}]|[\u{1F9D0}-\u{1F9D1}]|[\u{1F9D2}-\u{1F9D3}]|[\u{1F9D4}-\u{1F9D5}]|[\u{1F9D6}-\u{1F9D7}]|[\u{1F9D8}-\u{1F9D9}]|[\u{1F9DA}-\u{1F9DB}]|[\u{1F9DC}-\u{1F9DD}]|[\u{1F9DE}-\u{1F9DF}]|[\u{1F9E0}-\u{1F9E1}]|[\u{1F9E2}-\u{1F9E3}]|[\u{1F9E4}-\u{1F9E5}]|[\u{1F9E6}-\u{1F9E7}]|[\u{1F9E8}-\u{1F9E9}]|[\u{1F9EA}-\u{1F9EB}]|[\u{1F9EC}-\u{1F9ED}]|[\u{1F9EE}-\u{1F9EF}]|[\u{1F9F0}-\u{1F9F1}]|[\u{1F9F2}-\u{1F9F3}]|[\u{1F9F4}-\u{1F9F5}]|[\u{1F9F6}-\u{1F9F7}]|[\u{1F9F8}-\u{1F9F9}]|[\u{1F9FA}-\u{1F9FB}]|[\u{1F9FC}-\u{1F9FD}]|[\u{1F9FE}-\u{1F9FF}]/gu;
+    
     return [
       ...this.privatePatterns.map(pattern => ({ pattern, type: 'private' })),
       {
@@ -359,6 +362,10 @@ class RedactionService {
       {
         pattern: this.manipulationPattern,
         type: 'manipulation'
+      },
+      {
+        pattern: emojiRegex,
+        type: 'profanity'
       }
     ];
   }
@@ -410,16 +417,11 @@ class RedactionService {
 
     validPatterns.forEach(({ pattern, type }, index) => {
       redactedText = redactedText.replace(pattern, (match) => {
-        console.log(`Pattern ${index} matched: "${match}"`);
+        // console.log(`Pattern ${index} matched: "${match}"`);
         redactedItems.push({ value: match, type });
         return type === 'private' ? 'XXX' : '#'.repeat(match.length);
       });
     });
-
-    // Strip emojis from the redacted text
-    // Simple emoji regex that covers most common emojis
-    const emojiRegex = /[\u{1F600}-\u{1F64F}]|[\u{1F300}-\u{1F5FF}]|[\u{1F680}-\u{1F6FF}]|[\u{1F1E0}-\u{1F1FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]|[\u{1F900}-\u{1F9FF}]|[\u{FE00}-\u{FE0F}]|[\u{1F3FB}-\u{1F3FF}]/gu;
-    redactedText = redactedText.replace(emojiRegex, '').trim();
 
     return { redactedText, redactedItems };
   }

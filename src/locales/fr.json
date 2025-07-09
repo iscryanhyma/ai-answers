@@ -129,7 +129,7 @@
         "thinkingMore": "Génération de la réponse en cours...",
         "limitReached": "Votre limite de 3 questions par conversation a été atteinte. Actualisez la page pour commencer une nouvelle conversation.",
         "error": "Désolé, nous avons un problème de connexion au service en ce moment. Veuillez réessayer dans quelques minutes.",
-        "blockedContent": "Votre question contenait des mots qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
+        "blockedContent": "Votre question contenait des mots ou des emojis qui ne sont pas acceptés.\nVeuillez la reformuler différemment ci-dessous.",
         "blockedMessage": "Votre question n'a pas été envoyée au service d'IA.",
         "privateContent": "Pour protéger votre vie privée, votre question n'a pas été envoyée au service d'IA. Posez-la différemment ci-dessous sans aucune information personnelle.",
         "privacyMessage": "Les informations personnelles dans votre question sont marquées comme XXX.",
