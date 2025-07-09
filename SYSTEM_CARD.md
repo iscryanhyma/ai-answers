@@ -69,7 +69,7 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 
 ### Data Flow
 1. User submits question through chat interface
-2. Content filtering and PII redaction applied
+2. Content filtering and PI redaction applied
 3. Context service determines relevant department
 4. Search tools gather relevant government content
 5. **AI Agentic Behavior**: AI can use specialized tools including:
@@ -79,21 +79,109 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 6. Answer service generates response with citations
 7. Response logged to database with user feedback
 
-## Safety and Risk Mitigation
+## Risk Assessment and Safety Measures
 
-### Content Filtering
-- **PII Detection**: Automatic redaction of personal information (names, SIN, phone numbers, addresses)
+### Potential Harms and Mitigation Strategies
+
+#### **Information Accuracy Risks**
+**Potential Harms:**
+- Providing outdated or incorrect government information
+- Misleading users about eligibility requirements or deadlines
+- Giving incomplete information that could affect user decisions
+
+**Mitigation Strategies:**
+- **Real-time Content Verification**: downloadWebPage tool downloads and reads current web pages to verify information accuracy
+- **Citation Requirements**: Every answer must include a single verified government source link
+- **URL Validation**: Automatic checking of citation URLs for validity and accessibility
+- **Expert Evaluation System**: Continuous human expert evaluation of response accuracy
+- **Content Freshness Monitoring**: Prioritizes freshly downloaded content over potentially outdated training data
+- **Department-Specific Scenarios**: Tailored prompts for different government departments to improve accuracy
+
+#### **Privacy and Data Protection Risks**
+**Potential Harms:**
+- Accidental exposure of personal information
+- Logging sensitive user data
+- Unauthorized access to user conversations
+
+**Mitigation Strategies:**
+- **PI Detection and Redaction**: Automatic redaction of personal information (names, SIN, phone numbers, addresses) before processing
+- **User Notification**: Users are warned when PI is detected and asked to rephrase
+- **Data Minimization**: Only necessary conversation data is stored
+- **Access Controls**: Database access restricted to authorized personnel with role-based permissions
+- **Encryption**: All data encrypted at rest and in transit
+- **No PI to AI Services**: Personal information is never sent to AI services or logged
+
+#### **Content Safety Risks**
+**Potential Harms:**
+- Generation of inappropriate or harmful content
+- Response to manipulation attempts
+- Providing advice outside government scope
+
+**Mitigation Strategies:**
+- **Content Filtering**: Blocks profanity, discriminatory language, threats, and manipulation attempts
+- **Scope Enforcement**: Strict limitation to Government of Canada information only
+- **Rate Limiting**: 3 questions per session to prevent abuse
+- **Character Limits**: 750 character limit per question to prevent prompt injection
+- **User Warnings**: Clear notifications when inappropriate content is detected
+- **Response Length Limits**: Maximum 4 sentences to reduce hallucination risk
+
+#### **Accessibility and Fairness Risks**
+**Potential Harms:**
+- Excluding users with disabilities
+- Language barriers for non-English/French speakers
+- Inconsistent service quality across different user groups
+
+**Mitigation Strategies:**
+- **Screen Reader Testing**: Usability sessions with screen reader users to identify improvements
+- **WCAG 2.1 AA Compliance**: Full accessibility standards implementation
+- **Bilingual Support**: Full English/French support with official language compliance
+- **Multi-language Input**: Users can ask questions in any language
+- **Aria-labels and Live Regions**: Proper accessibility markup for assistive technologies
+- **Plain Language**: Responses use clear, simple language matching Canada.ca standards
+
+#### **System Reliability Risks**
+**Potential Harms:**
+- Service outages affecting user access
+- API dependency failures
+- Data loss or corruption
+
+**Mitigation Strategies:**
+- **Infrastructure Monitoring**: CloudWatch metrics and logging for production environment
+- **Automated Backups**: AWS DocumentDB with automated backup systems
+- **Failover Planning**: System designed for model independence with multiple AI providers
+- **Rate Limiting**: Prevents system overload and abuse
+- **Error Handling**: Graceful degradation when services are unavailable
+
+### Bias and Fairness Considerations
+
+#### **Potential Biases**
+- **Language Bias**: Potential preference for English over French content
+- **Department Bias**: Possible over-representation of certain government departments
+- **Content Recency Bias**: Newer government content may be prioritized over established information
+- **Geographic Bias**: Focus on federal services may not address regional variations
+
+#### **Mitigation Strategies**
+- **Balanced Language Support**: Equal treatment of English and French content with official language compliance
+- **Department-Specific Context**: Tailored scenarios for all major government departments
+- **Content Verification**: downloadWebPage tool ensures current information regardless of training data age
+- **Expert Evaluation**: Human oversight to identify and correct potential biases
+- **Transparency**: Clear documentation of system limitations and scope
+
+### Safety and Risk Mitigation
+
+#### **Content Filtering**
+- **PI Detection**: Automatic redaction of personal information (names, SIN, phone numbers, addresses)
 - **Inappropriate Content**: Blocks profanity, discriminatory language, threats, and manipulation attempts
 - **Rate Limiting**: 3 questions per session to prevent abuse
 - **Character Limits**: 750 character limit per question
 
-### Privacy Protection
-- **PII Protection**: Most personal information is blocked from being sent to AI services or logged
-- **User Notification**: Users are warned when PII is detected and asked to rephrase
+#### **Privacy Protection**
+- **PI Protection**: Most personal information is blocked from being sent to AI services or logged
+- **User Notification**: Users are warned when PI is detected and asked to rephrase
 - **Data Minimization**: Only necessary conversation data is stored
 - **Access Controls**: Database access restricted to authorized personnel
 
-### Accuracy Measures
+#### **Accuracy Measures**
 - **Citation Requirements**: Every answer must include a single verified government source link
 - **URL Validation**: Automatic checking of citation URLs for validity
 - **Content Verification**: Web page downloading for time-sensitive information
@@ -108,16 +196,48 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - **Helpfulness**: Corrects misunderstandings and provides actionable next steps
 
 ### Evaluation Methods
-- **Expert Feedback**: "Good" vs "Needs Improvement" ratings
-- **Sentence-Level Scoring**: Individual sentence accuracy assessment
-- **Citation Rating**: Verification of source link relevance
-- **Automated Evaluation**: Embedding-based similarity scoring from expert evaluations
+- **Innovative Expert Evaluation System**: 
+  - **In-App Evaluation**: Experts evaluate questions within the actual app interface, experiencing the same user experience
+  - **Flexible Evaluation**: Experts can enter their own questions or use existing chat IDs to evaluate user conversations
+  - **Sentence-Level Scoring**: Each sentence in AI responses is scored individually (100/80/0 points) with detailed explanations
+  - **Citation Rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)
+  - **Weighted Total Score**: 75% sentence scores + 25% citation score for comprehensive quality assessment
+  - **Embedding Generation**: Expert feedback creates embeddings that enable automated AI evaluations for similar questions
+  - **Future Enhancement**: These embeddings will soon assist in answering questions quickly and accurately
+
+- **Separate Public User Feedback**: 
+  - **Simple Interface**: "Was this helpful?" with Yes/No options for all users
+  - **Detailed Follow-up**: Single question asking why they clicked Yes or No with specific reason options
+  - **Positive Reasons**: No call needed, no visit needed, saved time, other
+  - **Negative Reasons**: Irrelevant, confusing, not detailed enough, not what they wanted, other
+  - **Survey Integration**: Links to external surveys for additional feedback collection
 
 ### Current Performance
 - **Response Time**: Under 10 seconds for most queries
 - **Accuracy**: Continuously monitored through expert feedback
 - **Accessibility**: Tested with screen reader users
 - **Uptime**: Production environment monitoring
+
+### Continuous Monitoring and Evaluation
+
+#### **Real-time Monitoring**
+- **System Health**: CloudWatch metrics for uptime, response times, and error rates
+- **User Feedback**: Continuous collection of public feedback and expert evaluations
+- **Content Quality**: Automated tracking of citation accuracy and response relevance
+- **Safety Metrics**: Monitoring of content filtering effectiveness and PI detection rates
+
+#### **Evaluation Framework**
+- **Expert Evaluation System**: Sentence-level scoring (100/80/0 points) with detailed explanations
+- **Citation Rating**: Separate scoring for citation accuracy and relevance (25/20/0 points)
+- **Weighted Scoring**: 75% sentence scores + 25% citation score for comprehensive assessment
+- **Embedding Generation**: Expert feedback creates embeddings for automated AI evaluations
+- **Public Feedback**: Simple "Was this helpful?" interface with detailed follow-up questions
+
+#### **Performance Benchmarks**
+- **Accuracy Target**: Continuous improvement toward 100% answer accuracy
+- **Response Quality**: Maximum 4 sentences for clarity and reduced hallucination risk
+- **Accessibility**: WCAG 2.1 AA compliance maintained
+- **Language Support**: Equal quality for English and French responses
 
 ## Limitations and Constraints
 
@@ -162,7 +282,14 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - **Multi-Provider Support**: Process batches with OpenAI or Anthropic AI services
 
 #### **Evaluation Tools**
-- **Embedding Generation**: Create embeddings from expert feedback for similarity matching
+- **Innovative Expert Evaluation System**: 
+  - **In-App Evaluation**: Experts evaluate within the actual app interface, experiencing the same user experience
+  - **Flexible Evaluation**: Experts can enter their own questions or use existing chat IDs to evaluate user conversations
+  - **Sentence-Level Scoring**: Each sentence scored individually (100/80/0) with detailed explanations
+  - **Citation Rating**: Separate scoring for citation accuracy (25/20/0 points)
+  - **Weighted Total Score**: 75% sentence scores + 25% citation score
+  - **Embedding Generation**: Expert feedback creates embeddings for automated AI evaluations
+  - **Future Enhancement**: Embeddings will soon assist in answering questions quickly and accurately
 - **Automated Evaluation**: Generate AI evaluations based on expert feedback patterns
 - **Evaluation Regeneration**: Rebuild all evaluations with updated criteria
 - **Progress Tracking**: Real-time monitoring of evaluation processing with batch statistics
@@ -193,8 +320,10 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 #### **Chat Viewer and Analysis**
 - **Chat Session Review**: View complete chat interactions by chat ID
 - **Interaction Analysis**: Examine individual question-answer pairs with feedback
-- **Expert Rating Interface**: Provide detailed expert feedback on AI responses
-- **Public Evaluation**: Manage public feedback collection and analysis
+- **Expert Rating Interface**: Provide detailed expert feedback on AI responses with sentence-level scoring within the app interface
+- **In-App Evaluation**: Experts can evaluate questions in the same interface users experience, or evaluate existing user conversations by chat ID
+- **Public Feedback Analysis**: Manage public feedback collection and analysis
+- **Separate Feedback Systems**: Expert evaluation (sentence-level) vs public feedback (helpful/not helpful)
 
 ### Partner-Specific Features
 - **AI Service Selection**: Choose between OpenAI and Anthropic for testing
@@ -226,6 +355,30 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - **Privacy**: PIPEDA compliance for data handling
 - **Government Standards**: Canada.ca design system compliance
 
+## Responsible AI Principles and Governance
+
+### Core Principles
+- **Accuracy First**: All responses must be accurate and verifiable through official government sources
+- **Privacy by Design**: Personal information is never processed or stored unnecessarily
+- **Accessibility for All**: Full compliance with accessibility standards and inclusive design
+- **Transparency**: Clear documentation of system capabilities, limitations, and decision-making processes
+- **Accountability**: Continuous monitoring and evaluation with human oversight
+- **Fairness**: Equal treatment across languages, regions, and user groups
+
+### Governance Framework
+- **Oversight**: Canadian Digital Service (CDS) provides overall governance and oversight
+- **Compliance**: Adherence to Government of Canada standards, policies, and legal requirements
+- **Transparency**: Open source codebase and comprehensive documentation
+- **Stakeholder Engagement**: Regular consultation with government departments and user communities
+- **Continuous Improvement**: Regular review and updates based on feedback and evaluation results
+
+### Ethical Considerations
+- **Public Service Mandate**: System designed exclusively for public service, not commercial purposes
+- **User Autonomy**: Users maintain control over their interactions and can choose not to use the service
+- **Benefit Maximization**: Focus on providing maximum benefit to Canadian citizens and residents
+- **Harm Minimization**: Comprehensive safety measures to prevent any potential harms
+- **Cultural Sensitivity**: Respect for Canada's diverse population and official languages
+
 ## Future Development
 
 ### Planned Improvements
@@ -251,6 +404,21 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - **Oversight**: Canadian Digital Service (CDS)
 - **Compliance**: Government of Canada standards and policies
 - **Transparency**: Open source codebase and documentation
+
+### Incident Response and Reporting
+- **Incident Classification**: Clear categorization of incidents by severity and impact
+- **Response Procedures**: Documented procedures for handling safety, privacy, or accuracy incidents
+- **Reporting Mechanisms**: Multiple channels for reporting issues (GitHub, admin dashboard, direct contact)
+- **Escalation Process**: Clear escalation paths for critical incidents
+- **Post-Incident Review**: Systematic review and improvement process after incidents
+- **Transparency**: Public reporting of significant incidents and lessons learned
+
+### Contact and Reporting
+- **Technical Issues**: GitHub repository for bug reports and feature requests
+- **Safety Concerns**: Direct contact through admin dashboard or GitHub issues
+- **Privacy Incidents**: Immediate reporting through designated channels
+- **Accessibility Issues**: Dedicated accessibility feedback channels
+- **General Feedback**: Multiple feedback mechanisms for different user types
 
 ---
 

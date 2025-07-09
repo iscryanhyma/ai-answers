@@ -1,7 +1,7 @@
 # AI Answers - Quick Reference System Card
 
 ## What is AI Answers?
-A specialized AI assistant for Government of Canada websites that provides accurate, brief answers to questions about government services, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. 
+A specialized AI assistant for Government of Canada websites that provides accurate, brief answers to questions about government services, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system features separate feedback mechanisms: expert sentence-level evaluation and simple public user feedback. 
 
 ## Key Facts
 - **Purpose**: Help users navigate Canada.ca and government services
@@ -13,7 +13,7 @@ A specialized AI assistant for Government of Canada websites that provides accur
 - **Staging URL**: ai-answers.cdssandbox.xyz
 
 ## Safety & Privacy
-- ✅ **PII Protection**: Most personal information is blocked from being sent to AI or logged
+- ✅ **PI Protection**: Most personal information is blocked from being sent to AI or logged
 - ✅ **Content Filtering**: Blocks inappropriate content and threats and manipulation 
 - ✅ **Rate Limiting**: 3 questions per session
 - ✅ **Character Limits**: 750 characters per question
@@ -27,7 +27,7 @@ A specialized AI assistant for Government of Canada websites that provides accur
 ## Admin Features
 - **User Management**: Admin and partner role management
 - **Batch Processing**: Bulk AI evaluation with CSV uploads
-- **Evaluation Tools**: Expert feedback and automated evaluation generation
+- **Expert Evaluation Tools**: Sentence-level scoring (100/80/0) and citation rating (25/20/0) with embedding generation for automated evaluations
 - **Database Management**: Export/import, maintenance, and monitoring
 - **Performance Metrics**: Real-time analytics and reporting
 - **System Configuration**: Service status and deployment mode controls
@@ -36,7 +36,8 @@ A specialized AI assistant for Government of Canada websites that provides accur
 - **Length**: Maximum 4 sentences per answer
 - **Style**: Plain language matching Canada.ca standards
 - **Citations**: Every answer includes verified government source link
-- **Evaluation**: Continuous improvement through expert feedback
+- **Expert Evaluation**: In-app evaluation with sentence-level scoring and weighted total (75% sentences + 25% citation)
+- **Public Feedback**: Simple "Was this helpful?" interface with detailed follow-up reasons
 
 ## Limitations
 - Does not provide information about provincial/territorial/municipal services
