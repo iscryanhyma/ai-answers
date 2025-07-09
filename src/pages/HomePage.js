@@ -163,6 +163,15 @@ const HomePage = ({ lang = 'en' }) => {
             </GcdsLink>
           </GcdsText>
         </GcdsDetails>
+        <GcdsDetails detailsTitle={t('homepage.immigration.title')} className="mb-400" tabIndex={0}>
+          <GcdsText>{t('homepage.immigration.advice')}</GcdsText>
+          <GcdsText>
+            {t('homepage.immigration.explore')}{' '}
+            <GcdsLink href={lang === 'fr' ? 'https://ircc.canada.ca/explorer-programmes/index.asp' : 'https://ircc.canada.ca/explore-programs/index.asp'}>
+              {t('homepage.immigration.exploreLink')}
+            </GcdsLink>
+          </GcdsText>
+        </GcdsDetails>
         <ChatAppContainer lang={lang} chatId={chatId} readOnly={reviewMode} initialMessages={initialMessages} />
       </GcdsContainer>
       <GcdsContainer size="xl" mainContainer centered tag="below" className="mb-600" tabIndex={0}>
