@@ -146,14 +146,19 @@ class RedactionService {
       ? [...manipulationFr.suspiciousWords, ...manipulationFr.manipulationPhrases]
       : [...manipulationEn.suspiciousWords, ...manipulationEn.manipulationPhrases];
 
-    const pattern = manipulationWords
+    // Create pattern for manipulation words
+    const wordPattern = manipulationWords
       .map(word => {
         const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         return `\\b${escaped}\\b`;
       })
       .join('|');
 
-    this.manipulationPattern = new RegExp(`(${pattern})`, 'gi');
+    // Add URL pattern to manipulation patterns
+    const urlPattern = /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g;
+    
+    // Combine word patterns with URL pattern
+    this.manipulationPattern = new RegExp(`(${wordPattern}|${urlPattern.source})`, 'gi');
   }
 
   /**
@@ -304,10 +309,10 @@ class RedactionService {
         pattern: /(\d{1,3}(\.\d{1,3}){3}|[0-9A-F]{4}(:[0-9A-F]{4}){5}(::|(:0000)+))/gi,
         description: 'IP addresses'
       },
-      {
-        pattern: /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g,
-        description: 'URLs'
-      },
+      // {
+      //   pattern: /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g,
+      //   description: 'URLs'
+      // },
       {
         pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{3}\b/g,
         description: 'Canadian SIN (Social Insurance Number)'
@@ -419,7 +424,7 @@ class RedactionService {
       redactedText = redactedText.replace(pattern, (match) => {
         // console.log(`Pattern ${index} matched: "${match}"`);
         redactedItems.push({ value: match, type });
-        return type === 'private' ? 'XXX' : '#'.repeat(match.length);
+        return type === 'private' ? 'XXX' : '####';
       });
     });
 

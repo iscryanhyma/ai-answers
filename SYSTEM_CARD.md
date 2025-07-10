@@ -1,9 +1,9 @@
 # AI Answers System Card
 
 **Version**: 1.0  
-**Date**: January 2025  
+**Date**: July 2025  
 **Organization**: Canadian Digital Service (CDS)  
-**Contact**: [Contact information to be added]  
+**Contact**: Peter Smith at cds.ca  
 
 ## Executive Summary
 
@@ -12,22 +12,19 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 ## Current Status
 - **Environment**: Preparing for public pilot
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
-- **Staging**: ai-answers.cdssandbox.xyz (OpenAI + MongoDB Atlas)
-- **Evaluation**: Ongoing expert feedback collection and response scoring
+- **Staging**: ai-answers.cdssandbox.xyz 
+- **Evaluation**: Ongoing expert feedback collection and response scoring feeding AI evals & answers
 - **Platform**: Departments can add prompt scenarios to meet specific needs
 
 ## System Purpose and Scope
 
 ### Primary Function
-- Assist users navigating Canada.ca and other government services
+- Assist users with questions about Government of Canada issues
 - Provide accurate information about Government of Canada programs, benefits, and services
 - Direct users to appropriate government resources and next steps
 
 ### Target Users
-- Canadian citizens and permanent residents
-- Temporary residents and visitors to Canada
-- Government employees seeking information
-- Anyone accessing Canada.ca or gc.ca websites
+- Anyone visiting Canada.ca or federal websites
 
 ### Content Scope
 - **In Scope**: Government of Canada services, programs, benefits, regulations, and official information
@@ -35,10 +32,10 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - **Sources**: Only Canada.ca, gc.ca, and federal organization domains
 
 ### Language Support
-- Full bilingual support (English/French)
+- Full bilingual support (English/French pages)
 - Official language compliance
-- Users can ask questions in any language, but citations match the page language
-- Responds in other languages as needed
+- Users can ask questions in either language, but citation matches the page language
+- Responds in other languages as needed (translates into English first for accuracy and logging)
 
 ## Technical Architecture
 
@@ -47,13 +44,12 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 2. **Backend**: Node.js microservices with prompt-chaining architecture
 3. **AI Services**: Azure OpenAI GPT models (production)
 4. **Database**: AWS DocumentDB (production)
-5. **Infrastructure**: AWS ECS with Terraform infrastructure as code
 
 ### AI Model Details
 - **Production Models**: Azure OpenAI GPT-4 and GPT-4o Mini models
 - **Temperature**: 0 (deterministic responses)
-- **Prompt Engineering**: Chain-of-thought prompting with structured output
-- **Model Independence**: System designed to work with different AI providers
+- **Prompt Engineering**: Chain-of-thought prompting with structured output, dept prompt pulled in as needed
+- **Model Independence**: System designed to work with different AI providers, tested with GPT & Claude
 
 ### Agentic Capabilities
 - **Tool Usage**: AI can autonomously use specialized tools to enhance responses
@@ -104,12 +100,11 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - Unauthorized access to user conversations
 
 **Mitigation Strategies:**
-- **PI Detection and Redaction**: Automatic redaction of personal information (names, SIN, phone numbers, addresses) before processing
+- **PI Detection and blocking**: Automatic blocking of personal information (SIN, emails, phone numbers, addresses, most names) - improved name redaction is planned for later
 - **User Notification**: Users are warned when PI is detected and asked to rephrase
-- **Data Minimization**: Only necessary conversation data is stored
+- **Data Minimization**: Only conversation data that is sent to the AI service is stored
 - **Access Controls**: Database access restricted to authorized personnel with role-based permissions
 - **Encryption**: All data encrypted at rest and in transit
-- **No PI to AI Services**: Personal information is never sent to AI services or logged
 
 #### **Content Safety Risks**
 **Potential Harms:**
@@ -121,23 +116,22 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - **Content Filtering**: Blocks profanity, discriminatory language, threats, and manipulation attempts
 - **Scope Enforcement**: Strict limitation to Government of Canada information only
 - **Rate Limiting**: 3 questions per session to prevent abuse
-- **Character Limits**: 750 character limit per question to prevent prompt injection
-- **User Warnings**: Clear notifications when inappropriate content is detected
+- **Character Limits**: 260 character limit per question to prevent prompt injection
+- **User Warnings**: Clear notifications when inappropriate content is detected - usability tested
 - **Response Length Limits**: Maximum 4 sentences to reduce hallucination risk
 
 #### **Accessibility and Fairness Risks**
 **Potential Harms:**
-- Excluding users with disabilities
+- Accessibility barriers
 - Language barriers for non-English/French speakers
 - Inconsistent service quality across different user groups
 
 **Mitigation Strategies:**
-- **Screen Reader Testing**: Usability sessions with screen reader users to identify improvements
+- **Screen Reader Testing**: Iterative usability sessions held with range of screen reader users to test and improve
 - **WCAG 2.1 AA Compliance**: Full accessibility standards implementation
 - **Bilingual Support**: Full English/French support with official language compliance
-- **Multi-language Input**: Users can ask questions in any language
-- **Aria-labels and Live Regions**: Proper accessibility markup for assistive technologies
-- **Plain Language**: Responses use clear, simple language matching Canada.ca standards
+- **Multi-language Input**: Users can ask questions in many languages and receive an answer in same language - indigenous language support is planned
+- **Plain Language**: Responses use clear, simple language matching Canada.ca standards, extensive iterative usability testing
 
 #### **System Reliability Risks**
 **Potential Harms:**
@@ -150,7 +144,7 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - **Automated Backups**: AWS DocumentDB with automated backup systems
 - **Failover Planning**: System designed for model independence with multiple AI providers
 - **Rate Limiting**: Prevents system overload and abuse
-- **Error Handling**: Graceful degradation when services are unavailable
+- **Outage setting**: Turn system off and show outage message via Admin panel
 
 ### Bias and Fairness Considerations
 
@@ -164,28 +158,8 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - **Balanced Language Support**: Equal treatment of English and French content with official language compliance
 - **Department-Specific Context**: Tailored scenarios for all major government departments
 - **Content Verification**: downloadWebPage tool ensures current information regardless of training data age
-- **Expert Evaluation**: Human oversight to identify and correct potential biases
+- **Expert Evaluation**: Human assessment of answers to identify and correct potential biases via system prompts and eval embeddings to feed improved answers
 - **Transparency**: Clear documentation of system limitations and scope
-
-### Safety and Risk Mitigation
-
-#### **Content Filtering**
-- **PI Detection**: Automatic redaction of personal information (names, SIN, phone numbers, addresses)
-- **Inappropriate Content**: Blocks profanity, discriminatory language, threats, and manipulation attempts
-- **Rate Limiting**: 3 questions per session to prevent abuse
-- **Character Limits**: 750 character limit per question
-
-#### **Privacy Protection**
-- **PI Protection**: Most personal information is blocked from being sent to AI services or logged
-- **User Notification**: Users are warned when PI is detected and asked to rephrase
-- **Data Minimization**: Only necessary conversation data is stored
-- **Access Controls**: Database access restricted to authorized personnel
-
-#### **Accuracy Measures**
-- **Citation Requirements**: Every answer must include a single verified government source link
-- **URL Validation**: Automatic checking of citation URLs for validity
-- **Content Verification**: Web page downloading for time-sensitive information
-- **Expert Feedback**: Continuous evaluation through expert ratings and feedback
 
 ## Performance and Evaluation
 
@@ -194,6 +168,7 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - **Style**: Plain language matching Canada.ca standards
 - **Accuracy**: Sourced exclusively from government content
 - **Helpfulness**: Corrects misunderstandings and provides actionable next steps
+- **Dept-aligned**: Dept can provide prompt scenarios to address specific communications needs, such as sending particular questions to a wizard rather than attempting to answer, or overcoming out-dated content issues by directing to most recent content
 
 ### Evaluation Methods
 - **Innovative Expert Evaluation System**: 
@@ -249,7 +224,7 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 
 ### Operational Constraints
 - **Rate Limits**: 3 questions per session
-- **Character Limits**: 750 characters per question
+- **Character Limits**: 260 characters per question
 - **Content Scope**: Government of Canada information only
 - **Language**: Primary support for English and French
 
@@ -382,15 +357,14 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 ## Future Development
 
 ### Planned Improvements
-- **Enhanced Evaluation**: Automated response quality assessment
+- **Enhanced Evaluation**: Automated response quality assessment from previous expert evaluations by experts
 - **Additional Languages**: Support for Indigenous languages
-- **Integration**: Direct integration with government service systems
-- **Personalization**: Context-aware responses based on user history
+- **Additional departmental partners**: add specific dept prompt layer and expert evaluations
+
 
 ### Research Areas
 - **Response Quality**: Improving accuracy and helpfulness
-- **User Experience**: Streamlining interaction patterns
-- **Content Coverage**: Expanding to more government services
+- **User Experience**: Streamlining interaction patterns - iterative usability testing with over 50 participants
 - **Accessibility**: Enhanced support for assistive technologies
 
 ## Contact and Support

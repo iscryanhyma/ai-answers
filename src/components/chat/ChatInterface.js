@@ -3,7 +3,7 @@ import FeedbackComponent from './FeedbackComponent.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import ChatOptions from './ChatOptions.js';
 
-const MAX_CHARS = 400;
+const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
 const ChatInterface = ({
   messages,
