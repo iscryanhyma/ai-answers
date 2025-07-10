@@ -7,12 +7,12 @@
 
 ## Executive Summary
 
-AI Answers is a specialized AI assistant designed exclusively for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with privacy, accessibility, and accuracy as core principles.
+AI Answers is a specialized AI assistant designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with privacy, accessibility, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and logging views.
 
 ## Current Status
 - **Environment**: Preparing for public pilot
 - **Production**: https://ai-answers.alpha.canada.ca (Azure OpenAI + AWS DocumentDB)
-- **Staging**: ai-answers.cdssandbox.xyz 
+- **Staging**: https://ai-answers.cdssandbox.xyz 
 - **Evaluation**: Ongoing expert feedback collection and response scoring feeding AI evals & answers
 - **Platform**: Departments can add prompt scenarios to meet specific needs
 
@@ -27,8 +27,8 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 - Anyone visiting Canada.ca or federal websites
 
 ### Content Scope
-- **In Scope**: Government of Canada services, programs, benefits, regulations, and official information
-- **Out of Scope**: Provincial/territorial/municipal services, personal advice, non-government topics
+- **In scope**: Government of Canada services, programs, benefits, regulations, and official information
+- **Out of scope**: Provincial/territorial/municipal services, personal advice, non-government topics
 - **Sources**: Only Canada.ca, gc.ca, and federal organization domains
 
 ### Language Support
@@ -46,32 +46,32 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 4. **Database**: AWS DocumentDB (production)
 
 ### AI Model Details
-- **Production Models**: Azure OpenAI GPT-4 and GPT-4o Mini models
+- **Production models**: Azure OpenAI GPT-4 and GPT-4o Mini models
 - **Temperature**: 0 (deterministic responses)
-- **Prompt Engineering**: Chain-of-thought prompting with structured output, dept prompt pulled in as needed
-- **Model Independence**: System designed to work with different AI providers, tested with GPT & Claude
+- **Prompt engineering**: Chain-of-thought prompting with structured output, dept prompt pulled in as needed
+- **Model independence**: System designed to work with different AI providers, tested with GPT & Claude
 
 ### Agentic Capabilities
-- **Tool Usage**: AI can autonomously use specialized tools to enhance responses
-- **downloadWebPage Tool**: Critical for accuracy - downloads and reads web pages to verify current information, especially for:
+- **Tool usage**: AI can autonomously use specialized tools to enhance responses
+- **downloadWebPage tool**: Critical for accuracy - downloads and reads web pages to verify current information, especially for:
   - New or updated government pages
   - Time-sensitive content (tax year changes, program updates)
   - Pages modified within the last 4 months
   - Unfamiliar URLs not in training data
   - Specific details like numbers, codes, dates, dollar amounts
-- **URL Validation**: Automatically checks if citation URLs are active and accessible
-- **Context Generation**: Creates new context for follow-up questions when needed
-- **Content Verification**: Prioritizes freshly downloaded content over training data
+- **URL validation**: Automatically checks if citation URLs are active and accessible
+- **Context generation**: Creates new context for follow-up questions when needed
+- **Content verification**: Prioritizes freshly downloaded content over training data
 
 ### Data Flow
 1. User submits question through chat interface
 2. Content filtering and PI redaction applied
 3. Context service determines relevant department
 4. Search tools gather relevant government content
-5. **AI Agentic Behavior**: AI can use specialized tools including:
-   - **downloadWebPage tool**: Downloads and reads web pages to verify current information, especially for new/updated URLs or time-sensitive content
-   - **URL validation tool**: Checks if citation URLs are active and accessible
-   - **Context generation tool**: Generates new context for follow-up questions
+5. **AI agentic behavior**: AI can use specialized tools including:
+- **downloadWebPage tool**: Downloads and reads web pages to verify current information, especially for new/updated URLs or time-sensitive content
+- **URL validation tool**: Checks if citation URLs are active and accessible
+- **Context generation tool**: Generates new context for follow-up questions
 6. Answer service generates response with citations
 7. Response logged to database with user feedback
 
@@ -79,86 +79,86 @@ AI Answers is a specialized AI assistant designed exclusively for Government of 
 
 ### Potential Harms and Mitigation Strategies
 
-#### **Information Accuracy Risks**
-**Potential Harms:**
+#### **Information accuracy risks**
+**Potential harms:**
 - Providing outdated or incorrect government information
 - Misleading users about eligibility requirements or deadlines
 - Giving incomplete information that could affect user decisions
 
-**Mitigation Strategies:**
-- **Real-time Content Verification**: downloadWebPage tool downloads and reads current web pages to verify information accuracy
-- **Citation Requirements**: Every answer must include a single verified government source link
-- **URL Validation**: Automatic checking of citation URLs for validity and accessibility
-- **Expert Evaluation System**: Continuous human expert evaluation of response accuracy
-- **Content Freshness Monitoring**: Prioritizes freshly downloaded content over potentially outdated training data
-- **Department-Specific Scenarios**: Tailored prompts for different government departments to improve accuracy
+**Mitigation strategies:**
+- **Real-time content verification**: downloadWebPage tool downloads and reads current web pages to verify information accuracy
+- **Citation requirements**: Every answer must include a single verified government source link
+- **URL validation**: Automatic checking of citation URLs for validity and accessibility
+- **Expert evaluation system**: Continuous human expert evaluation of response accuracy
+- **Content freshness monitoring**: Prioritizes freshly downloaded content over potentially outdated training data
+- **Department-specific scenarios**: Tailored prompts for different government departments to improve accuracy
 
-#### **Privacy and Data Protection Risks**
-**Potential Harms:**
+#### **Privacy and data protection risks**
+**Potential harms:**
 - Accidental exposure of personal information
 - Logging sensitive user data
 - Unauthorized access to user conversations
 
-**Mitigation Strategies:**
-- **PI Detection and blocking**: Automatic blocking of personal information (SIN, emails, phone numbers, addresses, most names) - improved name redaction is planned for later
-- **User Notification**: Users are warned when PI is detected and asked to rephrase
-- **Data Minimization**: Only conversation data that is sent to the AI service is stored
-- **Access Controls**: Database access restricted to authorized personnel with role-based permissions
+**Mitigation strategies:**
+- **PI detection and blocking**: Automatic blocking of personal information (SIN, emails, phone numbers, addresses, most names) - some names may slip through, improved name redaction is planned
+- **User notification**: Users are warned when PI is detected and asked to rephrase
+- **Data minimization**: Only conversation data that is sent to the AI service is stored
+- **Access controls**: Database access restricted to authorized personnel with role-based permissions
 - **Encryption**: All data encrypted at rest and in transit
 
-#### **Content Safety Risks**
-**Potential Harms:**
+#### **Content safety risks**
+**Potential harms:**
 - Generation of inappropriate or harmful content
 - Response to manipulation attempts
 - Providing advice outside government scope
 
-**Mitigation Strategies:**
-- **Content Filtering**: Blocks profanity, discriminatory language, threats, and manipulation attempts
-- **Scope Enforcement**: Strict limitation to Government of Canada information only
-- **Rate Limiting**: 3 questions per session to prevent abuse
-- **Character Limits**: 260 character limit per question to prevent prompt injection
-- **User Warnings**: Clear notifications when inappropriate content is detected - usability tested
-- **Response Length Limits**: Maximum 4 sentences to reduce hallucination risk
+**Mitigation strategies:**
+- **Content filtering**: Blocks profanity, discriminatory language, threats, and manipulation attempts
+- **Scope enforcement**: Strict limitation to Government of Canada information only
+- **Rate limiting**: 3 questions per session to prevent abuse
+- **Character limits**: 260 character limit per question to prevent prompt injection
+- **User warnings**: Clear notifications when inappropriate content is detected - usability tested
+- **Response length limits**: Maximum 4 sentences to reduce hallucination risk
 
-#### **Accessibility and Fairness Risks**
-**Potential Harms:**
+#### **Accessibility and fairness risks**
+**Potential harms:**
 - Accessibility barriers
 - Language barriers for non-English/French speakers
 - Inconsistent service quality across different user groups
 
-**Mitigation Strategies:**
-- **Screen Reader Testing**: Iterative usability sessions held with range of screen reader users to test and improve
-- **WCAG 2.1 AA Compliance**: Full accessibility standards implementation
-- **Bilingual Support**: Full English/French support with official language compliance
-- **Multi-language Input**: Users can ask questions in many languages and receive an answer in same language - indigenous language support is planned
-- **Plain Language**: Responses use clear, simple language matching Canada.ca standards, extensive iterative usability testing
+**Mitigation strategies:**
+- **Screen reader testing**: Iterative usability sessions held with range of screen reader users to test and improve
+- **WCAG 2.1 AA compliance**: Full accessibility standards implementation
+- **Bilingual support**: Full English/French support with official language compliance
+- **Multi-language input**: Users can ask questions in many languages and receive an answer in same language - indigenous language support is planned
+- **Plain language**: Responses use clear, simple language matching Canada.ca standards, extensive iterative usability testing
 
-#### **System Reliability Risks**
-**Potential Harms:**
+#### **System reliability risks**
+**Potential harms:**
 - Service outages affecting user access
 - API dependency failures
 - Data loss or corruption
 
-**Mitigation Strategies:**
-- **Infrastructure Monitoring**: CloudWatch metrics and logging for production environment
-- **Automated Backups**: AWS DocumentDB with automated backup systems
-- **Failover Planning**: System designed for model independence with multiple AI providers
-- **Rate Limiting**: Prevents system overload and abuse
+**Mitigation strategies:**
+- **Infrastructure monitoring**: CloudWatch metrics and logging for production environment
+- **Automated backups**: AWS DocumentDB with automated backup systems
+- **Failover planning**: System designed for model independence with multiple AI providers
+- **Rate limiting**: Prevents system overload and abuse
 - **Outage setting**: Turn system off and show outage message via Admin panel
 
 ### Bias and Fairness Considerations
 
-#### **Potential Biases**
-- **Language Bias**: Potential preference for English over French content
-- **Department Bias**: Possible over-representation of certain government departments
-- **Content Recency Bias**: Newer government content may be prioritized over established information
-- **Geographic Bias**: Focus on federal services may not address regional variations
+#### **Potential biases**
+- **Language bias**: Potential preference for English over French content
+- **Department bias**: Possible over-representation of certain government departments
+- **Content recency bias**: Newer government content may be prioritized over established information
+- **Geographic bias**: Focus on federal services may not address regional variations
 
-#### **Mitigation Strategies**
-- **Balanced Language Support**: Equal treatment of English and French content with official language compliance
-- **Department-Specific Context**: Tailored scenarios for all major government departments
-- **Content Verification**: downloadWebPage tool ensures current information regardless of training data age
-- **Expert Evaluation**: Human assessment of answers to identify and correct potential biases via system prompts and eval embeddings to feed improved answers
+#### **Mitigation strategies**
+- **Balanced language support**: Equal treatment of English and French content with official language compliance
+- **Department-specific context**: Tailored scenarios for all major government departments
+- **Content verification**: downloadWebPage tool ensures current information regardless of training data age
+- **Expert evaluation**: Human assessment of answers to identify and correct potential biases via system prompts and eval embeddings to feed improved answers
 - **Transparency**: Clear documentation of system limitations and scope
 
 ## Performance and Evaluation

@@ -38,6 +38,23 @@ const AppLayout = () => {
     // Removed the auth expiration checker setup
   }, []);
 
+  // Update Open Graph meta tags based on current language
+  useEffect(() => {
+    const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
+    
+    // Update og:image meta tag
+    let ogImageMeta = document.querySelector('meta[property="og:image"]');
+    if (ogImageMeta) {
+      ogImageMeta.setAttribute('content', ogImage);
+    }
+    
+    // Update twitter:image meta tag
+    let twitterImageMeta = document.querySelector('meta[property="twitter:image"]');
+    if (twitterImageMeta) {
+      twitterImageMeta.setAttribute('content', ogImage);
+    }
+  }, [currentLang]);
+
   return (
     <>
       <section className="alpha-top">
