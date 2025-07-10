@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.8](https://github.com/cds-snc/ai-answers/compare/v1.10.7...v1.10.8) (2025-07-10)
+
+
+### Bug Fixes
+
+* block-robots ([394d033](https://github.com/cds-snc/ai-answers/commit/394d033d0c16ec905b0db10c91784b5dabd0c7ae))
+* documents ([e4fb7eb](https://github.com/cds-snc/ai-answers/commit/e4fb7ebfb953576f8994c9f57eac1657eaa737c4))
+
 ## [1.10.7](https://github.com/cds-snc/ai-answers/compare/v1.10.6...v1.10.7) (2025-07-09)
 
 
