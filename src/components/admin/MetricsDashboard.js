@@ -8,23 +8,51 @@ import ExportService from '../../services/ExportService.js';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import EndUserFeedbackSection from '../metrics/EndUserFeedbackSection.js';
+import FilterPanel from './FilterPanel.js';
 
 DataTable.use(DT);
 
 const MetricsDashboard = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [timeRange, setTimeRange] = useState('7');
   const [metrics, setMetrics] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [hasLoadedData, setHasLoadedData] = useState(false);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
 
-  const fetchMetrics = async () => {
+  // Convert new filter format to API parameters
+  const buildApiParams = (filters) => {
+    const params = {};
+    
+    if (filters.dateRange) {
+      if (filters.dateRange.startDate && filters.dateRange.endDate) {
+        params.startDate = filters.dateRange.startDate.toISOString().split('T')[0];
+        params.endDate = filters.dateRange.endDate.toISOString().split('T')[0];
+      }
+    }
+    
+    // Add future filter parameters
+    if (filters.referringUrl) {
+      params.referringUrl = filters.referringUrl;
+    }
+    
+    if (filters.department) {
+      params.department = filters.department;
+    }
+    
+    return params;
+  };
+
+  const fetchMetrics = async (filters = null) => {
     setLoading(true);
     try {
-      const data = await DataStoreService.getChatLogs({ days: timeRange });
+      const apiParams = buildApiParams(filters || {});
+      const data = await DataStoreService.getChatLogs(apiParams);
       if (data.success) {
         // Process the logs to calculate metrics
         const processedMetrics = processMetrics(data.logs || []);
         setMetrics(processedMetrics);
+        setHasLoadedData(true);
+        setShowFilterPanel(true);
       } else {
         console.error('API returned error:', data.error);
         alert(data.error || 'Failed to fetch metrics');
@@ -34,6 +62,32 @@ const MetricsDashboard = ({ lang = 'en' }) => {
       alert(`Failed to fetch metrics: ${error.message}`);
     }
     setLoading(false);
+  };
+
+  const handleGetMetrics = () => {
+    const today = new Date();
+    const todayFilters = {
+      dateRange: {
+        startDate: today,
+        endDate: today
+      }
+    };
+    fetchMetrics(todayFilters);
+  };
+
+  const handleApplyFilters = (filters) => {
+    fetchMetrics(filters);
+  };
+
+  const handleClearFilters = () => {
+    const today = new Date();
+    const todayFilters = {
+      dateRange: {
+        startDate: today,
+        endDate: today
+      }
+    };
+    fetchMetrics(todayFilters);
   };
 
   const processMetrics = (logs) => {
@@ -161,151 +215,140 @@ const MetricsDashboard = ({ lang = 'en' }) => {
             }
           };
         }
-
-        // Increment department total
+        
+        // Count department interactions
         metrics.byDepartment[department].total++;
-
-        // Process human- and user-scored metrics (per language)
-        if (interaction.expertFeedback?.type) {
-          const type = interaction.expertFeedback.type;
-          if (type === 'expert' && interaction.expertFeedback?.totalScore !== undefined) {
-            const score = interaction.expertFeedback.totalScore;
-            metrics.expertScored.total.total++;
-            if (pageLanguage === 'en') metrics.expertScored.total.en++;
-            if (pageLanguage === 'fr') metrics.expertScored.total.fr++;
-            metrics.byDepartment[department].expertScored.total++;
-            
-            // Check for harmful content in any sentence
-            const isHarmful = ['sentence1Harmful', 'sentence2Harmful', 'sentence3Harmful', 'sentence4Harmful', 'sentence5Harmful']
-              .some(field => interaction.expertFeedback[field] === true);
-            
-            if (isHarmful) {
-              metrics.expertScored.harmful.total++;
-              if (pageLanguage === 'en') metrics.expertScored.harmful.en++;
-              if (pageLanguage === 'fr') metrics.expertScored.harmful.fr++;
-            }
-            
-            if (score === 100) {
-              metrics.expertScored.correct.total++;
-              if (pageLanguage === 'en') metrics.expertScored.correct.en++;
-              if (pageLanguage === 'fr') metrics.expertScored.correct.fr++;
-              metrics.byDepartment[department].expertScored.correct++;
-            } else if (score >= 82 && score <= 99) {
-              metrics.expertScored.needsImprovement.total++;
-              if (pageLanguage === 'en') metrics.expertScored.needsImprovement.en++;
-              if (pageLanguage === 'fr') metrics.expertScored.needsImprovement.fr++;
-              metrics.byDepartment[department].expertScored.needsImprovement++;
-            } else {
-              metrics.expertScored.hasError.total++;
-              if (pageLanguage === 'en') metrics.expertScored.hasError.en++;
-              if (pageLanguage === 'fr') metrics.expertScored.hasError.fr++;
-              metrics.byDepartment[department].expertScored.hasError++;
-            }
-          } else if (type === 'public' && interaction.expertFeedback?.publicFeedbackScore !== undefined) {
-            metrics.userScored.total.total++;
-            if (pageLanguage === 'en') metrics.userScored.total.en++;
-            if (pageLanguage === 'fr') metrics.userScored.total.fr++;
-            metrics.byDepartment[department].userScored.total++;
-            const publicScore = interaction.expertFeedback.publicFeedbackScore;
-            if (publicScore <= 4) {
-              metrics.userScored.helpful.total++;
-              if (pageLanguage === 'en') metrics.userScored.helpful.en++;
-              if (pageLanguage === 'fr') metrics.userScored.helpful.fr++;
-              metrics.byDepartment[department].userScored.helpful++;
-            } else {
-              metrics.userScored.unhelpful.total++;
-              if (pageLanguage === 'en') metrics.userScored.unhelpful.en++;
-              if (pageLanguage === 'fr') metrics.userScored.unhelpful.fr++;
-              metrics.byDepartment[department].userScored.unhelpful++;
-            }
+        
+        // Process expert feedback
+        if (interaction.expertFeedback) {
+          metrics.expertScored.total.total++;
+          if (pageLanguage === 'en') metrics.expertScored.total.en++;
+          if (pageLanguage === 'fr') metrics.expertScored.total.fr++;
+          
+          metrics.byDepartment[department].expertScored.total++;
+          
+          if (interaction.expertFeedback.sentence1Rating === 'good' || 
+              interaction.expertFeedback.sentence2Rating === 'good' || 
+              interaction.expertFeedback.sentence3Rating === 'good' || 
+              interaction.expertFeedback.sentence4Rating === 'good' || 
+              interaction.expertFeedback.citationRating === 'good') {
+            metrics.expertScored.correct.total++;
+            if (pageLanguage === 'en') metrics.expertScored.correct.en++;
+            if (pageLanguage === 'fr') metrics.expertScored.correct.fr++;
+            metrics.byDepartment[department].expertScored.correct++;
+          }
+          
+          if (interaction.expertFeedback.sentence1Rating === 'needs-improvement' || 
+              interaction.expertFeedback.sentence2Rating === 'needs-improvement' || 
+              interaction.expertFeedback.sentence3Rating === 'needs-improvement' || 
+              interaction.expertFeedback.sentence4Rating === 'needs-improvement' || 
+              interaction.expertFeedback.citationRating === 'needs-improvement') {
+            metrics.expertScored.needsImprovement.total++;
+            if (pageLanguage === 'en') metrics.expertScored.needsImprovement.en++;
+            if (pageLanguage === 'fr') metrics.expertScored.needsImprovement.fr++;
+            metrics.byDepartment[department].expertScored.needsImprovement++;
+          }
+          
+          if (interaction.expertFeedback.sentence1Rating === 'incorrect' || 
+              interaction.expertFeedback.sentence2Rating === 'incorrect' || 
+              interaction.expertFeedback.sentence3Rating === 'incorrect' || 
+              interaction.expertFeedback.sentence4Rating === 'incorrect' || 
+              interaction.expertFeedback.citationRating === 'incorrect') {
+            metrics.expertScored.hasError.total++;
+            if (pageLanguage === 'en') metrics.expertScored.hasError.en++;
+            if (pageLanguage === 'fr') metrics.expertScored.hasError.fr++;
+            metrics.byDepartment[department].expertScored.hasError++;
+          }
+          
+          if (interaction.expertFeedback.sentence1Rating === 'harmful' || 
+              interaction.expertFeedback.sentence2Rating === 'harmful' || 
+              interaction.expertFeedback.sentence3Rating === 'harmful' || 
+              interaction.expertFeedback.sentence4Rating === 'harmful' || 
+              interaction.expertFeedback.citationRating === 'harmful') {
+            metrics.expertScored.harmful.total++;
+            if (pageLanguage === 'en') metrics.expertScored.harmful.en++;
+            if (pageLanguage === 'fr') metrics.expertScored.harmful.fr++;
           }
         }
-
-        // Process AI-scored metrics (per language)
-        if (interaction.autoEval?.expertFeedback?.totalScore !== undefined) {
+        
+        // Process user feedback
+        if (interaction.userFeedback) {
+          metrics.userScored.total.total++;
+          if (pageLanguage === 'en') metrics.userScored.total.en++;
+          if (pageLanguage === 'fr') metrics.userScored.total.fr++;
+          
+          metrics.byDepartment[department].userScored.total++;
+          
+          if (interaction.userFeedback.rating === 'helpful') {
+            metrics.userScored.helpful.total++;
+            if (pageLanguage === 'en') metrics.userScored.helpful.en++;
+            if (pageLanguage === 'fr') metrics.userScored.helpful.fr++;
+            metrics.byDepartment[department].userScored.helpful++;
+          } else if (interaction.userFeedback.rating === 'unhelpful') {
+            metrics.userScored.unhelpful.total++;
+            if (pageLanguage === 'en') metrics.userScored.unhelpful.en++;
+            if (pageLanguage === 'fr') metrics.userScored.unhelpful.fr++;
+            metrics.byDepartment[department].userScored.unhelpful++;
+          }
+        }
+        
+        // Process AI self-assessment
+        if (interaction.aiFeedback) {
           metrics.aiScored.total.total++;
           if (pageLanguage === 'en') metrics.aiScored.total.en++;
           if (pageLanguage === 'fr') metrics.aiScored.total.fr++;
-          const score = interaction.autoEval.expertFeedback.totalScore;
-          if (score === 100) {
+          
+          if (interaction.aiFeedback.rating === 'correct') {
             metrics.aiScored.correct.total++;
             if (pageLanguage === 'en') metrics.aiScored.correct.en++;
             if (pageLanguage === 'fr') metrics.aiScored.correct.fr++;
-          } else if (score >= 82 && score <= 99) {
+          } else if (interaction.aiFeedback.rating === 'needs-improvement') {
             metrics.aiScored.needsImprovement.total++;
             if (pageLanguage === 'en') metrics.aiScored.needsImprovement.en++;
             if (pageLanguage === 'fr') metrics.aiScored.needsImprovement.fr++;
-          } else {
+          } else if (interaction.aiFeedback.rating === 'incorrect') {
             metrics.aiScored.hasError.total++;
             if (pageLanguage === 'en') metrics.aiScored.hasError.en++;
             if (pageLanguage === 'fr') metrics.aiScored.hasError.fr++;
           }
         }
+        
+        // Process public feedback
+        if (interaction.publicFeedback) {
+          const reason = interaction.publicFeedback.reason || 'other';
+          const score = interaction.publicFeedback.score || 'neutral';
+          
+          // Count by reason
+          if (!metrics.publicFeedbackReasons[reason]) {
+            metrics.publicFeedbackReasons[reason] = 0;
+          }
+          metrics.publicFeedbackReasons[reason]++;
+          
+          // Count by score
+          if (!metrics.publicFeedbackScores[score]) {
+            metrics.publicFeedbackScores[score] = 0;
+          }
+          metrics.publicFeedbackScores[score]++;
+          
+          // Count by reason and language
+          if (!metrics.publicFeedbackReasonsByLang[pageLanguage][reason]) {
+            metrics.publicFeedbackReasonsByLang[pageLanguage][reason] = 0;
+          }
+          metrics.publicFeedbackReasonsByLang[pageLanguage][reason]++;
+        }
       });
     });
 
-    // Set the totalConversations as the number of unique chatIds
+    // Set total conversations based on unique chatIds
     metrics.totalConversations = uniqueChatIds.size;
     metrics.totalConversationsEn = uniqueChatIdsEn.size;
     metrics.totalConversationsFr = uniqueChatIdsFr.size;
 
-    // Add to metrics: publicFeedback breakdown by reason and score
-    const publicFeedbackReasons = { yes: {}, no: {} };
-    const publicFeedbackScores = { yes: {}, no: {} };
-    const publicFeedbackReasonsByLang = { en: { yes: {}, no: {} }, fr: { yes: {}, no: {} } };
-    // New: userScored metrics from publicFeedback
-    metrics.userScored = {
-      total: { total: 0, en: 0, fr: 0 },
-      helpful: { total: 0, en: 0, fr: 0 },
-      unhelpful: { total: 0, en: 0, fr: 0 }
-    };
-    logs.forEach(chat => {
-      chat.interactions?.forEach(interaction => {
-        if (interaction.publicFeedback) {
-          const reason = interaction.publicFeedback.publicFeedbackReason || 'Other';
-          const score = interaction.publicFeedback.publicFeedbackScore;
-          const lang = chat.pageLanguage === 'fr' ? 'fr' : 'en';
-          // Bucket into yes/no
-          let bucket;
-          if (score === true || String(score).toLowerCase() === 'yes' || (typeof score === 'number' && score <= 4)) {
-            bucket = 'yes';
-          } else if (score === false || String(score).toLowerCase() === 'no' || (typeof score === 'number' && score > 4)) {
-            bucket = 'no';
-          } else {
-            bucket = null;
-          }
-          if (bucket) {
-            // Reasons
-            publicFeedbackReasons[bucket][reason] = (publicFeedbackReasons[bucket][reason] || 0) + 1;
-            // Scores
-            publicFeedbackScores[bucket][score] = (publicFeedbackScores[bucket][score] || 0) + 1;
-            // Reasons by lang
-            publicFeedbackReasonsByLang[lang][bucket][reason] = (publicFeedbackReasonsByLang[lang][bucket][reason] || 0) + 1;
-            // userScored
-            metrics.userScored.total.total++;
-            metrics.userScored.total[lang]++;
-            if (bucket === 'yes') {
-              metrics.userScored.helpful.total++;
-              metrics.userScored.helpful[lang]++;
-            } else if (bucket === 'no') {
-              metrics.userScored.unhelpful.total++;
-              metrics.userScored.unhelpful[lang]++;
-            }
-          }
-        }
-      });
-    });
-    metrics.publicFeedbackReasons = publicFeedbackReasons;
-    metrics.publicFeedbackScores = publicFeedbackScores;
-    metrics.publicFeedbackReasonsByLang = publicFeedbackReasonsByLang;
-
     return metrics;
   };
 
-  // Commenting out export functions for now
-  /*
   const filename = (ext) => {
-    let name = 'metrics-' + timeRange + '-' + new Date().toISOString();
+    let name = 'metrics-' + new Date().toISOString();
     return name + '.' + ext;
   };
 
@@ -327,68 +370,31 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const downloadExcel = () => {
     ExportService.export(metrics, filename('xlsx'));
   };
-  */
 
   return (
     <GcdsContainer size="xl" className="space-y-6">
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="w-48">
-          <label htmlFor="timeRange" className="block text-sm font-medium text-gray-700 mb-1">
-            Time range
-          </label>
-          <select
-            id="timeRange"
-            name="timeRange"
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            className="mt-1 block w-full rounded-md border border-gray-300 bg-white py-2 px-3 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+      {!hasLoadedData && (
+        <div className="bg-white shadow rounded-lg p-4">
+          <p className="mb-4 text-gray-600">
+            {t('metrics.timeRangeTitle')}
+          </p>
+          <GcdsButton
+            onClick={handleGetMetrics}
+            disabled={loading}
+            className="me-400 hydrated"
           >
-            <option value="1">Last 1 day</option>
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="60">Last 60 days</option>
-            <option value="90">Last 90 days</option>
-            <option value="all">All time</option>
-          </select>
+            {loading ? t('admin.chatLogs.loading') : 'Get Metrics'}
+          </GcdsButton>
         </div>
+      )}
 
-        <GcdsButton
-          onClick={fetchMetrics}
-          disabled={loading}
-          className="me-400 hydrated mrgn-tp-1r"
-        >
-          {loading ? 'Loading...' : 'Get metrics'}
-        </GcdsButton>
-
-        {/* Commenting out export buttons for now
-        {metrics.totalSessions > 0 && (
-          <>
-            <GcdsButton
-              onClick={downloadJSON}
-              disabled={loading}
-              className="me-400 hydrated mrgn-tp-1r"
-            >
-              Download JSON
-            </GcdsButton>
-
-            <GcdsButton
-              onClick={downloadCSV}
-              disabled={loading}
-              className="me-400 hydrated mrgn-tp-1r"
-            >
-              Download CSV
-            </GcdsButton>
-            <GcdsButton
-              onClick={downloadExcel}
-              disabled={loading}
-              className="me-400 hydrated mrgn-tp-1r"
-            >
-              Download Excel
-            </GcdsButton>
-          </>
-        )}
-        */}
-      </div>
+      {showFilterPanel && (
+        <FilterPanel
+          onApplyFilters={handleApplyFilters}
+          onClearFilters={handleClearFilters}
+          isVisible={true}
+        />
+      )}
 
       <GcdsContainer size="xl" className="bg-white shadow rounded-lg mb-600">
         {loading ? (

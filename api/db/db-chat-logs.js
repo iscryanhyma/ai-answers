@@ -15,7 +15,7 @@ async function chatLogsHandler(req, res) {
         console.log('Total documents in collection:', totalCount);
 
         let chats;
-        const daysParam = req.query.days;
+        const { days, startDate, endDate, filterType, presetValue } = req.query;
         const chatPopulate = [
             { path: 'user', select: 'email' }, // <-- populate user email
             {
@@ -57,18 +57,45 @@ async function chatLogsHandler(req, res) {
                 ]
             }
         ];
-        if (daysParam === 'all') {
-            // Return all logs
-            chats = await Chat.find({})
+
+        // Build date filter based on new parameters or fallback to legacy days parameter
+        let dateFilter = {};
+        
+        if (startDate && endDate) {
+            // New date range filter
+            dateFilter.createdAt = {
+                $gte: new Date(startDate),
+                $lte: new Date(endDate)
+            };
+        } else if (filterType === 'preset' && presetValue && presetValue !== 'all') {
+            // Preset filter
+            const hours = parseInt(presetValue) * 24;
+            const end = new Date();
+            const start = new Date(end.getTime() - hours * 60 * 60 * 1000);
+            dateFilter.createdAt = {
+                $gte: start,
+                $lte: end
+            };
+        } else if (days) {
+            // Legacy days parameter support
+            if (days === 'all') {
+                // Return all logs - no date filter
+            } else {
+                const daysNum = parseInt(days) || 1;
+                const startDate = new Date();
+                startDate.setDate(startDate.getDate() - daysNum);
+                dateFilter.createdAt = { $gte: startDate };
+            }
+        }
+
+        // Apply date filter if it exists
+        if (Object.keys(dateFilter).length > 0) {
+            chats = await Chat.find(dateFilter)
                 .populate(chatPopulate)
                 .sort({ createdAt: -1 });
         } else {
-            const days = parseInt(daysParam) || 1;
-            const startDate = new Date();
-            startDate.setDate(startDate.getDate() - days);
-            chats = await Chat.find({
-                createdAt: { $gte: startDate }
-            })
+            // No date filter - return all logs
+            chats = await Chat.find({})
                 .populate(chatPopulate)
                 .sort({ createdAt: -1 });
         }
