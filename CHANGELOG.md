@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.9](https://github.com/cds-snc/ai-answers/compare/v1.10.8...v1.10.9) (2025-07-11)
+
+
+### Bug Fixes
+
+* documents ([20cb8d8](https://github.com/cds-snc/ai-answers/commit/20cb8d8018a6d88bd26520aeef2f4fe1a105ff6e))
+* imm-text-final ([835f31f](https://github.com/cds-snc/ai-answers/commit/835f31f48b469e85e615032eb6b2a8c91858765a))
+* manipulation-reminder ([e7494dd](https://github.com/cds-snc/ai-answers/commit/e7494dd380d649605dd4603d0b9e397ad5a0fdf9))
+
 ## [1.10.8](https://github.com/cds-snc/ai-answers/compare/v1.10.7...v1.10.8) (2025-07-10)
 
 
