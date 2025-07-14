@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.10.11](https://github.com/cds-snc/ai-answers/compare/v1.10.10...v1.10.11) (2025-07-14)
+
+
+### Bug Fixes
+
+* correct typo in SAN entries for production environment ([0f4b801](https://github.com/cds-snc/ai-answers/commit/0f4b801d2b23536e6c23f3b5b2c25d8584a87c6a))
+* correct typo in SAN entries for production environment ([626abf0](https://github.com/cds-snc/ai-answers/commit/626abf028bd2d98cf633fabd4a130cbf3625cd09))
+
 ## [1.10.10](https://github.com/cds-snc/ai-answers/compare/v1.10.9...v1.10.10) (2025-07-14)
 
 
