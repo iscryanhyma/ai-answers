@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.10](https://github.com/cds-snc/ai-answers/compare/v1.10.9...v1.10.10) (2025-07-14)
+
+
+### Bug Fixes
+
+* update SAN handling in ACM certificate and add variable definiti… ([89631f2](https://github.com/cds-snc/ai-answers/commit/89631f2cc20e95837830e73b542ee3843b432e6a))
+
 ## [1.10.9](https://github.com/cds-snc/ai-answers/compare/v1.10.8...v1.10.9) (2025-07-11)
 
 
