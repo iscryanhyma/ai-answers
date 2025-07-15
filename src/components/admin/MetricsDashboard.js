@@ -25,9 +25,26 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     
     if (filters.dateRange) {
       if (filters.dateRange.startDate && filters.dateRange.endDate) {
-        params.startDate = filters.dateRange.startDate.toISOString().split('T')[0];
-        params.endDate = filters.dateRange.endDate.toISOString().split('T')[0];
+        // Handle both Date objects and datetime strings
+        const startDate = filters.dateRange.startDate instanceof Date 
+          ? filters.dateRange.startDate.toISOString() 
+          : filters.dateRange.startDate;
+        const endDate = filters.dateRange.endDate instanceof Date 
+          ? filters.dateRange.endDate.toISOString() 
+          : filters.dateRange.endDate;
+        
+        params.startDate = startDate;
+        params.endDate = endDate;
       }
+    }
+    
+    // Add preset filter information
+    if (filters.filterType) {
+      params.filterType = filters.filterType;
+    }
+    
+    if (filters.presetValue) {
+      params.presetValue = filters.presetValue;
     }
     
     // Add future filter parameters
@@ -49,17 +66,25 @@ const MetricsDashboard = ({ lang = 'en' }) => {
       const data = await DataStoreService.getChatLogs(apiParams);
       if (data.success) {
         // Process the logs to calculate metrics
-        const processedMetrics = processMetrics(data.logs || []);
+        const logsData = data.logs || [];
+        const processedMetrics = processMetrics(logsData);
         setMetrics(processedMetrics);
         setHasLoadedData(true);
-        setShowFilterPanel(true);
+        // Only show filter panel if we have data or if this is a subsequent filter request
+        if (logsData.length > 0 || filters) {
+          setShowFilterPanel(true);
+        }
       } else {
         console.error('API returned error:', data.error);
         alert(data.error || 'Failed to fetch metrics');
+        // Don't show filter panel on error
+        setShowFilterPanel(false);
       }
     } catch (error) {
       console.error('Error fetching metrics:', error);
       alert(`Failed to fetch metrics: ${error.message}`);
+      // Don't show filter panel on error
+      setShowFilterPanel(false);
     }
     setLoading(false);
   };

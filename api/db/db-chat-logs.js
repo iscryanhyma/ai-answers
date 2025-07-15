@@ -15,7 +15,7 @@ async function chatLogsHandler(req, res) {
         console.log('Total documents in collection:', totalCount);
 
         let chats;
-        const { days, startDate, endDate, filterType, presetValue } = req.query;
+        const { days, startDate, endDate, filterType, presetValue, department, referringUrl } = req.query;
         const chatPopulate = [
             { path: 'user', select: 'email' }, // <-- populate user email
             {
@@ -88,13 +88,38 @@ async function chatLogsHandler(req, res) {
             }
         }
 
-        // Apply date filter if it exists
-        if (Object.keys(dateFilter).length > 0) {
-            chats = await Chat.find(dateFilter)
+        // Build department filter
+        let departmentFilter = {};
+        if (department && department.trim() !== '') {
+            // Filter chats that have at least one interaction with the specified department
+            departmentFilter = {
+                'interactions.context.department': department
+            };
+        }
+
+        // Build referring URL filter
+        let referringUrlFilter = {};
+        if (referringUrl && referringUrl.trim() !== '') {
+            // Filter chats that have at least one interaction with the specified referring URL
+            referringUrlFilter = {
+                'interactions.context.referringUrl': { $regex: referringUrl, $options: 'i' }
+            };
+        }
+
+        // Combine all filters
+        const combinedFilter = {
+            ...dateFilter,
+            ...departmentFilter,
+            ...referringUrlFilter
+        };
+
+        // Apply filters
+        if (Object.keys(combinedFilter).length > 0) {
+            chats = await Chat.find(combinedFilter)
                 .populate(chatPopulate)
                 .sort({ createdAt: -1 });
         } else {
-            // No date filter - return all logs
+            // No filters - return all logs
             chats = await Chat.find({})
                 .populate(chatPopulate)
                 .sort({ createdAt: -1 });

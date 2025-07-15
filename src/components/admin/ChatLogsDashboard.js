@@ -23,9 +23,26 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     
     if (filters && filters.dateRange) {
       if (filters.dateRange.startDate && filters.dateRange.endDate) {
-        params.startDate = filters.dateRange.startDate.toISOString().split('T')[0];
-        params.endDate = filters.dateRange.endDate.toISOString().split('T')[0];
+        // Handle both Date objects and datetime strings
+        const startDate = filters.dateRange.startDate instanceof Date 
+          ? filters.dateRange.startDate.toISOString() 
+          : filters.dateRange.startDate;
+        const endDate = filters.dateRange.endDate instanceof Date 
+          ? filters.dateRange.endDate.toISOString() 
+          : filters.dateRange.endDate;
+        
+        params.startDate = startDate;
+        params.endDate = endDate;
       }
+    }
+    
+    // Add preset filter information
+    if (filters && filters.filterType) {
+      params.filterType = filters.filterType;
+    }
+    
+    if (filters && filters.presetValue) {
+      params.presetValue = filters.presetValue;
     }
     
     // Add future filter parameters
@@ -48,17 +65,25 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
       const data = await DataStoreService.getChatLogs(apiParams);
       console.log('API response:', data);
       if (data.success) {
-        setLogs(data.logs || []);
+        const logsData = data.logs || [];
+        setLogs(logsData);
         setHasLoadedData(true);
-        setShowFilterPanel(true);
-        console.log('Set logs:', data.logs || []);
+        // Only show filter panel if we have data or if this is a subsequent filter request
+        if (logsData.length > 0 || filters) {
+          setShowFilterPanel(true);
+        }
+        console.log('Set logs:', logsData);
       } else {
         console.error('API returned error:', data.error);
         alert(data.error || 'Failed to fetch logs');
+        // Don't show filter panel on error
+        setShowFilterPanel(false);
       }
     } catch (error) {
       console.error('Error fetching logs:', error);
       alert(`Failed to fetch logs: ${error.message}`);
+      // Don't show filter panel on error
+      setShowFilterPanel(false);
     }
     setLoading(false);
   };

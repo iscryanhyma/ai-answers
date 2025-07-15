@@ -1914,6 +1914,12 @@ fieldset.gc-chckbxrdio {
   gap: 0.5rem;
 }
 
+.filter-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
 .filter-label {
   font-weight: 500;
   color: #374151;
@@ -1939,6 +1945,108 @@ fieldset.gc-chckbxrdio {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Quick set buttons styling */
+.quick-set-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.quick-set-button {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #dbeafe;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+}
+
+.quick-set-button:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.quick-set-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Radio button styling */
+.filter-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filter-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-radio-item input[type="radio"] {
+  width: 1rem;
+  height: 1rem;
+  color: #3b82f6;
+  border-color: #d1d5db;
+  border-radius: 50%;
+}
+
+.filter-radio-item input[type="radio"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.filter-radio-item span {
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+/* Fieldset and legend styling */
+.filter-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.filter-legend {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+/* Current selection styling */
+.current-selection {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.current-selection h3 {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.current-selection-content {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.current-selection-content p {
+  margin-bottom: 0.25rem;
+}
+
+.current-selection-content strong {
+  color: #374151;
 }
 
 .date-range-picker {
@@ -1997,5 +2105,9 @@ fieldset.gc-chckbxrdio {
   
   .filter-button {
     width: 100%;
+  }
+  
+  .quick-set-buttons {
+    justify-content: center;
   }
 }
