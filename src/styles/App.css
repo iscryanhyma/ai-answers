@@ -230,13 +230,12 @@ code {
 }
 
 @media screen and (max-width: 768px) {
-  .citation-link {
+  .citation-link a {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-height: calc(1.2em * 2);
     line-height: 1.2em;
     width: 100%;
   }
