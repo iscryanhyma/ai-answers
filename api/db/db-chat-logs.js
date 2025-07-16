@@ -88,39 +88,76 @@ async function chatLogsHandler(req, res) {
             }
         }
 
-        // Build department filter
-        let departmentFilter = {};
-        if (department && department.trim() !== '') {
-            // Filter chats that have at least one interaction with the specified department
-            departmentFilter = {
-                'interactions.context.department': department
-            };
-        }
 
-        // Build referring URL filter
-        let referringUrlFilter = {};
-        if (referringUrl && referringUrl.trim() !== '') {
-            // Filter chats that have at least one interaction with the specified referring URL
-            referringUrlFilter = {
-                'interactions.context.referringUrl': { $regex: referringUrl, $options: 'i' }
-            };
-        }
+        // If department or referringUrl filter is present, use aggregation pipeline
+        if ((department && department.trim() !== '') || (referringUrl && referringUrl.trim() !== '')) {
+            // Build match stage for date filter
+            const matchStage = Object.keys(dateFilter).length > 0 ? { $match: dateFilter } : {};
 
-        // Combine all filters
-        const combinedFilter = {
-            ...dateFilter,
-            ...departmentFilter,
-            ...referringUrlFilter
-        };
+            // Lookup interactions and their contexts
+            const pipeline = [];
+            if (Object.keys(matchStage).length > 0) pipeline.push(matchStage);
+            pipeline.push(
+                {
+                    $lookup: {
+                        from: 'interactions',
+                        localField: 'interactions',
+                        foreignField: '_id',
+                        as: 'interactions_docs',
+                        pipeline: [
+                            {
+                                $lookup: {
+                                    from: 'contexts', // The collection name for the Context model
+                                    localField: 'context',
+                                    foreignField: '_id',
+                                    as: 'context_doc'
+                                }
+                            },
+                            {
+                                $addFields: {
+                                    context: { $arrayElemAt: ['$context_doc', 0] }
+                                }
+                            }
+                        ]
+                    }
+                }
+            );
 
-        // Apply filters
-        if (Object.keys(combinedFilter).length > 0) {
-            chats = await Chat.find(combinedFilter)
-                .populate(chatPopulate)
-                .sort({ createdAt: -1 });
+            // Build filter for interactions_docs
+            const interactionMatch = {};
+            if (department && department.trim() !== '') {
+                const deptParts = department.split('-').map(d => d.trim()).filter(Boolean);
+                interactionMatch['interactions_docs'] = {
+                    $elemMatch: {
+                        'context.department': { $regex: deptParts.join('|'), $options: 'i' }
+                    }
+                };
+            }
+            if (referringUrl && referringUrl.trim() !== '') {
+                // Escape regex special characters for literal match
+                const escapedUrl = referringUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                interactionMatch['interactions_docs'] = {
+                    ...(interactionMatch['interactions_docs'] || {}),
+                    $elemMatch: { 
+                        ...(interactionMatch['interactions_docs']?.$elemMatch || {}),
+                        referringUrl: { $regex: escapedUrl, $options: 'i' } 
+                    }
+                };
+            }
+
+            if (Object.keys(interactionMatch).length > 0) {
+                pipeline.push({ $match: interactionMatch });
+            }
+
+            pipeline.push({ $sort: { createdAt: -1 } });
+
+            chats = await Chat.aggregate(pipeline);
+            // Populate referenced fields manually after aggregation
+            chats = await Chat.populate(chats, chatPopulate);
         } else {
-            // No filters - return all logs
-            chats = await Chat.find({})
+            // No department/referringUrl filter, use normal find
+            const combinedFilter = { ...dateFilter };
+            chats = await Chat.find(combinedFilter)
                 .populate(chatPopulate)
                 .sort({ createdAt: -1 });
         }
