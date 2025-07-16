@@ -1,5 +1,37 @@
 # Changelog
 
+## [1.10.11](https://github.com/cds-snc/ai-answers/compare/v1.10.10...v1.10.11) (2025-07-14)
+
+
+### Bug Fixes
+
+* correct typo in SAN entries for production environment ([0f4b801](https://github.com/cds-snc/ai-answers/commit/0f4b801d2b23536e6c23f3b5b2c25d8584a87c6a))
+* correct typo in SAN entries for production environment ([626abf0](https://github.com/cds-snc/ai-answers/commit/626abf028bd2d98cf633fabd4a130cbf3625cd09))
+
+## [1.10.10](https://github.com/cds-snc/ai-answers/compare/v1.10.9...v1.10.10) (2025-07-14)
+
+
+### Bug Fixes
+
+* update SAN handling in ACM certificate and add variable definiti… ([89631f2](https://github.com/cds-snc/ai-answers/commit/89631f2cc20e95837830e73b542ee3843b432e6a))
+
+## [1.10.9](https://github.com/cds-snc/ai-answers/compare/v1.10.8...v1.10.9) (2025-07-11)
+
+
+### Bug Fixes
+
+* documents ([20cb8d8](https://github.com/cds-snc/ai-answers/commit/20cb8d8018a6d88bd26520aeef2f4fe1a105ff6e))
+* imm-text-final ([835f31f](https://github.com/cds-snc/ai-answers/commit/835f31f48b469e85e615032eb6b2a8c91858765a))
+* manipulation-reminder ([e7494dd](https://github.com/cds-snc/ai-answers/commit/e7494dd380d649605dd4603d0b9e397ad5a0fdf9))
+
+## [1.10.8](https://github.com/cds-snc/ai-answers/compare/v1.10.7...v1.10.8) (2025-07-10)
+
+
+### Bug Fixes
+
+* block-robots ([394d033](https://github.com/cds-snc/ai-answers/commit/394d033d0c16ec905b0db10c91784b5dabd0c7ae))
+* documents ([e4fb7eb](https://github.com/cds-snc/ai-answers/commit/e4fb7ebfb953576f8994c9f57eac1657eaa737c4))
+
 ## [1.10.7](https://github.com/cds-snc/ai-answers/compare/v1.10.6...v1.10.7) (2025-07-09)
 
 
