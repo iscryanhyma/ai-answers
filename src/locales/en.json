@@ -287,16 +287,50 @@
       "chatViewer": "View full interaction for a Chat ID",
       "database": "Manage the database",
       "eval": "Control evaluation embeddings",
-  "metrics": "View performance metrics",
-  "publicEval": "Public Evaluation",
-  "logout": "Sign out"
-},
- "publicEval": {
-   "title": "Public Evaluation",
-   "chatId": "Chat ID",
-   "department": "Department",
-   "date": "Date"
- },
+      "metrics": "View performance metrics",
+      "publicEval": "Public Evaluation",
+      "logout": "Sign out"
+    },
+    "filters": {
+      "title": "Filters",
+      "clearAll": "Clear All",
+      "apply": "Apply Filters",
+      "loading": "Loading...",
+      "dateRange": "Date Range",
+      "days": "days",
+      "allTime": "All time",
+      "referringUrl": "Referring URL",
+      "referringUrlPlaceholder": "Enter referring URL...",
+      "referringUrlHelp": "Filter by referring URL (coming soon)",
+      "department": "Department",
+      "allDepartments": "All Departments",
+      "departmentHelp": "Filter by department (coming soon)",
+      "activeFilters": "Active Filters",
+      "noActiveFilters": "No active filters"
+    },
+
+    "dateRange": {
+      "title": "Select Time Period",
+      "filterType": "Date Filter Type",
+      "presetRanges": "Preset Ranges",
+      "customRange": "Custom Range",
+      "chooseRange": "Choose a Range",
+      "startDateTime": "Start Date and Time",
+      "endDateTime": "End Date and Time",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This Week",
+      "currentSelection": "Current Selection",
+      "period": "Period:",
+      "from": "From:",
+      "to": "To:"
+    },
+    "publicEval": {
+      "title": "Public Evaluation",
+      "chatId": "Chat ID",
+      "department": "Department",
+      "date": "Date"
+    },
     "chatLogs": {
       "title": "Download recent chat logs",
       "timeRange": "Time range",

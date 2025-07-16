@@ -289,16 +289,50 @@
       "chatViewer": "Voir le journal complet pour un ID de chat",
       "database": "Gérer la base de données",
       "eval": "Contrôler les intégrations d'évaluation",
-  "metrics": "Voir les métriques de performance",
-  "publicEval": "Évaluation publique",
-  "logout": "Se déconnecter"
-},
- "publicEval": {
-   "title": "Évaluation publique",
-   "chatId": "ID de chat",
-   "department": "Ministère",
-   "date": "Date"
- },
+      "metrics": "Voir les métriques de performance",
+      "publicEval": "Évaluation publique",
+      "logout": "Se déconnecter"
+    },
+    "filters": {
+      "title": "Filtres",
+      "clearAll": "Effacer tout",
+      "apply": "Appliquer les filtres",
+      "loading": "Chargement...",
+      "dateRange": "Plage de dates",
+      "days": "jours",
+      "allTime": "Tout le temps",
+      "referringUrl": "URL de référence",
+      "referringUrlPlaceholder": "Entrez l'URL de référence...",
+      "referringUrlHelp": "Filtrer par URL de référence (à venir)",
+      "department": "Département",
+      "allDepartments": "Tous les départements",
+      "departmentHelp": "Filtrer par département (à venir)",
+      "activeFilters": "Filtres actifs",
+      "noActiveFilters": "Aucun filtre actif"
+    },
+
+    "dateRange": {
+      "title": "Sélectionner la période",
+      "filterType": "Type de filtre de date",
+      "presetRanges": "Plages prédéfinies",
+      "customRange": "Plage personnalisée",
+      "chooseRange": "Choisir une plage",
+      "startDateTime": "Date et heure de début",
+      "endDateTime": "Date et heure de fin",
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "thisWeek": "Cette semaine",
+      "currentSelection": "Sélection actuelle",
+      "period": "Période:",
+      "from": "De:",
+      "to": "À:"
+    },
+    "publicEval": {
+      "title": "Évaluation publique",
+      "chatId": "ID de chat",
+      "department": "Ministère",
+      "date": "Date"
+    },
     "deleteChat": {
       "title": "Supprimer une conversation avec des rétroactions incorrectes",
       "idLabel": "ID de chat",
