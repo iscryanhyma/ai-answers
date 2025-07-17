@@ -1,5 +1,43 @@
 # Changelog
 
+## [1.11.0](https://github.com/cds-snc/ai-answers/compare/v1.10.11...v1.11.0) (2025-07-17)
+
+
+### Features
+
+* temp fix to margin shenangians ([2871266](https://github.com/cds-snc/ai-answers/commit/2871266db6d59cbd684ce91e639a7443135be7ad))
+* temp fix to margin shenangians ([0401652](https://github.com/cds-snc/ai-answers/commit/04016524033684f0346f28241ea42901ee3614c8))
+
+
+### Bug Fixes
+
+* admin-filter-panel ([cb1b3e0](https://github.com/cds-snc/ai-answers/commit/cb1b3e08aab7bf84a14f597051ab4f68a274ee0c))
+* citation link mobile ([814d43c](https://github.com/cds-snc/ai-answers/commit/814d43cf318b37638fd7f58dc47870e40e1d944e))
+* clean-up-messages ([d896351](https://github.com/cds-snc/ai-answers/commit/d89635127b348b47bcf22b95dccb1ab46f274d87))
+* clean-up-messages ([2a89e3e](https://github.com/cds-snc/ai-answers/commit/2a89e3e31e4e5552d4f90f2c838736f79c5bb083))
+* did a thing ([c918164](https://github.com/cds-snc/ai-answers/commit/c918164c3c6bd6d44146d4cf869f712d5009c9de))
+* format-load-one-day ([5d40cd1](https://github.com/cds-snc/ai-answers/commit/5d40cd1b361ef06ddac5619f02f5739d8b4b62b7))
+* format-load-one-day ([62d38d8](https://github.com/cds-snc/ai-answers/commit/62d38d86b66a7386833628157c41004ac0a798a1))
+* local and codespace debugging ([b0e2208](https://github.com/cds-snc/ai-answers/commit/b0e22087e13508a84797f55c146c2735065279b4))
+* mobile font for chat ([c41ee16](https://github.com/cds-snc/ai-answers/commit/c41ee16912b36d493e4f9dfa9d50cd32518d5f7f))
+* mobile size ([f76025c](https://github.com/cds-snc/ai-answers/commit/f76025c894a29869b71552767e6acf99fd8d0aa6))
+* pagination-only-for-chatlogs ([334affa](https://github.com/cds-snc/ai-answers/commit/334affa1c3c8dc73fd7725f2e6c9174c4f82a468))
+* passport-fees-refugees ([af4137d](https://github.com/cds-snc/ai-answers/commit/af4137dfd64e36e1e28c569a1cc5363a8628ff20))
+* passport-fees-refugees ([98b1898](https://github.com/cds-snc/ai-answers/commit/98b1898076867086d10d6404630a65c72f0e0b42))
+
+
+### Miscellaneous Chores
+
+* update Dockerfile to install socat and clean up apt cache; modify ECS config to enable execute command in staging ([eeb0588](https://github.com/cds-snc/ai-answers/commit/eeb0588218ead1139065b33a1d0f6a6898c146fb))
+
+
+### Code Refactoring
+
+* enhance chat logs filtering with aggregation pipeline for department and referring URL ([a69ab72](https://github.com/cds-snc/ai-answers/commit/a69ab72945682e32730b8fe52e19cdba99e999d4))
+* improve chat logs filtering with enhanced date handling and aggregation pipeline ([ab6b07c](https://github.com/cds-snc/ai-answers/commit/ab6b07c6925aede09e9111169eb07e1a68f234fa))
+* improve chat logs filtering with enhanced date handling and… ([fb75ec6](https://github.com/cds-snc/ai-answers/commit/fb75ec6c6d060d3bfbeb9b9ef4ae46920058d912))
+* improve logging and cleanup in in-memory MongoDB setup ([b5bcc75](https://github.com/cds-snc/ai-answers/commit/b5bcc75861503e6fac71fccd25b43fa57abb54fa))
+
 ## [1.10.11](https://github.com/cds-snc/ai-answers/compare/v1.10.10...v1.10.11) (2025-07-14)
 
 
