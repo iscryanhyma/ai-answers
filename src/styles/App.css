@@ -2024,8 +2024,8 @@ fieldset.gc-chckbxrdio {
 
 /* Current selection styling */
 .current-selection {
-  margin-top: 1rem;
-  padding-top: 1rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
   border-top: 1px solid #e5e7eb;
 }
 

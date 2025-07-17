@@ -18,8 +18,14 @@ async function chatLogsHandler(req, res) {
     const {
       days, startDate, endDate,
       filterType, presetValue,
-      department, referringUrl
+      department, referringUrl,
+      limit, offset
     } = req.query;
+
+    // Parse pagination parameters - if not provided, return all data
+    const usePagination = limit !== undefined || offset !== undefined;
+    const pageLimit = usePagination ? (parseInt(limit) || 50) : null;
+    const pageOffset = usePagination ? (parseInt(offset) || 0) : null;
 
     const dateFilter = {};
     if (startDate && endDate) {
@@ -67,6 +73,8 @@ async function chatLogsHandler(req, res) {
     ];
 
     let chats;
+    let totalCount = 0;
+
     if (department || referringUrl) {
       const pipeline = [];
       if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
@@ -199,15 +207,54 @@ async function chatLogsHandler(req, res) {
       pipeline.push({ $replaceRoot: { newRoot: { $mergeObjects: ['$doc', { interactions: '$interactions', department: '$department', pageLanguage: '$pageLanguage', chatId: '$chatId' }] } } });
       pipeline.push({ $sort: { createdAt: -1 } });
 
+      // Get total count for pagination (only if using pagination)
+      if (usePagination) {
+        const countPipeline = [...pipeline];
+        countPipeline.push({ $count: 'total' });
+        const countResult = await Chat.aggregate(countPipeline);
+        totalCount = countResult.length > 0 ? countResult[0].total : 0;
+
+        // Add pagination to main pipeline
+        pipeline.push({ $skip: pageOffset });
+        pipeline.push({ $limit: pageLimit });
+      }
+
       chats = await Chat.aggregate(pipeline);
       // Don't populate after aggregation since we already have the data
     } else {
-      chats = await Chat.find(dateFilter)
+      // Get total count for pagination (only if using pagination)
+      if (usePagination) {
+        totalCount = await Chat.countDocuments(dateFilter);
+      }
+
+      let query = Chat.find(dateFilter)
         .populate(chatPopulate)
         .sort({ createdAt: -1 });
+
+      // Add pagination only if requested
+      if (usePagination) {
+        query = query.skip(pageOffset).limit(pageLimit);
+      }
+
+      chats = await query;
     }
 
-    return res.status(200).json({ success: true, logs: chats });
+    const response = { 
+      success: true, 
+      logs: chats
+    };
+
+    // Only include pagination info if pagination was used
+    if (usePagination) {
+      response.pagination = {
+        total: totalCount,
+        limit: pageLimit,
+        offset: pageOffset,
+        hasMore: pageOffset + pageLimit < totalCount
+      };
+    }
+
+    return res.status(200).json(response);
 
   } catch (error) {
     console.error(error);
