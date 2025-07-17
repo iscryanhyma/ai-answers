@@ -188,7 +188,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
               </label>
               
               {/* Filter Type Toggle */}
-              <div className="mb-4">
+              <div className="mb-2">
                 <fieldset className="filter-fieldset">
                   <legend className="filter-legend">
                     {t('admin.dateRange.filterType')}
@@ -220,7 +220,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
 
               {/* Preset Options */}
               {filterType === 'preset' && (
-                <div className="mb-4">
+                <div className="mb-2">
                   <label htmlFor="preset-select" className="filter-label">
                     {t('admin.dateRange.chooseRange')}
                   </label>
