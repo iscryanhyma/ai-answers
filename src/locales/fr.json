@@ -294,19 +294,17 @@
       "logout": "Se déconnecter"
     },
     "filters": {
-      "title": "Filtres",
-      "clearAll": "Effacer tout",
-      "apply": "Appliquer les filtres",
+      "title": "Filtres - sélectionnez puis Appliquer pour voir",
+      "clearAll": "Effacer",
+      "apply": "Appliquer",
       "loading": "Chargement...",
       "dateRange": "Plage de dates",
       "days": "jours",
       "allTime": "Tout le temps",
       "referringUrl": "URL de référence",
       "referringUrlPlaceholder": "Entrez l'URL de référence...",
-      "referringUrlHelp": "Filtrer par URL de référence (à venir)",
       "department": "Département",
       "allDepartments": "Tous les départements",
-      "departmentHelp": "Filtrer par département (à venir)",
       "activeFilters": "Filtres actifs",
       "noActiveFilters": "Aucun filtre actif"
     },
@@ -360,7 +358,6 @@
       "downloadExcel": "Télécharger Excel",
       "found": "Trouvé",
       "interactionsFound": "interactions de chat. Téléchargez les journaux pour voir l'ensemble complet et les détails.",
-      "selectRange": "Sélectionnez une plage de temps et cliquez sur « Obtenir les journaux » pour voir l'historique des conversations",
       "date": "Date",
       "chatId": "ID de chat",
       "interactions": "Interactions"

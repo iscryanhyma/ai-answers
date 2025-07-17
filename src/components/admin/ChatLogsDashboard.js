@@ -244,12 +244,6 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
               }}
             />
           </div>
-        ) : hasLoadedData ? (
-          <div className="p-4">
-            <p className="text-gray-500">
-              {t('admin.chatLogs.selectRange')}
-            </p>
-          </div>
         ) : null}
       </div>
     </div>
