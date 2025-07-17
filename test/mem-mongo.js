@@ -1,11 +1,21 @@
+import 'dotenv/config';
 import { MongoMemoryServer } from "mongodb-memory-server";
-async function start() {
-  const mongod = await MongoMemoryServer.create({
-    instance: { port: 27017 }
-  });
-  const uri = mongod.getUri();
-  console.log("In-memory MongoDB started at:", uri);
+import { spawn } from "child_process";
+import getPort from "get-port";
+import { existsSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+async function start() {
+  const mongod = await MongoMemoryServer.create();
+  const uri = mongod.getUri();
+
+  // Pick a random port for the server
+  const port = await getPort();
+
+  console.log("In-memory MongoDB started at:", uri);
   console.log("Starting server on port:", port);
 
   // Detect Codespaces environment and set API URL accordingly
@@ -20,15 +30,13 @@ async function start() {
 
   // Only build if the build directory doesn't exist
   const buildPath = path.resolve(__dirname, "../build");
-  if (!existsSync(buildPath)) {
-    console.log("No build directory found. Building frontend...");
     try {
       await new Promise((resolve, reject) => {
         const build = spawn("npm", ["run", "build"], {
           stdio: "inherit",
           env: {
             ...process.env,
-            REACT_APP_API_URL: `${apiUrl}`,
+            REACT_APP_API_URL: `${apiUrl}/api`,
           },
           shell: true, // Fix for Windows
         });
@@ -42,9 +50,7 @@ async function start() {
       console.error("Frontend build failed:", error);
       process.exit(1);
     }
-  } else {
-    console.log("Build directory exists, skipping frontend build");
-  }
+  
 
   console.log("Starting server...");
   // Start backend (which will serve the frontend build)
@@ -63,6 +69,7 @@ async function start() {
     mongod.stop();
     process.exit(code);
   });
+   console.log("AI Answers URL:", apiUrl);
 }
 
 start().catch(console.error);
