@@ -1,6 +1,10 @@
 /* Add Font Awesome CSS import at the top */
 @import url("https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css");
-
+/* temp fix spacing shenangians */
+.user-message-box p,
+.chat-id p {
+  margin-bottom: 0px;
+}
 /* top banner for alpha warning copied from wayfinding repo*/
 .alpha-top {
   /* border-bottom: 1px solid black !important;
