@@ -15,7 +15,7 @@ async function start() {
   // Pick a random port for the server
   const port = await getPort();
 
-  console.log("In-memory MongoDB started at:", uri);
+  console.log("In-memory MongoDB started at:", uri);   
   console.log("Starting server on port:", port);
 
   // Detect Codespaces environment and set API URL accordingly
