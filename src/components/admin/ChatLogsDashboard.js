@@ -16,6 +16,12 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   const [loading, setLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [pagination, setPagination] = useState({
+    total: 0,
+    limit: 50,
+    offset: 0,
+    hasMore: false
+  });
 
   // Convert new filter format to API parameters
   const buildApiParams = (filters) => {
@@ -57,10 +63,15 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     return params;
   };
 
-  const fetchLogs = async (filters = null) => {
+  const fetchLogs = async (filters = null, pageOffset = 0) => {
     setLoading(true);
     try {
       const apiParams = buildApiParams(filters || {});
+      
+      // Add pagination parameters
+      apiParams.limit = pagination.limit;
+      apiParams.offset = pageOffset;
+      
       console.log('Fetching logs with params:', apiParams);
       const data = await DataStoreService.getChatLogs(apiParams);
       console.log('API response:', data);
@@ -68,6 +79,17 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         const logsData = data.logs || [];
         setLogs(logsData);
         setHasLoadedData(true);
+        
+        // Update pagination info
+        if (data.pagination) {
+          setPagination({
+            total: data.pagination.total,
+            limit: data.pagination.limit,
+            offset: data.pagination.offset,
+            hasMore: data.pagination.hasMore
+          });
+        }
+        
         // Only show filter panel if we have data or if this is a subsequent filter request
         if (logsData.length > 0 || filters) {
           setShowFilterPanel(true);
@@ -89,12 +111,19 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   };
 
   const handleGetLogs = () => {
-    // Temporarily fetch all logs to test if any exist
-    fetchLogs({});
+    // Default to today's data instead of all data for faster loading
+    const today = new Date();
+    const todayFilters = {
+      dateRange: {
+        startDate: today,
+        endDate: today
+      }
+    };
+    fetchLogs(todayFilters, 0);
   };
 
   const handleApplyFilters = (filters) => {
-    fetchLogs(filters);
+    fetchLogs(filters, 0);
   };
 
   const handleClearFilters = () => {
@@ -105,7 +134,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         endDate: today
       }
     };
-    fetchLogs(todayFilters);
+    fetchLogs(todayFilters, 0);
   };
 
   const filename = (ext) => {
@@ -136,9 +165,6 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     <div className="space-y-6">
       {!hasLoadedData && (
         <div className="bg-white shadow rounded-lg p-4">
-          <p className="mb-4 text-gray-600">
-            {t('admin.chatLogs.selectRange')}
-          </p>
           <GcdsButton
             onClick={handleGetLogs}
             disabled={loading}
@@ -192,7 +218,8 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         ) : logs.length > 0 ? (
           <div className="p-4">
             <p className="mb-4 text-gray-600">
-              {t('admin.chatLogs.found')} {logs.length} {t('admin.chatLogs.interactionsFound')}
+              {t('admin.chatLogs.found')} {pagination.total} {t('admin.chatLogs.interactionsFound')} 
+              {pagination.total > pagination.limit && ` (showing ${logs.length} of ${pagination.total})`}
             </p>
             <DataTable
               data={logs}
@@ -210,6 +237,10 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
                 searching: true,
                 ordering: true,
                 order: [[0, 'desc']],
+                pageLength: pagination.limit,
+                info: true,
+                lengthChange: true,
+                lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'All']]
               }}
             />
           </div>

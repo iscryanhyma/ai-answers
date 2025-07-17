@@ -18,8 +18,13 @@ async function chatLogsHandler(req, res) {
     const {
       days, startDate, endDate,
       filterType, presetValue,
-      department, referringUrl
+      department, referringUrl,
+      limit, offset
     } = req.query;
+
+    // Parse pagination parameters with defaults
+    const pageLimit = parseInt(limit) || 50;
+    const pageOffset = parseInt(offset) || 0;
 
     const dateFilter = {};
     if (startDate && endDate) {
@@ -67,6 +72,8 @@ async function chatLogsHandler(req, res) {
     ];
 
     let chats;
+    let totalCount = 0;
+
     if (department || referringUrl) {
       const pipeline = [];
       if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
@@ -199,15 +206,39 @@ async function chatLogsHandler(req, res) {
       pipeline.push({ $replaceRoot: { newRoot: { $mergeObjects: ['$doc', { interactions: '$interactions', department: '$department', pageLanguage: '$pageLanguage', chatId: '$chatId' }] } } });
       pipeline.push({ $sort: { createdAt: -1 } });
 
+      // Get total count for pagination
+      const countPipeline = [...pipeline];
+      countPipeline.push({ $count: 'total' });
+      const countResult = await Chat.aggregate(countPipeline);
+      totalCount = countResult.length > 0 ? countResult[0].total : 0;
+
+      // Add pagination to main pipeline
+      pipeline.push({ $skip: pageOffset });
+      pipeline.push({ $limit: pageLimit });
+
       chats = await Chat.aggregate(pipeline);
       // Don't populate after aggregation since we already have the data
     } else {
+      // Get total count for pagination
+      totalCount = await Chat.countDocuments(dateFilter);
+
       chats = await Chat.find(dateFilter)
         .populate(chatPopulate)
-        .sort({ createdAt: -1 });
+        .sort({ createdAt: -1 })
+        .skip(pageOffset)
+        .limit(pageLimit);
     }
 
-    return res.status(200).json({ success: true, logs: chats });
+    return res.status(200).json({ 
+      success: true, 
+      logs: chats,
+      pagination: {
+        total: totalCount,
+        limit: pageLimit,
+        offset: pageOffset,
+        hasMore: pageOffset + pageLimit < totalCount
+      }
+    });
 
   } catch (error) {
     console.error(error);
