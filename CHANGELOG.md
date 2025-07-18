@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.12.0](https://github.com/cds-snc/ai-answers/compare/v1.11.0...v1.12.0) (2025-07-18)
+
+
+### Features
+
+* add API endpoint to delete evaluations within a date range and implement corresponding handler ([080a9a2](https://github.com/cds-snc/ai-answers/commit/080a9a26cf3483bcb39797ac78dbcfb0d4dc4871))
+* enhance database export functionality with collection selection and date range ([27d04c3](https://github.com/cds-snc/ai-answers/commit/27d04c33d7d54fbd34623eceb0754f3466318c71))
+* implement non-empty eval count endpoint and integrate with Data… ([9671982](https://github.com/cds-snc/ai-answers/commit/96719827eee79dad82c13682e612bc8ede207628))
+* implement non-empty eval count endpoint and integrate with DataStoreService ([27d04c3](https://github.com/cds-snc/ai-answers/commit/27d04c33d7d54fbd34623eceb0754f3466318c71))
+
+
+### Bug Fixes
+
+* adjust export chunk sizes for improved performance ([b5e00c8](https://github.com/cds-snc/ai-answers/commit/b5e00c80e7e2d99f50acdbc130d264f20fcd1bf4))
+* adjust export chunk sizes for improved performance ([c7868ed](https://github.com/cds-snc/ai-answers/commit/c7868edf698fc21c728816c71835c67802a2c20a))
+* increase fetch timeout to 5 minutes for improved reliability ([edcb424](https://github.com/cds-snc/ai-answers/commit/edcb424755584b4fbfda789dc57a681ad21a4d11))
+* update evalBatchProcessingDuration to 30 seconds and ensure evalConcurrency is set ([565168d](https://github.com/cds-snc/ai-answers/commit/565168d3cadb00721f39f2d1b813703a0f511aff))
+* update evaluation processing to include time filters and improve empty eval handling ([27d04c3](https://github.com/cds-snc/ai-answers/commit/27d04c33d7d54fbd34623eceb0754f3466318c71))
+
+
+### Miscellaneous Chores
+
+* update eval configuration for improved performance and limits ([27d04c3](https://github.com/cds-snc/ai-answers/commit/27d04c33d7d54fbd34623eceb0754f3466318c71))
+
 ## [1.11.0](https://github.com/cds-snc/ai-answers/compare/v1.10.11...v1.11.0) (2025-07-17)
 
 
