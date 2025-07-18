@@ -68,8 +68,8 @@ const DatabasePage = ({ lang }) => {
       const fileStream = streamSaver.createWriteStream(filename);
       const writer = fileStream.getWriter();
       const encoder = new TextEncoder();
-      const initialChunkSize = 2000;
-      const minChunkSize = 50;
+      const initialChunkSize = 10000;
+      const minChunkSize = 1;
 
       for (let i = 0; i < collectionsToExport.length; i++) {
         const collection = collectionsToExport[i];
