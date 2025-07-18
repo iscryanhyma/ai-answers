@@ -75,17 +75,18 @@ const DatabasePage = ({ lang }) => {
 
       for (let i = 0; i < collectionsToExport.length; i++) {
         const collection = collectionsToExport[i];
-        let skip = 0;
-        let total = null;
+        let lastId = '';
         let chunkSize = initialChunkSize;
-        while (total === null || skip < total) {
+        let hasMore = true;
+        while (hasMore) {
           let success = false;
           let data = [];
-          let collectionTotal = null;
+          let newLastId = '';
           while (!success && chunkSize >= minChunkSize) {
             try {
               // Add date range and always use updatedAt
-              let url = getApiUrl(`db-database-management?collection=${encodeURIComponent(collection)}&skip=${skip}&limit=${chunkSize}`);
+              let url = getApiUrl(`db-database-management?collection=${encodeURIComponent(collection)}&limit=${chunkSize}`);
+              if (lastId) url += `&lastId=${encodeURIComponent(lastId)}`;
               if (startDate) url += `&startDate=${encodeURIComponent(startDate)}`;
               if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
               url += `&dateField=updatedAt`;
@@ -107,7 +108,7 @@ const DatabasePage = ({ lang }) => {
               }
               const json = await res.json();
               data = json.data;
-              collectionTotal = json.total;
+              newLastId = json.lastId;
               success = true;
             } catch (err) {
               // Retry on any error until minChunkSize is reached
@@ -119,13 +120,16 @@ const DatabasePage = ({ lang }) => {
               }
             }
           }
-          if (total === null) total = collectionTotal;
           // Write each document as a JSONL line: {"collection": "name", "doc": {...}}
           for (let j = 0; j < data.length; j++) {
             const docStr = JSON.stringify({ collection, doc: data[j] });
             await writer.write(encoder.encode(docStr + '\n'));
           }
-          skip += chunkSize;
+          if (!newLastId || data.length === 0) {
+            hasMore = false;
+          } else {
+            lastId = newLastId;
+          }
         }
       }
       await writer.close();
