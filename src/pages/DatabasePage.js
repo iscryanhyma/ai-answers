@@ -88,7 +88,7 @@ const DatabasePage = ({ lang }) => {
               if (endDate) url += `&endDate=${encodeURIComponent(endDate)}`;
               url += `&dateField=updatedAt`;
               const controller = new AbortController();
-              const timeout = setTimeout(() => controller.abort(), 25000);
+              const timeout = setTimeout(() => controller.abort(), 300000); // 5 minutes
               const res = await fetch(url, { headers: AuthService.getAuthHeader(), signal: controller.signal });
               clearTimeout(timeout);
               if (!res.ok) {
