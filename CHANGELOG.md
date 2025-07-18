@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.13.1](https://github.com/cds-snc/ai-answers/compare/v1.13.0...v1.13.1) (2025-07-18)
+
+
+### Bug Fixes
+
+* improve export logic by implementing pagination with lastId tracking ([ddb5d1f](https://github.com/cds-snc/ai-answers/commit/ddb5d1f68d9834861b61a1e92fb600f5ea50e675))
+
+
+### Miscellaneous Chores
+
+* comment out fargate resource configurations in staging environment ([5ff139f](https://github.com/cds-snc/ai-answers/commit/5ff139fcb58b00c219b9f1ba7348394d56b8b2c9))
+
 ## [1.13.0](https://github.com/cds-snc/ai-answers/compare/v1.12.0...v1.13.0) (2025-07-18)
 
 
