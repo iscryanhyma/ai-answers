@@ -7,6 +7,8 @@ import streamSaver from 'streamsaver';
 
 const DatabasePage = ({ lang }) => {
   const [isExporting, setIsExporting] = useState(false);
+  const [collections, setCollections] = useState([]);
+  const [selectedCollection, setSelectedCollection] = useState('All');
   const [isImporting, setIsImporting] = useState(false);
   const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);  const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
   const [isRepairingTimestamps, setIsRepairingTimestamps] = useState(false);
@@ -21,7 +23,7 @@ const DatabasePage = ({ lang }) => {
 
   useEffect(() => {
     let isMounted = true;
-    async function fetchCounts() {
+    async function fetchCountsAndCollections() {
       setCountsError('');
       try {
         const counts = await DataStoreService.getTableCounts();
@@ -29,8 +31,21 @@ const DatabasePage = ({ lang }) => {
       } catch (e) {
         if (isMounted) setCountsError(e.message);
       }
+      // Fetch collections for export dropdown
+      try {
+        const collectionsRes = await fetch(getApiUrl('db-database-management'), {
+          method: 'GET',
+          headers: AuthService.getAuthHeader()
+        });
+        if (collectionsRes.ok) {
+          const { collections } = await collectionsRes.json();
+          if (isMounted && Array.isArray(collections)) setCollections(collections);
+        }
+      } catch (e) {
+        // ignore
+      }
     }
-    fetchCounts();
+    fetchCountsAndCollections();
     return () => { isMounted = false; };
   }, []);
 
@@ -39,30 +54,25 @@ const DatabasePage = ({ lang }) => {
       setIsExporting(true);
       setMessage('');
 
-      // Step 1: Get list of collections
-      const collectionsRes = await fetch(getApiUrl('db-database-management'), {
-        method: 'GET',
-        headers: AuthService.getAuthHeader()
-      });
-      if (!collectionsRes.ok) {
-        const error = await collectionsRes.json();
-        throw new Error(error.message || 'Failed to get collections');
+      // Use selectedCollection for export
+      let collectionsToExport = collections;
+      if (selectedCollection && selectedCollection !== 'All') {
+        collectionsToExport = [selectedCollection];
       }
-      const { collections } = await collectionsRes.json();
-      if (!collections || !Array.isArray(collections)) {
+      if (!collectionsToExport || !Array.isArray(collectionsToExport) || collectionsToExport.length === 0) {
         throw new Error('No collections found');
       }
 
       // Step 2: Stream each collection as it is fetched (JSONL format)
-      const filename = `database-backup-${new Date().toISOString()}.jsonl`;
+      const filename = `database-backup-${selectedCollection && selectedCollection !== 'All' ? selectedCollection + '-' : ''}${new Date().toISOString()}.jsonl`;
       const fileStream = streamSaver.createWriteStream(filename);
       const writer = fileStream.getWriter();
       const encoder = new TextEncoder();
       const initialChunkSize = 2000;
       const minChunkSize = 50;
 
-      for (let i = 0; i < collections.length; i++) {
-        const collection = collections[i];
+      for (let i = 0; i < collectionsToExport.length; i++) {
+        const collection = collectionsToExport[i];
         let skip = 0;
         let total = null;
         let chunkSize = initialChunkSize;
@@ -401,18 +411,31 @@ const DatabasePage = ({ lang }) => {
           !countsError && <div>{lang === 'en' ? 'Loading table counts...' : 'Chargement...'}</div>
         )}
       </div>
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
+        <label>
+          Table:&nbsp;
+          <select
+            value={selectedCollection}
+            onChange={e => setSelectedCollection(e.target.value)}
+            style={{ minWidth: 120 }}
+            disabled={isExporting || collections.length === 0}
+          >
+            <option value="All">All</option>
+            {collections.map((col) => (
+              <option key={col} value={col}>{col}</option>
+            ))}
+          </select>
+        </label>
         <label>Start date:&nbsp;
           <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
         </label>
-        &nbsp;&nbsp;
         <label>End date:&nbsp;
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
         </label>
+        <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0}>
+          {isExporting ? 'Exporting...' : 'Export Database'}
+        </GcdsButton>
       </div>
-      <GcdsButton onClick={handleExport} disabled={isExporting}>
-        {isExporting ? 'Exporting...' : 'Export Database'}
-      </GcdsButton>
       <div className="mb-400">
         <GcdsHeading tag="h2">{lang === 'en' ? 'Import Database' : 'Importer la base de données'}</GcdsHeading>
         <GcdsText>
@@ -420,6 +443,10 @@ const DatabasePage = ({ lang }) => {
             ? 'Restore the database from a backup file. Warning: This will replace all existing data.'
             : 'Restaurer la base de données à partir d\'un fichier de sauvegarde. Avertissement : Cela remplacera toutes les données existantes.'}
         </GcdsText>
+        {/* Show import progress message above the import button */}
+        {isImporting && message && (
+          <div style={{ margin: '12px 0', color: 'blue' }}>{message}</div>
+        )}
         <form onSubmit={handleImport} className="mb-200">
           <input
             type="file"
@@ -532,7 +559,8 @@ const DatabasePage = ({ lang }) => {
         </GcdsButton>
       </div>
 
-      {message && <div style={{ marginTop: 16, color: 'blue' }}>{message}</div>}
+      {/* Show other messages (not import progress) at the bottom */}
+      {(!isImporting && message) && <div style={{ marginTop: 16, color: 'blue' }}>{message}</div>}
     </GcdsContainer>
   );
 };

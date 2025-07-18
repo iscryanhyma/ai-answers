@@ -17,11 +17,18 @@ const EvalPage = () => {
   const [isRequestInProgress, setIsRequestInProgress] = useState(false);
   const [isEvalRequestInProgress, setIsEvalRequestInProgress] = useState(false);
   const [expertFeedbackCount, setExpertFeedbackCount] = useState(null);
+  const [nonEmptyEvalCount, setNonEmptyEvalCount] = useState(null);
+  // Add state for time range selectors
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
 
   React.useEffect(() => {
     DataStoreService.getExpertFeedbackCount()
       .then(setExpertFeedbackCount)
       .catch(() => setExpertFeedbackCount('Error'));
+    DataStoreService.getEvalNonEmptyCount()
+      .then(setNonEmptyEvalCount)
+      .catch(() => setNonEmptyEvalCount('Error'));
   }, []);
 
   const handleGenerateEmbeddings = async (isAutoProcess = false, regenerateAll = false, lastId = null) => {
@@ -79,8 +86,15 @@ const EvalPage = () => {
         if (regenerateAll) {
           setIsRegeneratingAll(true);
         }
-      }      setEvalProgress(prev => ({ ...prev, loading: true }));
-      const result = await DataStoreService.generateEvals({ lastProcessedId: lastId, regenerateAll });
+      }
+      setEvalProgress(prev => ({ ...prev, loading: true }));
+      // Pass startTime and endTime in the payload
+      const result = await DataStoreService.generateEvals({
+        lastProcessedId: lastId,
+        regenerateAll,
+        startTime: startTime || undefined,
+        endTime: endTime || undefined
+      });
       // Only update progress if we got a valid response
       if (typeof result.remaining === 'number') {
         setEvalProgress({
@@ -124,13 +138,18 @@ const EvalPage = () => {
     }
   };
 
-  const handleRegenerateAllEvals = () => {
+
+  // Delete evaluations in date range
+  const handleDeleteEvals = async () => {
     const confirmed = window.confirm(
-      'This will delete all existing evaluations and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?'
+      'This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?'
     );
-    
-    if (confirmed) {
-      handleGenerateEvals(false, true);
+    if (!confirmed) return;
+    try {
+      const result = await DataStoreService.deleteEvals({ startTime: startTime || undefined, endTime: endTime || undefined });
+      alert(`Deleted ${result.deleted} evaluations and ${result.expertFeedbackDeleted} expert feedback records.`);
+    } catch (error) {
+      alert('Failed to delete evaluations. Check the console for details.');
     }
   };
 
@@ -160,6 +179,11 @@ const EvalPage = () => {
         {expertFeedbackCount !== null && (
           <GcdsText>
             <strong>Expert Evaluations in System:</strong> {expertFeedbackCount}
+          </GcdsText>
+        )}
+        {nonEmptyEvalCount !== null && (
+          <GcdsText>
+            <strong>Non-Empty Evaluations in System:</strong> {nonEmptyEvalCount}
           </GcdsText>
         )}
         <GcdsText>
@@ -203,9 +227,7 @@ const EvalPage = () => {
         <GcdsText>
           This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring the feedback scores and explanations.
         </GcdsText>
-        
         <GcdsDetails detailsTitle="Detailed Evaluation Process" className="mt-400">
-          
           <ol className="mb-200">
             <li><strong>Initial Validation:</strong> The system first validates that the interaction has question and answer content, then checks if an evaluation already exists</li>
             <li><strong>Embedding Retrieval:</strong> Finds vector embeddings for the interaction (question+answer combined, answer-only, and sentence-level)</li>
@@ -243,6 +265,27 @@ const EvalPage = () => {
           </ol>
         </GcdsDetails>
         <br/>
+        {/* Date range selectors above the button group */}
+        <div style={{ display: "flex", gap: "1rem", margin: "1rem 0" }}>
+          <label>
+            Start Time:
+            <input
+              type="datetime-local"
+              value={startTime}
+              onChange={e => setStartTime(e.target.value)}
+              style={{ marginLeft: "0.5rem" }}
+            />
+          </label>
+          <label>
+            End Time:
+            <input
+              type="datetime-local"
+              value={endTime}
+              onChange={e => setEndTime(e.target.value)}
+              style={{ marginLeft: "0.5rem" }}
+            />
+          </label>
+        </div>
         <div className="button-group">
           <GcdsButton 
             onClick={() => handleGenerateEvals(false)}
@@ -251,14 +294,13 @@ const EvalPage = () => {
           >
             {evalProgress?.loading && !isAutoProcessingEvals && !isRegeneratingAll ? 'Processing...' : 'Generate Evaluations'}
           </GcdsButton>
-          
           <GcdsButton 
-            onClick={handleRegenerateAllEvals}
-            disabled={evalProgress?.loading || isAutoProcessingEvals || isRegeneratingAll}
+            onClick={handleDeleteEvals}
+            disabled={evalProgress?.loading || isAutoProcessingEvals}
             variant="danger"
             className="mb-200 mr-200"
           >
-            {isRegeneratingAll ? 'Regenerating All...' : 'Regenerate All Evaluations'}
+            Delete Evaluations
           </GcdsButton>
         </div>
           {evalProgress && (

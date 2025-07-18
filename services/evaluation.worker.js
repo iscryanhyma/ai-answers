@@ -149,7 +149,7 @@ function findBestAnswerMatches(sourceEmbedding, similarEmbeddings, topMatches = 
             const sentenceCountPenalty = Math.abs(
                 sourceEmbedding.sentenceEmbeddings.length -
                 match.embedding.sentenceEmbeddings.length
-            ) * 0.05;
+            ) * 0.15;
             const recencyBias = match.embedding.interactionId.createdAt ?
                 (new Date() - new Date(match.embedding.interactionId.createdAt)) / (1000 * 60 * 60 * 24 * 365) : 0;
             const recencyWeight = 0.1;
@@ -412,7 +412,9 @@ export default async function ({ interactionId, chatId }) {
         }
         const similarEmbeddings = await findSimilarEmbeddingsWithFeedback(
             sourceEmbedding,
-            config.thresholds.questionAnswerSimilarity
+            config.thresholds.questionAnswerSimilarity,
+            config.searchLimits.similarEmbeddings,
+            config.similarEmbeddingsTimeLimit
         );
         if (!similarEmbeddings.length) {
             await createNoMatchEvaluation(interaction, chatId, 'no similar embeddings found');
