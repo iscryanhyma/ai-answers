@@ -98,9 +98,10 @@ class EvaluationService {
      * Process interactions for evaluation for a specified duration.
      * This method will now call the worker-offloaded `evaluateInteraction`.
      */
-    async processEvaluationsForDuration(duration, skipExisting = true, lastProcessedId = null, deploymentMode = 'CDS') {
+    async processEvaluationsForDuration(duration, skipExisting = true, lastProcessedId = null, deploymentMode = 'CDS', extraFilter = {}) {
         const startTime = Date.now();
         let lastId = lastProcessedId;
+        const concurrency = config.evalConcurrency || 8;
 
         try {
             await dbConnect();
@@ -109,23 +110,19 @@ class EvaluationService {
             // delete all existing evaluations and expert feedback
             if (!skipExisting && !lastProcessedId) {
                 ServerLoggingService.info('Regenerating all evaluations - deleting existing evaluations', 'system');
-                
                 // First get all evals to find the expert feedback IDs
                 const allEvals = await Eval.find({});
                 const expertFeedbackIds = allEvals
                     .map(evaluation => evaluation.expertFeedback)
                     .filter(id => id); // Filter out null/undefined values
-                
                 // Delete all evaluations
                 await Eval.deleteMany({});
                 ServerLoggingService.info(`Deleted ${allEvals.length} evaluations`, 'system');
-                
                 // Delete associated expert feedback
                 if (expertFeedbackIds.length > 0) {
                     await ExpertFeedback.deleteMany({ _id: { $in: expertFeedbackIds } });
                     ServerLoggingService.info(`Deleted ${expertFeedbackIds.length} expert feedback records`, 'system');
                 }
-                
                 // Clear autoEval field from all interactions
                 await Interaction.updateMany(
                     { autoEval: { $exists: true } },
@@ -137,7 +134,8 @@ class EvaluationService {
             // Find interactions that have both question and answer
             const query = {
                 question: { $exists: true, $ne: null },
-                answer: { $exists: true, $ne: null }
+                answer: { $exists: true, $ne: null },
+                ...extraFilter
             };
 
             // If skipExisting is true, exclude interactions that already have evaluations
@@ -154,37 +152,40 @@ class EvaluationService {
             const interactions = await Interaction.find(query)
                 .sort({ _id: 1 })
                 .limit(100) // Process in batches of 100
-                .populate('question answer');            // Process each interaction until time runs out with resilience
+                .populate('question answer');
+
             let processedCount = 0;
             let failedCount = 0;
-            
-            for (const interaction of interactions) {
+            let idx = 0;
+            while (idx < interactions.length && ((Date.now() - startTime) / 1000 < duration)) {
+                const batch = interactions.slice(idx, idx + concurrency);
+                const promises = batch.map(async (interaction) => {
+                    try {
+                        const chats = await Chat.find({ interactions: interaction._id });
+                        const chatId = chats.length > 0 ? chats[0].chatId : null;
+                        await this.evaluateInteraction(interaction, chatId, deploymentMode);
+                        processedCount++;
+                        ServerLoggingService.debug(`Successfully evaluated interaction ${interaction._id}`, 'eval-service');
+                        lastId = interaction._id.toString();
+                    } catch (error) {
+                        failedCount++;
+                        ServerLoggingService.error(
+                            `Failed to evaluate interaction ${interaction._id}, continuing with next interaction`,
+                            'eval-service',
+                            error
+                        );
+                        lastId = interaction._id.toString();
+                    }
+                });
+                await Promise.allSettled(promises);
+                idx += concurrency;
                 if ((Date.now() - startTime) / 1000 >= duration) {
                     break;
-                }
-                
-                try {
-                    const chats = await Chat.find({ interactions: interaction._id });
-                    const chatId = chats.length > 0 ? chats[0].chatId : null;
-                    await this.evaluateInteraction(interaction, chatId, deploymentMode);
-                    processedCount++;
-                    ServerLoggingService.debug(`Successfully evaluated interaction ${interaction._id}`, 'eval-service');
-                } catch (error) {
-                    failedCount++;
-                    ServerLoggingService.error(
-                        `Failed to evaluate interaction ${interaction._id}, continuing with next interaction`, 
-                        'eval-service', 
-                        error
-                    );
-                    // Continue processing other interactions even if one fails
-                } finally {
-                    // Always update lastId to ensure progress, even if evaluation failed
-                    lastId = interaction._id.toString();
                 }
             }
 
             ServerLoggingService.info(
-                `Evaluation batch completed: ${processedCount} successful, ${failedCount} failed`, 
+                `Evaluation batch completed: ${processedCount} successful, ${failedCount} failed`,
                 'eval-service'
             );
 
@@ -193,7 +194,7 @@ class EvaluationService {
                 ...query,
                 _id: { $gt: new mongoose.Types.ObjectId(lastId || '000000000000000000000000') }
             };
-            
+
             return {
                 remaining: await Interaction.countDocuments(remainingQuery),
                 lastProcessedId: lastId,

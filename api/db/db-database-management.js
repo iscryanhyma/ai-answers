@@ -25,11 +25,11 @@ async function databaseManagementHandler(req, res) {
     }, {});
 
     if (req.method === 'GET') {
-      // Chunked export support with date range
-      const { collection, skip = 0, limit = 1000, startDate, endDate } = req.query;
-      // Always use 'updatedAt' as the date field
+      // Efficient chunked export using lastId (id-based pagination)
+      // Treat collection=All as no collection filter (return list of collections)
+      const { collection, limit = 1000, startDate, endDate, lastId } = req.query;
       const dateField = 'updatedAt';
-      if (!collection) {
+      if (!collection || collection === 'All') {
         // Return list of available collections
         return res.status(200).json({
           collections: Object.keys(collections)
@@ -40,26 +40,29 @@ async function databaseManagementHandler(req, res) {
         return res.status(400).json({ message: `Collection '${collection}' not found` });
       }
       // Build date filter if provided
-      let dateFilter = {};
+      let queryFilter = {};
       // Only apply date filter if the model schema has updatedAt
       const hasUpdatedAt = model.schema && model.schema.paths && model.schema.paths.updatedAt;
       if ((startDate || endDate) && hasUpdatedAt) {
-        dateFilter[dateField] = {};
-        if (startDate) dateFilter[dateField].$gte = new Date(startDate);
-        if (endDate) dateFilter[dateField].$lte = new Date(endDate);
+        queryFilter[dateField] = {};
+        if (startDate) queryFilter[dateField].$gte = new Date(startDate);
+        if (endDate) queryFilter[dateField].$lte = new Date(endDate);
+      }
+      // Efficient id-based pagination
+      if (lastId) {
+        queryFilter._id = { $gt: lastId };
       }
       // Paginated export for a single collection with optional date filter
-      const docs = await model.find(dateFilter)
+      const docs = await model.find(queryFilter)
         .sort({ _id: 1 }) // Ensure consistent ordering between chunks
-        .skip(Number(skip))
         .limit(Number(limit))
         .lean();
-      const total = await model.countDocuments(dateFilter);
+      const total = await model.countDocuments(queryFilter);
       return res.status(200).json({
         collection,
         total,
-        skip: Number(skip),
         limit: Number(limit),
+        lastId: docs.length ? docs[docs.length - 1]._id : null,
         data: docs
       });
     } else if (req.method === 'POST') {

@@ -1,3 +1,4 @@
+
 import { getApiUrl, getProviderApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
 
@@ -49,6 +50,18 @@ class DataStoreService {
     } catch (error) {
       console.error('Error getting batch list:', error);
       throw error;
+    }
+  }
+
+  static async getEvalNonEmptyCount() {
+    try {
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-eval-non-empty-count'));
+      if (!response.ok) throw new Error('Failed to get non-empty eval count');
+      const data = await response.json();
+      return data.count;
+    } catch (error) {
+      console.error('Error getting non-empty eval count:', error);
+      return 0;
     }
   }
 
@@ -317,12 +330,16 @@ class DataStoreService {
 
   static async generateEvals({ lastProcessedId = null, regenerateAll = false } = {}) {
     try {
+      const { startTime, endTime } = arguments[0] || {};
+      const payload = { lastProcessedId, regenerateAll };
+      if (startTime) payload.startTime = startTime;
+      if (endTime) payload.endTime = endTime;
       const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-evals'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ lastProcessedId, regenerateAll })
+        body: JSON.stringify(payload)
       });
       if (!response.ok) throw new Error('Failed to generate evals');
       return await response.json();
