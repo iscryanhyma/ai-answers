@@ -28,6 +28,7 @@ async function databaseManagementHandler(req, res) {
       // Efficient chunked export using lastId (id-based pagination)
       // Treat collection=All as no collection filter (return list of collections)
       const { collection, limit = 1000, startDate, endDate, lastId } = req.query;
+      console.log(`Exporting collection: ${collection}, limit: ${limit}, startDate: ${startDate}, endDate: ${endDate}, lastId: ${lastId}`);
       const dateField = 'updatedAt';
       if (!collection || collection === 'All') {
         // Return list of available collections
@@ -58,6 +59,7 @@ async function databaseManagementHandler(req, res) {
         .limit(Number(limit))
         .lean();
       const total = await model.countDocuments(queryFilter);
+      console.log(`Exported ${docs.length} documents from collection '${collection}'`);
       return res.status(200).json({
         collection,
         total,
