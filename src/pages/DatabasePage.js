@@ -10,13 +10,15 @@ const DatabasePage = ({ lang }) => {
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('All');
   const [isImporting, setIsImporting] = useState(false);
-  const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);  const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
+  const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);
+  const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
   const [isRepairingTimestamps, setIsRepairingTimestamps] = useState(false);
   const [isRepairingExpertFeedback, setIsRepairingExpertFeedback] = useState(false);
   const [isMigratingPublicFeedback, setIsMigratingPublicFeedback] = useState(false);
   const [message, setMessage] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [exportLimit, setExportLimit] = useState(10000); // New state for export limit
   const [tableCounts, setTableCounts] = useState(null);
   const [countsError, setCountsError] = useState('');
   const fileInputRef = useRef(null);
@@ -68,7 +70,7 @@ const DatabasePage = ({ lang }) => {
       const fileStream = streamSaver.createWriteStream(filename);
       const writer = fileStream.getWriter();
       const encoder = new TextEncoder();
-      const initialChunkSize = 10000;
+      const initialChunkSize = Number(exportLimit) || 10000;
       const minChunkSize = 1;
 
       for (let i = 0; i < collectionsToExport.length; i++) {
@@ -431,6 +433,16 @@ const DatabasePage = ({ lang }) => {
         </label>
         <label>End date:&nbsp;
           <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+        </label>
+        <label>Limit:&nbsp;
+          <input
+            type="number"
+            min="1"
+            value={exportLimit}
+            onChange={e => setExportLimit(e.target.value)}
+            style={{ width: 100 }}
+            disabled={isExporting}
+          />
         </label>
         <GcdsButton onClick={handleExport} disabled={isExporting || collections.length === 0}>
           {isExporting ? 'Exporting...' : 'Export Database'}
