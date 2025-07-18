@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.13.0](https://github.com/cds-snc/ai-answers/compare/v1.12.0...v1.13.0) (2025-07-18)
+
+
+### Features
+
+* add export limit input and logging for database export operations ([74af3c9](https://github.com/cds-snc/ai-answers/commit/74af3c9ad5116330eecaf1dc7ab0dc0620724dff))
+* add export limit input and logging for database export operations ([abd39fa](https://github.com/cds-snc/ai-answers/commit/abd39fac928040ee2db99ccc4b5133eb798a503d))
+
+
+### Bug Fixes
+
+* increase Fargate memory to 16GB for production and staging envir… ([288134c](https://github.com/cds-snc/ai-answers/commit/288134c4fc3d43fb5746b159fd6bd4230020bd2f))
+* increase Fargate memory to 16GB for production and staging environments ([af591bb](https://github.com/cds-snc/ai-answers/commit/af591bb6b499e739097a98d7861cfb3076c0b7b8))
+
 ## [1.12.0](https://github.com/cds-snc/ai-answers/compare/v1.11.0...v1.12.0) (2025-07-18)
 
 
