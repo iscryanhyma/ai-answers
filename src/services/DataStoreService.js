@@ -1,8 +1,23 @@
-
 import { getApiUrl, getProviderApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
 
 class DataStoreService {
+  static async deleteEvals({ startTime, endTime }) {
+    try {
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-delete-evals'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ startTime, endTime })
+      });
+      if (!response.ok) throw new Error('Failed to delete evaluations');
+      return await response.json();
+    } catch (error) {
+      console.error('Error deleting evaluations:', error);
+      throw error;
+    }
+  }
   static async checkDatabaseConnection() {
     if (process.env.REACT_APP_ENV !== 'production') {
       console.log('Skipping database connection check in development environment');

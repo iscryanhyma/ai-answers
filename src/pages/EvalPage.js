@@ -138,13 +138,18 @@ const EvalPage = () => {
     }
   };
 
-  const handleRegenerateAllEvals = () => {
+
+  // Delete evaluations in date range
+  const handleDeleteEvals = async () => {
     const confirmed = window.confirm(
-      'This will delete all existing evaluations and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?'
+      'This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?'
     );
-    
-    if (confirmed) {
-      handleGenerateEvals(false, true);
+    if (!confirmed) return;
+    try {
+      const result = await DataStoreService.deleteEvals({ startTime: startTime || undefined, endTime: endTime || undefined });
+      alert(`Deleted ${result.deleted} evaluations and ${result.expertFeedbackDeleted} expert feedback records.`);
+    } catch (error) {
+      alert('Failed to delete evaluations. Check the console for details.');
     }
   };
 
@@ -290,12 +295,12 @@ const EvalPage = () => {
             {evalProgress?.loading && !isAutoProcessingEvals && !isRegeneratingAll ? 'Processing...' : 'Generate Evaluations'}
           </GcdsButton>
           <GcdsButton 
-            onClick={handleRegenerateAllEvals}
-            disabled={evalProgress?.loading || isAutoProcessingEvals || isRegeneratingAll}
+            onClick={handleDeleteEvals}
+            disabled={evalProgress?.loading || isAutoProcessingEvals}
             variant="danger"
             className="mb-200 mr-200"
           >
-            {isRegeneratingAll ? 'Regenerating All...' : 'Regenerate All Evaluations'}
+            Delete Evaluations
           </GcdsButton>
         </div>
           {evalProgress && (

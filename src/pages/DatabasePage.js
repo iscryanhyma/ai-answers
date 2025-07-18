@@ -443,6 +443,10 @@ const DatabasePage = ({ lang }) => {
             ? 'Restore the database from a backup file. Warning: This will replace all existing data.'
             : 'Restaurer la base de données à partir d\'un fichier de sauvegarde. Avertissement : Cela remplacera toutes les données existantes.'}
         </GcdsText>
+        {/* Show import progress message above the import button */}
+        {isImporting && message && (
+          <div style={{ margin: '12px 0', color: 'blue' }}>{message}</div>
+        )}
         <form onSubmit={handleImport} className="mb-200">
           <input
             type="file"
@@ -555,7 +559,8 @@ const DatabasePage = ({ lang }) => {
         </GcdsButton>
       </div>
 
-      {message && <div style={{ marginTop: 16, color: 'blue' }}>{message}</div>}
+      {/* Show other messages (not import progress) at the bottom */}
+      {(!isImporting && message) && <div style={{ marginTop: 16, color: 'blue' }}>{message}</div>}
     </GcdsContainer>
   );
 };

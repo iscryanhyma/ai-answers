@@ -1,4 +1,4 @@
-// server/server.js - this is only used for local development NOT for Vercel
+import dbDeleteEvalsHandler from '../api/db/db-delete-evals.js';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -87,6 +87,7 @@ app.get("*", (req, res, next) => {
   }
   res.sendFile(path.join(__dirname, "../build", "index.html"));
 });
+app.post('/api/db/db-delete-evals', dbDeleteEvalsHandler);
 app.get('/api/db/db-public-site-status', dbPublicSiteStatusHandler);
 app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);
 app.get('/api/db/db-chat', dbChatHandler);
