@@ -16,12 +16,6 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   const [loading, setLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [pagination, setPagination] = useState({
-    total: 0,
-    limit: 50,
-    offset: 0,
-    hasMore: false
-  });
 
   // Convert new filter format to API parameters
   const buildApiParams = (filters) => {
@@ -63,15 +57,10 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     return params;
   };
 
-  const fetchLogs = async (filters = null, pageOffset = 0) => {
+  const fetchLogs = async (filters = null) => {
     setLoading(true);
     try {
       const apiParams = buildApiParams(filters || {});
-      
-      // Add pagination parameters
-      apiParams.limit = pagination.limit;
-      apiParams.offset = pageOffset;
-      
       console.log('Fetching logs with params:', apiParams);
       const data = await DataStoreService.getChatLogs(apiParams);
       console.log('API response:', data);
@@ -79,51 +68,29 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         const logsData = data.logs || [];
         setLogs(logsData);
         setHasLoadedData(true);
+
         
-        // Update pagination info
-        if (data.pagination) {
-          setPagination({
-            total: data.pagination.total,
-            limit: data.pagination.limit,
-            offset: data.pagination.offset,
-            hasMore: data.pagination.hasMore
-          });
-        }
-        
-        // Only show filter panel if we have data or if this is a subsequent filter request
-        if (logsData.length > 0 || filters) {
-          setShowFilterPanel(true);
-        }
         console.log('Set logs:', logsData);
       } else {
         console.error('API returned error:', data.error);
         alert(data.error || 'Failed to fetch logs');
-        // Don't show filter panel on error
-        setShowFilterPanel(false);
+        
       }
     } catch (error) {
       console.error('Error fetching logs:', error);
       alert(`Failed to fetch logs: ${error.message}`);
-      // Don't show filter panel on error
-      setShowFilterPanel(false);
+      
     }
     setLoading(false);
   };
 
   const handleGetLogs = () => {
-    // Default to today's data instead of all data for faster loading
-    const today = new Date();
-    const todayFilters = {
-      dateRange: {
-        startDate: today,
-        endDate: today
-      }
-    };
-    fetchLogs(todayFilters, 0);
+    // Only show filter panel, do not query
+    setShowFilterPanel(true);
   };
 
   const handleApplyFilters = (filters) => {
-    fetchLogs(filters, 0);
+    fetchLogs(filters);
   };
 
   const handleClearFilters = () => {
@@ -134,7 +101,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         endDate: today
       }
     };
-    fetchLogs(todayFilters, 0);
+    fetchLogs(todayFilters);
   };
 
   const filename = (ext) => {
@@ -143,6 +110,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   };
 
   const downloadJSON = () => {
+    // Always export the currently filtered logs
     const json = JSON.stringify(logs, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -185,6 +153,9 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
 
       {logs.length > 0 && (
         <div className="flex items-center gap-4 flex-wrap">
+          <div className="mrgn-tp-1r">
+            {t('admin.chatLogs.found')} {logs.length} {t('admin.chatLogs.interactionsFound')}
+          </div>
           <GcdsButton
             onClick={downloadJSON}
             disabled={loading}
@@ -209,43 +180,6 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
           </GcdsButton>
         </div>
       )}
-
-      <div className="bg-white shadow rounded-lg">
-        {loading ? (
-          <div className="p-4">
-            <p className="text-gray-500">{t('admin.chatLogs.loadingLogs')}</p>
-          </div>
-        ) : logs.length > 0 ? (
-          <div className="p-4">
-            <p className="mb-4 text-gray-600">
-              {t('admin.chatLogs.found')} {pagination.total} {t('admin.chatLogs.interactionsFound')} 
-              {pagination.total > pagination.limit && ` (showing ${logs.length} of ${pagination.total})`}
-            </p>
-            <DataTable
-              data={logs}
-              columns={[
-                { title: t('admin.chatLogs.date'), data: 'createdAt', render: (data) => (data ? data : '') },
-                { title: t('admin.chatLogs.chatId'), data: 'chatId', render: (data) => (data ? data : '') },
-                {
-                  title: t('admin.chatLogs.interactions'),
-                  data: 'interactions',
-                  render: (data) => (data ? data.length : 0),
-                },
-              ]}
-              options={{
-                paging: true,
-                searching: true,
-                ordering: true,
-                order: [[0, 'desc']],
-                pageLength: pagination.limit,
-                info: true,
-                lengthChange: true,
-                lengthMenu: [[25, 50, 100, -1], [25, 50, 100, 'All']]
-              }}
-            />
-          </div>
-        ) : null}
-      </div>
     </div>
   );
 };
