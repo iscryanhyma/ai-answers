@@ -344,7 +344,7 @@
       "downloadCsv": "Download CSV",
       "downloadExcel": "Download Excel",
       "found": "Found",
-      "interactionsFound": "chat interactions. Download the logs to see the full set and details.",
+      "interactionsFound": "chats. Download the logs to see the full set and details.",
       "date": "Date",
       "chatId": "Chat ID",
       "interactions": "Interactions"
