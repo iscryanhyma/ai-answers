@@ -75,31 +75,44 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
 
   // Update date range when preset changes
   useEffect(() => {
-    if (filterType === 'preset' && presetValue !== 'all') {
-      const end = new Date();
-      const hours = presetOptions.find(opt => opt.value === presetValue)?.hours;
-      if (hours) {
-        const start = new Date(end.getTime() - hours * 60 * 60 * 1000);
-        const newRange = {
-          startDate: formatDateTimeLocal(start),
-          endDate: formatDateTimeLocal(end)
-        };
-        setDateRange(newRange);
+    if (filterType === 'preset') {
+      // When switching to preset, reset custom date range to default
+      setDateRange(getDefaultDates());
+      if (presetValue !== 'all') {
+        const end = new Date();
+        const hours = presetOptions.find(opt => opt.value === presetValue)?.hours;
+        if (hours) {
+          const start = new Date(end.getTime() - hours * 60 * 60 * 1000);
+          const newRange = {
+            startDate: formatDateTimeLocal(start),
+            endDate: formatDateTimeLocal(end)
+          };
+          setDateRange(newRange);
+        }
       }
+    }
+    if (filterType === 'custom') {
+      // When switching to custom, clear preset value
+      setPresetValue('1');
     }
   }, [filterType, presetValue]);
 
   const handleApply = () => {
-    const filters = {
-      dateRange: {
-        startDate: new Date(dateRange.startDate + ':00Z'),
-        endDate: new Date(dateRange.endDate + ':00Z')
-      },
+    let filters = {
       department,
       referringUrl,
-      filterType,
-      presetValue
+      filterType
     };
+    if (filterType === 'preset') {
+      filters.presetValue = presetValue;
+      if (presetValue !== 'all') {
+        filters.startDate = new Date(dateRange.startDate + ':00Z');
+        filters.endDate = new Date(dateRange.endDate + ':00Z');
+      }
+    } else if (filterType === 'custom') {
+      filters.startDate = new Date(dateRange.startDate + ':00Z');
+      filters.endDate = new Date(dateRange.endDate + ':00Z');
+    }
     onApplyFilters(filters);
   };
 
@@ -124,6 +137,11 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
 
   const handleFilterTypeChange = (type) => {
     setFilterType(type);
+    if (type === 'preset') {
+      setDateRange(getDefaultDates());
+    } else if (type === 'custom') {
+      setPresetValue('1');
+    }
   };
 
   const quickSetToday = () => {
