@@ -78,6 +78,8 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
                     { _id: 1, expertFeedback: 1, createdAt: 1 }
                 ).lean();
                 if (!interaction) continue;
+                // Skip if this is the same as the source interaction
+              if (interaction._id.toString() === sourceEmbedding.interactionId.toString()) continue;
                 const embedding = await Embedding.findOne({
                     interactionId: interaction._id,
                     questionsAnswerEmbedding: { $exists: true, $not: { $size: 0 } }
@@ -85,7 +87,7 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
                 if (!embedding) continue;
                 const similarity = cosineSimilarity(
                     sourceEmbedding.questionsAnswerEmbedding,
-                    embedding.questionsAnswerEmbedding
+                embedding.questionsAnswerEmbedding
                 );
                 processedCount++;
                 if (similarity >= similarityThreshold) {

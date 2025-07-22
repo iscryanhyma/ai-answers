@@ -74,7 +74,7 @@ const EvalPage = () => {
     }
   };
 
-  const handleGenerateEvals = async (isAutoProcess = false, regenerateAll = false, lastId = null) => {
+  const handleGenerateEvals = async (isAutoProcess = false, regenerateAll = false, lastId = null, skipEmptyCleanup = false) => {
     if (isEvalRequestInProgress) {
       return; // Skip if a request is already in progress
     }
@@ -93,7 +93,8 @@ const EvalPage = () => {
         lastProcessedId: lastId,
         regenerateAll,
         startTime: startTime || undefined,
-        endTime: endTime || undefined
+        endTime: endTime || undefined,
+        skipEmptyCleanup
       });
       // Only update progress if we got a valid response
       if (typeof result.remaining === 'number') {
@@ -293,6 +294,13 @@ const EvalPage = () => {
             className="mb-200 mr-200"
           >
             {evalProgress?.loading && !isAutoProcessingEvals && !isRegeneratingAll ? 'Processing...' : 'Generate Evaluations'}
+          </GcdsButton>
+          <GcdsButton 
+            onClick={() => handleGenerateEvals(false, false, null, true)}
+            disabled={evalProgress?.loading || isAutoProcessingEvals || isRegeneratingAll}
+            className="mb-200 mr-200"
+          >
+            Continue Generate
           </GcdsButton>
           <GcdsButton 
             onClick={handleDeleteEvals}

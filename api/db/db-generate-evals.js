@@ -12,7 +12,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { lastProcessedId, regenerateAll, startTime, endTime } = req.body;
+        const { lastProcessedId, regenerateAll, startTime, endTime, skipEmptyCleanup } = req.body;
         const duration = config.evalBatchProcessingDuration; // Use config value for duration
 
         // Get deploymentMode from settings
@@ -25,8 +25,8 @@ export default async function handler(req, res) {
             console.error('Failed to read deploymentMode setting', e);
         }
 
-        // Clear empty evals only on the first batch (when lastProcessedId is not set)
-        if (!lastProcessedId) {
+        // Clear empty evals only on the first batch (when lastProcessedId is not set) and skipEmptyCleanup is false
+        if (!lastProcessedId && !skipEmptyCleanup) {
             try {
                 // Find evals that are empty (no expertFeedback, processed=false, or hasMatches=false)
                 const emptyEvals = await Eval.find({
