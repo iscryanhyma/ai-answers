@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.14.1](https://github.com/cds-snc/ai-answers/compare/v1.14.0...v1.14.1) (2025-07-22)
+
+
+### Bug Fixes
+
+* enhance FilterPanel to reset date range and preset value on filt… ([6a9fb54](https://github.com/cds-snc/ai-answers/commit/6a9fb5488cb00023137bf6c70f915b7c7dd51c55))
+* enhance FilterPanel to reset date range and preset value on filter type change ([e6d381b](https://github.com/cds-snc/ai-answers/commit/e6d381b9dc79f7b6556713f4602dd5abbf07c61f))
+* simplify date filter handling and remove unused parameter conversion in dashboards ([1638cb5](https://github.com/cds-snc/ai-answers/commit/1638cb56c29bd9e382d9192838c6e1f03cd57810))
+
 ## [1.14.0](https://github.com/cds-snc/ai-answers/compare/v1.13.1...v1.14.0) (2025-07-22)
 
 
