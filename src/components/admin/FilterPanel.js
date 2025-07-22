@@ -106,12 +106,13 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
     if (filterType === 'preset') {
       filters.presetValue = presetValue;
       if (presetValue !== 'all') {
-        filters.startDate = new Date(dateRange.startDate + ':00Z');
-        filters.endDate = new Date(dateRange.endDate + ':00Z');
+        filters.startDate = dateRange.startDate + ':00Z';
+        filters.endDate = dateRange.endDate + ':00Z';
       }
+      // If 'all', do not send startDate/endDate
     } else if (filterType === 'custom') {
-      filters.startDate = new Date(dateRange.startDate + ':00Z');
-      filters.endDate = new Date(dateRange.endDate + ':00Z');
+      filters.startDate = dateRange.startDate + ':00Z';
+      filters.endDate = dateRange.endDate + ':00Z';
     }
     onApplyFilters(filters);
   };

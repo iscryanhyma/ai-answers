@@ -19,51 +19,11 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
 
-  // Convert new filter format to API parameters
-  const buildApiParams = (filters) => {
-    const params = {};
-    
-    if (filters.dateRange) {
-      if (filters.dateRange.startDate && filters.dateRange.endDate) {
-        // Handle both Date objects and datetime strings
-        const startDate = filters.dateRange.startDate instanceof Date 
-          ? filters.dateRange.startDate.toISOString() 
-          : filters.dateRange.startDate;
-        const endDate = filters.dateRange.endDate instanceof Date 
-          ? filters.dateRange.endDate.toISOString() 
-          : filters.dateRange.endDate;
-        
-        params.startDate = startDate;
-        params.endDate = endDate;
-      }
-    }
-    
-    // Add preset filter information
-    if (filters.filterType) {
-      params.filterType = filters.filterType;
-    }
-    
-    if (filters.presetValue) {
-      params.presetValue = filters.presetValue;
-    }
-    
-    // Add future filter parameters
-    if (filters.referringUrl) {
-      params.referringUrl = filters.referringUrl;
-    }
-    
-    if (filters.department) {
-      params.department = filters.department;
-    }
-    
-    return params;
-  };
 
   const fetchMetrics = async (filters = null) => {
     setLoading(true);
     try {
-      const apiParams = buildApiParams(filters || {});
-      const data = await DataStoreService.getChatLogs(apiParams);
+      const data = await DataStoreService.getChatLogs(filters || {});
       if (data.success) {
         // Process the logs to calculate metrics
         const logsData = data.logs || [];
@@ -92,10 +52,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const handleGetMetrics = () => {
     const today = new Date();
     const todayFilters = {
-      dateRange: {
-        startDate: today,
-        endDate: today
-      }
+      startDate: today,
+      endDate: today
     };
     fetchMetrics(todayFilters);
   };
@@ -107,10 +65,8 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const handleClearFilters = () => {
     const today = new Date();
     const todayFilters = {
-      dateRange: {
-        startDate: today,
-        endDate: today
-      }
+      startDate: today,
+      endDate: today
     };
     fetchMetrics(todayFilters);
   };

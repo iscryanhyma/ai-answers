@@ -25,15 +25,6 @@ async function chatLogsHandler(req, res) {
     const dateFilter = {};
     if (startDate && endDate) {
       dateFilter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
-    } else if (filterType === 'preset' && presetValue !== 'all') {
-      const hours = parseInt(presetValue) * 24;
-      const end = new Date(), start = new Date(end.getTime() - hours * 3600_000);
-      dateFilter.createdAt = { $gte: start, $lte: end };
-    } else if (days && days !== 'all') {
-      const n = parseInt(days) || 1;
-      const dt = new Date();
-      dt.setDate(dt.getDate() - n);
-      dateFilter.createdAt = { $gte: dt };
     }
 
     const chatPopulate = [
