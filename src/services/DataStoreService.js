@@ -345,10 +345,11 @@ class DataStoreService {
 
   static async generateEvals({ lastProcessedId = null, regenerateAll = false } = {}) {
     try {
-      const { startTime, endTime } = arguments[0] || {};
+      const { startTime, endTime, skipEmptyCleanup } = arguments[0] || {};
       const payload = { lastProcessedId, regenerateAll };
       if (startTime) payload.startTime = startTime;
       if (endTime) payload.endTime = endTime;
+      if (typeof skipEmptyCleanup !== 'undefined') payload.skipEmptyCleanup = skipEmptyCleanup;
       const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-evals'), {
         method: 'POST',
         headers: {
