@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.14.0](https://github.com/cds-snc/ai-answers/compare/v1.13.1...v1.14.0) (2025-07-22)
+
+
+### Features
+
+* add skipEmptyCleanup option to eval generation and update simil… ([69dc39f](https://github.com/cds-snc/ai-answers/commit/69dc39fd947c628a5adcb692eb76179a5dead62e))
+* add skipEmptyCleanup option to eval generation and update similarity thresholds ([d648e5c](https://github.com/cds-snc/ai-answers/commit/d648e5c0c212694bf29c000c2987b7f7d140d0a8))
+
+
+### Bug Fixes
+
+* remove pagination logic from chat logs handler and update relate… ([1fb0415](https://github.com/cds-snc/ai-answers/commit/1fb0415e4cb9fbfc58a7c7b12825129b5bc80e72))
+* remove pagination logic from chat logs handler and update related components ([204d0f4](https://github.com/cds-snc/ai-answers/commit/204d0f4f2c5fa08562de5c0f33e221be4ec167e5))
+
 ## [1.13.1](https://github.com/cds-snc/ai-answers/compare/v1.13.0...v1.13.1) (2025-07-18)
 
 
