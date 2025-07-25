@@ -12,7 +12,6 @@ import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
 
-// Remove isActuallyOnVercel and only use deploymentMode
 let pool;
 let directWorkerFn;
 const __filename = fileURLToPath(import.meta.url);
@@ -21,36 +20,58 @@ const numCPUs = os.cpus().length;
 
 // Always initialize both, but only use one depending on deploymentMode
 pool = new Piscina({
-  filename: path.resolve(__dirname, 'evaluation.worker.js'),
-  minThreads: 1,
-  maxThreads: Math.max(1, numCPUs > 1 ? numCPUs - 1 : 1),
+    filename: path.resolve(__dirname, 'evaluation.worker.js'),
+    minThreads: 1,
+    maxThreads: Math.max(1, numCPUs > 1 ? numCPUs - 1 : 1),
 });
 // directWorkerFn will be loaded as needed
 
 class EvaluationService {
+    /**
+     * Delete evaluations (and associated expert feedback) for interactions in a date range or all.
+     * @param {Object} options - { timeFilter }
+     * @returns {Object} - { deleted, expertFeedbackDeleted }
+     */
+    async deleteEvaluations({ timeFilter }) {
+        await dbConnect();
+        const interactionQuery = timeFilter && Object.keys(timeFilter).length > 0
+            ? { ...timeFilter, autoEval: { $exists: true, $ne: null } }
+            : { autoEval: { $exists: true, $ne: null } };
+        const interactions = await Interaction.find(interactionQuery).select('autoEval');
+        const evalIdsToDelete = interactions.map(i => i.autoEval).filter(Boolean);
+        let expertFeedbackDeleted = 0;
+        if (evalIdsToDelete.length > 0) {
+            const evals = await Eval.find({ _id: { $in: evalIdsToDelete } }).select('expertFeedback');
+            const expertFeedbackIds = evals.map(e => e.expertFeedback).filter(Boolean);
+            const deletedEvals = await Eval.deleteMany({ _id: { $in: evalIdsToDelete } });
+            await Interaction.updateMany({ autoEval: { $in: evalIdsToDelete } }, { $unset: { autoEval: "" } });
+            if (expertFeedbackIds.length > 0) {
+                const deletedExpertFeedback = await ExpertFeedback.deleteMany({ _id: { $in: expertFeedbackIds } });
+                expertFeedbackDeleted = deletedExpertFeedback.deletedCount || 0;
+            }
+            return { deleted: deletedEvals.deletedCount || 0, expertFeedbackDeleted };
+        }
+        return { deleted: 0, expertFeedbackDeleted: 0 };
+    }
     async evaluateInteraction(interaction, chatId, deploymentMode) {
         if (!interaction || !interaction._id) {
-            ServerLoggingService.error('Invalid interaction object passed to evaluateInteraction', chatId, 
+            ServerLoggingService.error('Invalid interaction object passed to evaluateInteraction', chatId,
                 { hasInteraction: !!interaction, hasId: !!interaction?._id });
-            throw new Error('Invalid interaction object'); 
+            throw new Error('Invalid interaction object');
         }
         const interactionIdStr = interaction._id.toString();
         try {
-            if (deploymentMode === 'CDS') {
-                // Use Piscina worker pool for background processing
-                return pool.run({ interactionId: interactionIdStr, chatId });
-            } else {
-                // For 'Vercel' or any other mode, run worker function directly
+           
                 if (!directWorkerFn) {
                     // Use dynamic import instead of require
                     const imported = await import('./evaluation.worker.js');
                     directWorkerFn = imported.default || imported;
                 }
                 return directWorkerFn({ interactionId: interactionIdStr, chatId });
-            }
+            
         } catch (error) {
-            ServerLoggingService.error('Error during interaction evaluation dispatch', chatId, { 
-                interactionId: interactionIdStr, 
+            ServerLoggingService.error('Error during interaction evaluation dispatch', chatId, {
+                interactionId: interactionIdStr,
                 errorMessage: error.message
             });
             throw error;
@@ -98,7 +119,7 @@ class EvaluationService {
      * Process interactions for evaluation for a specified duration.
      * This method will now call the worker-offloaded `evaluateInteraction`.
      */
-    async processEvaluationsForDuration(duration, skipExisting = true, lastProcessedId = null, deploymentMode = 'CDS', extraFilter = {}) {
+    async processEvaluationsForDuration(duration, lastProcessedId = null, deploymentMode = 'CDS', extraFilter = {}) {
         const startTime = Date.now();
         let lastId = lastProcessedId;
         const concurrency = config.evalConcurrency || 8;
@@ -106,42 +127,13 @@ class EvaluationService {
         try {
             await dbConnect();
 
-            // If skipExisting is false and this is the first batch (no lastProcessedId),
-            // delete all existing evaluations and expert feedback
-            if (!skipExisting && !lastProcessedId) {
-                ServerLoggingService.info('Regenerating all evaluations - deleting existing evaluations', 'system');
-                // First get all evals to find the expert feedback IDs
-                const allEvals = await Eval.find({});
-                const expertFeedbackIds = allEvals
-                    .map(evaluation => evaluation.expertFeedback)
-                    .filter(id => id); // Filter out null/undefined values
-                // Delete all evaluations
-                await Eval.deleteMany({});
-                ServerLoggingService.info(`Deleted ${allEvals.length} evaluations`, 'system');
-                // Delete associated expert feedback
-                if (expertFeedbackIds.length > 0) {
-                    await ExpertFeedback.deleteMany({ _id: { $in: expertFeedbackIds } });
-                    ServerLoggingService.info(`Deleted ${expertFeedbackIds.length} expert feedback records`, 'system');
-                }
-                // Clear autoEval field from all interactions
-                await Interaction.updateMany(
-                    { autoEval: { $exists: true } },
-                    { $unset: { autoEval: "" } }
-                );
-                ServerLoggingService.info('Reset autoEval field in all interactions', 'system');
-            }
-
-            // Find interactions that have both question and answer
+            // Always skip existing evaluations
             const query = {
                 question: { $exists: true, $ne: null },
                 answer: { $exists: true, $ne: null },
+                autoEval: { $exists: false },
                 ...extraFilter
             };
-
-            // If skipExisting is true, exclude interactions that already have evaluations
-            if (skipExisting) {
-                query.autoEval = { $exists: false };
-            }
 
             // Add pagination using lastProcessedId if provided
             if (lastId) {
@@ -161,8 +153,14 @@ class EvaluationService {
                 const batch = interactions.slice(idx, idx + concurrency);
                 const promises = batch.map(async (interaction) => {
                     try {
-                        const chats = await Chat.find({ interactions: interaction._id });
+                        const chats = await Chat.find({
+                            interactions: interaction._id
+                        });
                         const chatId = chats.length > 0 ? chats[0].chatId : null;
+                        if (!chatId) {
+                            ServerLoggingService.warn(`No chat found for interaction ${interaction._id}`, 'eval-service');
+                            return;
+                        }
                         await this.evaluateInteraction(interaction, chatId, deploymentMode);
                         processedCount++;
                         ServerLoggingService.debug(`Successfully evaluated interaction ${interaction._id}`, 'eval-service');
