@@ -3,7 +3,7 @@ import { Chat } from '../../models/chat.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { PublicFeedback } from '../../models/publicFeedback.js';
 import { withOptionalUser } from '../../middleware/auth.js';
-import VectorService from '../../services/VectorService.js';
+import { VectorService } from '../../services/VectorServiceFactory.js';
 import { Embedding } from '../../models/embedding.js';
 
 async function feedbackHandler(req, res) {
