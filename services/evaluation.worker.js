@@ -127,7 +127,7 @@ import { Embedding } from '../models/embedding.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import dbConnect from '../api/db/db-connect.js';
 import config from '../config/eval.js';
-import VectorService from './VectorService.js';
+import { VectorService } from '../services/VectorServiceFactory.js';
 
 async function validateInteractionAndCheckExisting(interaction, chatId) {
     ServerLoggingService.debug('Validating interaction (worker)', chatId, {
