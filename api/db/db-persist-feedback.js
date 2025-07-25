@@ -3,6 +3,8 @@ import { Chat } from '../../models/chat.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { PublicFeedback } from '../../models/publicFeedback.js';
 import { withOptionalUser } from '../../middleware/auth.js';
+import VectorService from '../../services/VectorService.js';
+import { Embedding } from '../../models/embedding.js';
 
 async function feedbackHandler(req, res) {
   if (req.method !== 'POST') {
@@ -29,6 +31,19 @@ async function feedbackHandler(req, res) {
       existingInteraction.expertFeedback = expertFeedback._id;
       console.log('Saving expert feedback:', JSON.stringify(expertFeedback.toObject(), null, 2));
       await expertFeedback.save();
+      
+      // Add embedding to VectorService
+      // Find the embedding for this interaction
+      const embedding = await Embedding.findOne({ interactionId: existingInteraction._id });
+      if (embedding && embedding.questionsAnswerEmbedding && embedding.answerEmbedding) {
+        VectorService.addExpertFeedbackEmbedding({
+          interactionId: existingInteraction._id,
+          expertFeedbackId: expertFeedback._id,
+          createdAt: embedding.createdAt,
+          questionsAnswerEmbedding: embedding.questionsAnswerEmbedding,
+          answerEmbedding: embedding.answerEmbedding
+        });
+      }
     }
 
     if (publicFeedbackData) {
