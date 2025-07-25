@@ -11,13 +11,17 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [saving, setSaving] = useState(false);
   const [deploymentMode, setDeploymentMode] = useState('CDS');
   const [savingDeployment, setSavingDeployment] = useState(false);
+  const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
+  const [savingVectorType, setSavingVectorType] = useState(false);
 
   useEffect(() => {
     async function loadSettings() {
-      const current = await DataStoreService.getSiteStatus();
+      const current = await DataStoreService.getSetting('siteStatus', 'available');
       setStatus(current);
-      const mode = await DataStoreService.getDeploymentMode();
+      const mode = await DataStoreService.getSetting('deploymentMode', 'CDS');
       setDeploymentMode(mode);
+      const type = await DataStoreService.getSetting('vectorServiceType', 'imvectordb');
+      setVectorServiceType(type);
     }
     loadSettings();
   }, []);
@@ -27,7 +31,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     setStatus(newStatus);
     setSaving(true);
     try {
-      await DataStoreService.setSiteStatus(newStatus);
+      await DataStoreService.setSetting('siteStatus', newStatus);
     } finally {
       setSaving(false);
     }
@@ -38,7 +42,7 @@ const SettingsPage = ({ lang = 'en' }) => {
     setDeploymentMode(newMode);
     setSavingDeployment(true);
     try {
-      await DataStoreService.setDeploymentMode(newMode);
+      await DataStoreService.setSetting('deploymentMode', newMode);
     } finally {
       setSavingDeployment(false);
     }
@@ -64,6 +68,25 @@ const SettingsPage = ({ lang = 'en' }) => {
       <select id="deployment-mode" value={deploymentMode} onChange={handleDeploymentModeChange} disabled={savingDeployment}>
         <option value="CDS">{t('settings.deploymentMode.cds', 'CDS (Background worker)')}</option>
         <option value="Vercel">{t('settings.deploymentMode.vercel', 'Vercel (Wait for completion)')}</option>
+      </select>
+
+      <label htmlFor="vector-service-type" className="mb-200 display-block mt-400">
+        {t('settings.vectorServiceTypeLabel', 'Vector Service Type')}
+      </label>
+      <select
+        id="vector-service-type"
+        value={vectorServiceType}
+        onChange={async (e) => {
+          const newType = e.target.value;
+          setSavingVectorType(true);
+          setVectorServiceType(newType);
+          await DataStoreService.setSetting('vectorServiceType', newType);
+          setSavingVectorType(false);
+        }}
+        disabled={savingVectorType}
+      >
+        <option value="imvectordb">{t('settings.vectorServiceType.imvectordb', 'IMVectorDB (local)')}</option>
+        <option value="documentdb">{t('settings.vectorServiceType.documentdb', 'DocumentDB (AWS)')}</option>
       </select>
     </GcdsContainer>
   );
