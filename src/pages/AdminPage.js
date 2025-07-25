@@ -62,6 +62,11 @@ const AdminPage = ({ lang = 'en' }) => {
             </GcdsLink>
           </li>
           <li>
+            <GcdsLink href={`/${lang}/vector`}>
+              {t('admin.navigation.vector', 'Vector Administration')}
+            </GcdsLink>
+          </li>
+          <li>
             <GcdsLink href={`/${lang}/settings`}>
               {t('settings.title', 'Settings')}
             </GcdsLink>
