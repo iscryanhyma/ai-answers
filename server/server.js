@@ -51,6 +51,7 @@ import dbTableCountsHandler from '../api/db/db-table-counts.js';
 import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
 import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
 import dbMigratePublicFeedbackHandler from '../api/db/db-migrate-public-feedback.js';
+import VectorService from '../services/VectorService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -145,11 +146,29 @@ app.post('/api/search/search-context', contextSearchHandler);
 
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+(async () => {
+  try {
+    await dbConnect();
+    console.log("Database connected");
 
-fetch(`http://localhost:${PORT}/health`)
-  .then((response) => response.json())
-  .then((data) => console.log("Health check:", data))
-  .catch((error) => console.error("Error:", error));
+    // Initialize VectorService to load embeddings into memory
+    await VectorService.initialize();
+    console.log("Vector service initialized");
+    console.log('Vector Service Stats:', VectorService.getStats());
+    const memoryUsage = process.memoryUsage();
+    console.log(`Total application memory usage (RSS): ${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`);
+    
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+    fetch(`http://localhost:${PORT}/health`)
+      .then((response) => response.json())
+      .then((data) => console.log("Health check:", data))
+      .catch((error) => console.error("Error:", error));
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+})();
+
+
