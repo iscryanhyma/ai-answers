@@ -15,7 +15,7 @@
       "type": "node",
       "request": "launch",
       "program": "${workspaceFolder}/server/server.js",
-      "envFile": "${workspaceFolder}/server/.env",
+      "envFile": "${workspaceFolder}/.env",
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen"
