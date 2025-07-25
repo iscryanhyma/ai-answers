@@ -2,22 +2,6 @@ import { getApiUrl, getProviderApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
 
 class DataStoreService {
-  static async deleteEvals({ startTime, endTime }) {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-delete-evals'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ startTime, endTime })
-      });
-      if (!response.ok) throw new Error('Failed to delete evaluations');
-      return await response.json();
-    } catch (error) {
-      console.error('Error deleting evaluations:', error);
-      throw error;
-    }
-  }
   static async checkDatabaseConnection() {
     if (process.env.REACT_APP_ENV !== 'production') {
       console.log('Skipping database connection check in development environment');
@@ -68,17 +52,6 @@ class DataStoreService {
     }
   }
 
-  static async getEvalNonEmptyCount() {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-eval-non-empty-count'));
-      if (!response.ok) throw new Error('Failed to get non-empty eval count');
-      const data = await response.json();
-      return data.count;
-    } catch (error) {
-      console.error('Error getting non-empty eval count:', error);
-      return 0;
-    }
-  }
 
   static async getBatch(batchId) {
     try {
@@ -343,39 +316,7 @@ class DataStoreService {
     }
   }
 
-  static async generateEvals({ lastProcessedId = null, regenerateAll = false } = {}) {
-    try {
-      const { startTime, endTime, skipEmptyCleanup } = arguments[0] || {};
-      const payload = { lastProcessedId, regenerateAll };
-      if (startTime) payload.startTime = startTime;
-      if (endTime) payload.endTime = endTime;
-      if (typeof skipEmptyCleanup !== 'undefined') payload.skipEmptyCleanup = skipEmptyCleanup;
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-evals'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) throw new Error('Failed to generate evals');
-      return await response.json();
-    } catch (error) {
-      console.error('Error generating evals:', error);
-      throw error;
-    }
-  }
 
-  static async getExpertFeedbackCount() {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-expert-feedback-count'));
-      if (!response.ok) throw new Error('Failed to get expert feedback count');
-      const data = await response.json();
-      return data.count;
-    } catch (error) {
-      console.error('Error getting expert feedback count:', error);
-      throw error;
-    }
-  }
   static async getTableCounts() {
     try {
       const response = await AuthService.fetchWithAuth(getApiUrl('db-table-counts'));
