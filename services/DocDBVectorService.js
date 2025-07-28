@@ -25,23 +25,28 @@ class DocDBVectorService {
       sentences: 0,
       vectorMemoryUsage: {}
     };
-  
+    this.embeddingMetadatas = new Map();
+    this.sentenceMetadatas = new Map();
+  }
+
   /**
    * Find similar chats by embedding using QA search logic
    * @param {Array<number>} embedding - The query embedding
    * @param {Object} options - { excludeChatId, limit }
    * @returns {Promise<Array<{ chatId: string, score: number }>>}
    */
-  DocDBVectorService.prototype.findSimilarChats = async function(embedding, { excludeChatId, limit = 20 }) {
+  async findSimilarChats(embedding, { excludeChatId, limit = 20 }) {
     // Use the same search logic as evaluation.worker.js (QA search)
     // This assumes you have a search method that returns neighbors with interactionId and similarity
     const neighbors = await this.search(embedding, limit * 2, 'qa');
     // Get chatId for each neighbor, exclude the source chatId
     const mongoose = require('mongoose');
     const Chat = mongoose.model('Chat');
+    const config = await import('../config/eval.js');
+    const similarityThreshold = config.default.thresholds.questionAnswerSimilarity;
     const results = [];
     for (const neighbor of neighbors) {
-      if (neighbor.interactionId && neighbor.similarity > 0.85) {
+      if (neighbor.interactionId && neighbor.similarity > similarityThreshold) {
         // Find chatId for this interaction
         const chatDoc = await Chat.findOne({ interactions: neighbor.interactionId }, { chatId: 1 }).lean();
         if (chatDoc && chatDoc.chatId !== excludeChatId) {
@@ -60,9 +65,6 @@ class DocDBVectorService {
     // Sort by score descending
     deduped.sort((a, b) => b.score - a.score);
     return deduped;
-  };
-    this.embeddingMetadatas = new Map();
-    this.sentenceMetadatas = new Map();
   }
 
   /**
