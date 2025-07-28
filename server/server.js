@@ -1,4 +1,5 @@
 import dbDeleteEvalsHandler from '../api/db/db-delete-evals.js';
+import similarChatsHandler from '../api/vector/vector-similar-chats.js';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
@@ -51,6 +52,9 @@ import dbTableCountsHandler from '../api/db/db-table-counts.js';
 import dbRepairTimestampsHandler from '../api/db/db-repair-timestamps.js';
 import dbRepairExpertFeedbackHandler from '../api/db/db-repair-expert-feedback.js';
 import dbMigratePublicFeedbackHandler from '../api/db/db-migrate-public-feedback.js';
+import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
+import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
+import vectorStatsHandler from '../api/vector/vector-stats.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -88,6 +92,9 @@ app.get("*", (req, res, next) => {
   res.sendFile(path.join(__dirname, "../build", "index.html"));
 });
 app.post('/api/db/db-delete-evals', dbDeleteEvalsHandler);
+app.post('/api/vector/vector-reinitialize', vectorReinitializeHandler);
+app.get('/api/vector/vector-similar-chats', similarChatsHandler);
+app.get('/api/vector/vector-stats', vectorStatsHandler);
 app.get('/api/db/db-public-site-status', dbPublicSiteStatusHandler);
 app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);
 app.get('/api/db/db-chat', dbChatHandler);
@@ -145,11 +152,35 @@ app.post('/api/search/search-context', contextSearchHandler);
 
 const PORT = process.env.PORT || 3001;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+(async () => {
+  try {
+    await dbConnect();
+    console.log("Database connected");
 
-fetch(`http://localhost:${PORT}/health`)
-  .then((response) => response.json())
-  .then((data) => console.log("Health check:", data))
-  .catch((error) => console.error("Error:", error));
+    // Initialize VectorService using the factory method
+    try {
+      await initVectorService();
+      console.log("Vector service initialized");
+      if (VectorService && typeof VectorService.getStats === 'function') {
+        console.log('Vector Service Stats:', VectorService.getStats());
+      }
+    } catch (vectorError) {
+      console.error("Vector service initialization failed:", vectorError);
+      // Optionally, set VectorService to null or a stub
+    }
+    const memoryUsage = process.memoryUsage();
+    console.log(`Total application memory usage (RSS): ${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`);
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+    fetch(`http://localhost:${PORT}/health`)
+      .then((response) => response.json())
+      .then((data) => console.log("Health check:", data))
+      .catch((error) => console.error("Error:", error));
+  } catch (error) {
+    console.error("Failed to start server:", error);
+    process.exit(1);
+  }
+})();
+
+

@@ -2,19 +2,31 @@ import { getApiUrl, getProviderApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
 
 class DataStoreService {
-  static async deleteEvals({ startTime, endTime }) {
+  static async getSetting(key, defaultValue = null) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-delete-evals'), {
+      const response = await AuthService.fetchWithAuth(getApiUrl(`db-settings?key=${encodeURIComponent(key)}`));
+      if (!response.ok) throw new Error(`Failed to get setting: ${key}`);
+      const data = await response.json();
+      return data.value !== undefined ? data.value : defaultValue;
+    } catch (error) {
+      console.error(`Error getting setting '${key}':`, error);
+      return defaultValue;
+    }
+  }
+
+  static async setSetting(key, value) {
+    try {
+      const response = await AuthService.fetchWithAuth(getApiUrl('db-settings'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ startTime, endTime })
+        body: JSON.stringify({ key, value })
       });
-      if (!response.ok) throw new Error('Failed to delete evaluations');
+      if (!response.ok) throw new Error(`Failed to set setting: ${key}`);
       return await response.json();
     } catch (error) {
-      console.error('Error deleting evaluations:', error);
+      console.error(`Error setting setting '${key}':`, error);
       throw error;
     }
   }
@@ -68,17 +80,6 @@ class DataStoreService {
     }
   }
 
-  static async getEvalNonEmptyCount() {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-eval-non-empty-count'));
-      if (!response.ok) throw new Error('Failed to get non-empty eval count');
-      const data = await response.json();
-      return data.count;
-    } catch (error) {
-      console.error('Error getting non-empty eval count:', error);
-      return 0;
-    }
-  }
 
   static async getBatch(batchId) {
     try {
@@ -267,64 +268,6 @@ class DataStoreService {
     }
   }
 
-  static async getSiteStatus() {
-    try {
-      const response = await fetch(getApiUrl('db-public-site-status'));
-      if (!response.ok) throw new Error('Failed to get site status');
-      const data = await response.json();
-      return data.value || 'unavailable';
-    } catch (error) {
-      console.error('Error getting site status:', error);
-      return 'unavailable';
-    }
-  }
-
-  static async setSiteStatus(status) {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-settings'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ key: 'siteStatus', value: status })
-      });
-      if (!response.ok) throw new Error('Failed to set site status');
-      return await response.json();
-    } catch (error) {
-      console.error('Error setting site status:', error);
-      throw error;
-    }
-  }
-
-  // Add deployment mode setting
-  static async getDeploymentMode() {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-settings?key=deploymentMode')); // Use fetchWithAuth
-      if (!response.ok) throw new Error('Failed to get deployment mode');
-      const data = await response.json();
-      return data.value || 'CDS';
-    } catch (error) {
-      console.error('Error getting deployment mode:', error);
-      return 'CDS';
-    }
-  }
-
-  static async setDeploymentMode(mode) {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-settings'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ key: 'deploymentMode', value: mode })
-      });
-      if (!response.ok) throw new Error('Failed to set deployment mode');
-      return await response.json();
-    } catch (error) {
-      console.error('Error setting deployment mode:', error);
-      throw error;
-    }
-  }
 
   static async generateEmbeddings({ lastProcessedId = null, regenerateAll = false } = {}) {
     try {
@@ -343,39 +286,7 @@ class DataStoreService {
     }
   }
 
-  static async generateEvals({ lastProcessedId = null, regenerateAll = false } = {}) {
-    try {
-      const { startTime, endTime, skipEmptyCleanup } = arguments[0] || {};
-      const payload = { lastProcessedId, regenerateAll };
-      if (startTime) payload.startTime = startTime;
-      if (endTime) payload.endTime = endTime;
-      if (typeof skipEmptyCleanup !== 'undefined') payload.skipEmptyCleanup = skipEmptyCleanup;
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-evals'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-      if (!response.ok) throw new Error('Failed to generate evals');
-      return await response.json();
-    } catch (error) {
-      console.error('Error generating evals:', error);
-      throw error;
-    }
-  }
 
-  static async getExpertFeedbackCount() {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-expert-feedback-count'));
-      if (!response.ok) throw new Error('Failed to get expert feedback count');
-      const data = await response.json();
-      return data.count;
-    } catch (error) {
-      console.error('Error getting expert feedback count:', error);
-      throw error;
-    }
-  }
   static async getTableCounts() {
     try {
       const response = await AuthService.fetchWithAuth(getApiUrl('db-table-counts'));

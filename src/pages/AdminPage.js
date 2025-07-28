@@ -48,7 +48,7 @@ const AdminPage = ({ lang = 'en' }) => {
           </li>
           <li>
             <GcdsLink href={`/${lang}/eval`}>
-              {t('admin.navigation.eval', 'Evaluation Tools')}
+              {t('admin.navigation.eval', 'Evaluation Administration')}
             </GcdsLink>
           </li>
           <li>
@@ -59,6 +59,11 @@ const AdminPage = ({ lang = 'en' }) => {
           <li>
             <GcdsLink href={`/${lang}/metrics`}>
               {t('admin.navigation.metrics', 'View performance metrics')}
+            </GcdsLink>
+          </li>
+          <li>
+            <GcdsLink href={`/${lang}/vector`}>
+              {t('admin.navigation.vector', 'Vector Administration')}
             </GcdsLink>
           </li>
           <li>

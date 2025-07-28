@@ -286,10 +286,12 @@
       "users": "Manage user accounts",
       "chatViewer": "View full interaction for a Chat ID",
       "database": "Manage the database",
-      "eval": "Control evaluation embeddings",
+      "eval": "Evaluation Administration",
       "metrics": "View performance metrics",
       "publicEval": "Public Evaluation",
-      "logout": "Sign out"
+      "logout": "Sign out",
+      "vector": "Vector Administration"
+  
     },
     "filters": {
       "title": "Filters - select then Apply to view",
@@ -425,6 +427,12 @@
       "cds": "CDS (Background worker)",
       "vercel": "Vercel (Wait for completion)"
     }
+    ,
+    "vectorServiceTypeLabel": "Vector Service Type",
+    "vectorServiceType": {
+      "imvectordb": "IMVectorDB (local)",
+      "documentdb": "DocumentDB (AWS)"
+    }
   },
   "outage": {
     "title": "Service Unavailable",
@@ -497,5 +505,29 @@
         "expertTotal": "Expert evaluations"
       }
     }
+  },
+  "vector": {
+    "title": "Vector Administration",
+    "indexManagement": "Vector Index Management",
+    "manageDescription": "Manage vector indexes and view vector database statistics.",
+    "reinitializeIndex": "Reinitialize Index",
+    "loading": "Loading...",
+    "fetchStats": "Fetch Vector Stats",
+    "createIndex": "Create Vector Index",
+    "embeddingManagement": "Embedding Management",
+    "embeddingDescription": "Process interactions to generate embeddings.",
+    "generateEmbeddings": "Generate Embeddings",
+    "regenerateEmbeddings": "Regenerate Embeddings",
+    "regenerating": "Regenerating...",
+    "processing": "Processing...",
+    "remaining": "Remaining",
+    "autoProcessingActive": "Auto-processing active",
+    "similarChats": "Find Similar Chats",
+    "similarChatsDescription": "Find chats similar to a given Chat ID using vector similarity.",
+    "chatIdPlaceholder": "Enter Chat ID",
+    "getSimilarChats": "Get Similar Chats",
+    "loadingSimilarChats": "Loading similar chats..."
   }
+  
+     
 }

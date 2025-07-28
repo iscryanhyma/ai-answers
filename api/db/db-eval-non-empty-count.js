@@ -9,14 +9,10 @@ async function evalNonEmptyCountHandler(req, res) {
   }
   await dbConnect();
   try {
-    // Count Evals that have at least one non-empty value (not just processed/hasMatches)
+    // Count Evals that have a full evaluation (hasMatches: true and expertFeedback is not null)
     const count = await Eval.countDocuments({
-      $or: [
-        { 'sentenceMatchTrace.0': { $exists: true } },
-        { 'similarityScores.sentences.0': { $exists: true } },
-        { 'similarityScores.citation': { $ne: 0 } },
-        { expertFeedback: { $exists: true, $ne: null } }
-      ]
+      hasMatches: true,
+      expertFeedback: { $exists: true, $ne: null }
     });
     res.status(200).json({ count });
   } catch (error) {

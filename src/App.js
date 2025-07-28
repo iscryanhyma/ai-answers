@@ -13,6 +13,7 @@ import UsersPage from './pages/UsersPage.js';
 import EvalPage from './pages/EvalPage.js';
 import DatabasePage from './pages/DatabasePage.js';
 import SettingsPage from './pages/SettingsPage.js';
+import VectorPage from './pages/VectorPage.js';
 import { AuthProvider } from './contexts/AuthContext.js';
 import { AdminRoute, RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
@@ -119,7 +120,9 @@ export default function App() {
       { path: '/en/metrics', element: <AdminRoute lang="en"><MetricsPage lang="en" /></AdminRoute> },
       { path: '/fr/metrics', element: <AdminRoute lang="fr"><MetricsPage lang="fr" /></AdminRoute> },
       { path: '/en/settings', element: <AdminRoute lang="en"><SettingsPage lang="en" /></AdminRoute> },
-      { path: '/fr/settings', element: <AdminRoute lang="fr"><SettingsPage lang="fr" /></AdminRoute> }
+      { path: '/fr/settings', element: <AdminRoute lang="fr"><SettingsPage lang="fr" /></AdminRoute> },
+      { path: '/en/vector', element: <AdminRoute lang="en"><VectorPage lang="en" /></AdminRoute> },
+      { path: '/fr/vector', element: <AdminRoute lang="fr"><VectorPage lang="fr" /></AdminRoute> }
     ];
 
     return createBrowserRouter([

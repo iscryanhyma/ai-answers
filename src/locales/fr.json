@@ -288,10 +288,11 @@
       "users": "Gérer les comptes utilisateurs",
       "chatViewer": "Voir le journal complet pour un ID de chat",
       "database": "Gérer la base de données",
-      "eval": "Contrôler les intégrations d'évaluation",
+      "eval": "Administration des évaluations",
       "metrics": "Voir les métriques de performance",
       "publicEval": "Évaluation publique",
-      "logout": "Se déconnecter"
+      "logout": "Se déconnecter",
+      "vector": "Administration des vecteurs"
     },
     "filters": {
       "title": "Filtres - sélectionnez puis Appliquer pour voir",
@@ -428,6 +429,12 @@
       "cds": "CDS (travailleur en arrière-plan)",
       "vercel": "Vercel (attendre la fin de l'évaluation)"
     }
+    ,
+    "vectorServiceTypeLabel": "Type de service de vecteurs",
+    "vectorServiceType": {
+      "imvectordb": "IMVectorDB (local)",
+      "documentdb": "DocumentDB (AWS)"
+    }
   },
   "outage": {
     "title": "Service indisponible",
@@ -500,5 +507,27 @@
         "expertTotal": "Évaluations d'experts"
       }
     }
+  },
+  "vector": {
+    "title": "Administration des vecteurs",
+    "indexManagement": "Gestion des index de vecteurs",
+    "manageDescription": "Gérez les index de vecteurs et consultez les statistiques de la base de données de vecteurs.",
+    "loading": "Chargement...",
+    "fetchStats": "Afficher les statistiques des vecteurs",
+    "reinitializeIndex": "Réinitialiser l'index",
+    "createIndex": "Créer un index de vecteurs",
+    "embeddingManagement": "Gestion des embeddings",
+    "embeddingDescription": "Traitez les interactions pour générer des embeddings.",
+    "generateEmbeddings": "Générer les embeddings",
+    "regenerateEmbeddings": "Régénérer les embeddings",
+    "regenerating": "Régénération...",
+    "processing": "Traitement...",
+    "remaining": "Restant",
+    "autoProcessingActive": "Traitement automatique actif",
+    "similarChats": "Trouver des chats similaires",
+    "similarChatsDescription": "Trouvez des chats similaires à un ID de chat donné à l'aide de la similarité vectorielle.",
+    "chatIdPlaceholder": "Entrez l'ID du chat",
+    "getSimilarChats": "Obtenir les chats similaires",
+    "loadingSimilarChats": "Chargement des chats similaires..."
   }
 }
