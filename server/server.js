@@ -158,7 +158,7 @@ const PORT = process.env.PORT || 3001;
     console.log("Database connected");
 
     // Initialize VectorService using the factory method
-    try {
+    /*try {
       await initVectorService();
       console.log("Vector service initialized");
       if (VectorService && typeof VectorService.getStats === 'function') {
@@ -167,7 +167,7 @@ const PORT = process.env.PORT || 3001;
     } catch (vectorError) {
       console.error("Vector service initialization failed:", vectorError);
       // Optionally, set VectorService to null or a stub
-    }
+    }*/
     const memoryUsage = process.memoryUsage();
     console.log(`Total application memory usage (RSS): ${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`);
     app.listen(PORT, () => {
