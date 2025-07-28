@@ -1,5 +1,56 @@
 # Changelog
 
+## [1.15.0](https://github.com/cds-snc/ai-answers/compare/v1.14.1...v1.15.0) (2025-07-28)
+
+
+### Features
+
+* add getSetting and setSetting methods to DataStoreService for improved settings management ([cfd8c36](https://github.com/cds-snc/ai-answers/commit/cfd8c36a272a312020d8b4d05103f907fe541513))
+* add imvectordb dependency to package.json and package-lock.json ([5999766](https://github.com/cds-snc/ai-answers/commit/599976649b0309779b4a114462b928acb9b5ccc4))
+* add link to Vector Administration in AdminPage navigation ([783da5d](https://github.com/cds-snc/ai-answers/commit/783da5da5235f2c0c580fd90aade722d4c1e38f3))
+* add SimilarChatsDashboard component for fetching and displaying similar chats ([02857ae](https://github.com/cds-snc/ai-answers/commit/02857ae54090a77aeca3690e27d4c799460629fb))
+* add vector administration and service type options to localization files ([133080e](https://github.com/cds-snc/ai-answers/commit/133080eb21fc47e5bc02ee809ee1137cca15345c))
+* add vector page routes for English and French languages ([e2e0f0f](https://github.com/cds-snc/ai-answers/commit/e2e0f0fcce81c705f69235a043b96723c1116cab))
+* add vector reinitialize handler for reinitializing VectorService ([f0b3746](https://github.com/cds-snc/ai-answers/commit/f0b3746a8fae61222c0ed279636ea9b71155e30d))
+* add vector service type selection and update settings management ([2faa1c7](https://github.com/cds-snc/ai-answers/commit/2faa1c70705de06bf66e49a95a9975ae79b67687))
+* add vector stats API endpoint with protection middleware ([d6ee403](https://github.com/cds-snc/ai-answers/commit/d6ee403a76d15ce0b1c6be5104946e1e5606b3c0))
+* add VectorPage component for managing vector indexes and embeddings ([0182bdd](https://github.com/cds-snc/ai-answers/commit/0182bdd9655afafbf66fd11db5e43dd6275a7ec1))
+* enhance findSimilarChats method to use configurable similarity threshold ([3547ace](https://github.com/cds-snc/ai-answers/commit/3547ace7bcf7b3af31523b9fd34f124b55bc72a4))
+* enhance sentenceMatchTraceSchema for improved traceability and optional fields ([748d8b5](https://github.com/cds-snc/ai-answers/commit/748d8b5d376a05d214c68ea4b4913547f3d34d63))
+* implement DocDBVectorService for vector management and search functionality ([9f15c90](https://github.com/cds-snc/ai-answers/commit/9f15c90643d33eb282e8b6bfb07ed4b56978dc6b))
+* implement generateEvals and deleteEvals methods in EvaluationService for evaluation management ([207ee90](https://github.com/cds-snc/ai-answers/commit/207ee904b7acc9675aa58a7cb2de2d9a87bf4174))
+* implement getSiteStatus method in DataStoreService for fetching site availability ([e3865bd](https://github.com/cds-snc/ai-answers/commit/e3865bda5f7bdd214e0ca35c74ccd6642e201a74))
+* implement getSiteStatus method in DataStoreService for fetching… ([a181b70](https://github.com/cds-snc/ai-answers/commit/a181b701d7813a5add4446813b713586eaea8284))
+* implement IMVectorService with embedding management and search functionality ([622b457](https://github.com/cds-snc/ai-answers/commit/622b4579c7074d5a21dcadfd2dcfc192d898dd75))
+* implement QA high score fallback for evaluation and enhance embedding similarity search using VectorService ([0e06bdc](https://github.com/cds-snc/ai-answers/commit/0e06bdce7e1690e7a65b78774790edee4830381b))
+* implement similarChatsHandler for retrieving similar chats based on embeddings ([e8f2fe2](https://github.com/cds-snc/ai-answers/commit/e8f2fe242b66a9c222635168d65f0ca0b88b8afc))
+* implement VectorService for managing embeddings and interactions with validation and memory usage tracking ([db59d9d](https://github.com/cds-snc/ai-answers/commit/db59d9d1ce5b15d5f0c6c83e7577905fed6fc8f1))
+* implement VectorServiceFactory for initializing vector services ([8d3162c](https://github.com/cds-snc/ai-answers/commit/8d3162c3bb1d2d972e7d7b45fbc8fe620f21c230))
+* integrate vector service initialization and add new vector API endpoints ([596efe4](https://github.com/cds-snc/ai-answers/commit/596efe4c9149860ad503ea25b1917c77a76c252f))
+* integrate VectorService for embedding initialization and enhance server startup process ([e0cb01a](https://github.com/cds-snc/ai-answers/commit/e0cb01a6db111200d8e7eb98f33817741a9edb91))
+* refactor import of VectorService to use VectorServiceFactory ([67cac2b](https://github.com/cds-snc/ai-answers/commit/67cac2b8d875ccad6b03bcb16049a22759d9dea2))
+* refactor VectorService import to use VectorServiceFactory ([bac0c11](https://github.com/cds-snc/ai-answers/commit/bac0c1129c789af70827206f364078c97413afc2))
+* remove unused evaluation methods from DataStoreService ([af58c34](https://github.com/cds-snc/ai-answers/commit/af58c345701cef76c53762dd2270e0dcb1f51522))
+* remove VectorService implementation and related functionality ([8afa1ad](https://github.com/cds-snc/ai-answers/commit/8afa1ad2c7fee9e5a9806498b4edb72892029fd5))
+* update evalNonEmptyCountHandler to count full evaluations and integrate VectorService for expert feedback embeddings ([2365784](https://github.com/cds-snc/ai-answers/commit/2365784299c5e7a83a4ec9791d64a8b53f4b476b))
+* update evaluation and vector administration labels in localization files ([fc27314](https://github.com/cds-snc/ai-answers/commit/fc273147dfcdbbddf4d55373419159f0fe133d57))
+* update evaluation processing logic and adjust similarity thresholds in config ([5ce107b](https://github.com/cds-snc/ai-answers/commit/5ce107b7d9d74c02a87643ce937c6adb467a3069))
+* update findSimilarChats method to use configurable similarity threshold ([7c4c23c](https://github.com/cds-snc/ai-answers/commit/7c4c23cc3da6682839565310b415d9bf925eca60))
+* update navigation label in AdminPage and refine EvalPage by removing unused embedding logic ([db0b7bd](https://github.com/cds-snc/ai-answers/commit/db0b7bd14621840a3f934b1f3468afbd95cb30bd))
+* update site status fetching to use settings management ([852d498](https://github.com/cds-snc/ai-answers/commit/852d498878c6b34b0e94798aa8a796b3955ed048))
+
+
+### Bug Fixes
+
+* comment out vector service initialization for debugging purposes ([bf81762](https://github.com/cds-snc/ai-answers/commit/bf81762783dbb026ce0cfaf5d3285991e057eff4))
+* comment out vector service initialization for debugging purposes ([8e9d3d4](https://github.com/cds-snc/ai-answers/commit/8e9d3d43f5e5bb629386f251bec0ac24d5bc5ef5))
+* update envFile path in launch configuration to use root .env ([9014cce](https://github.com/cds-snc/ai-answers/commit/9014cce48a36ae3f6ccd5582c7304e58b94ee13e))
+
+
+### Code Refactoring
+
+* replace DataStoreService with EvaluationService for evaluation-related functions ([baadc1e](https://github.com/cds-snc/ai-answers/commit/baadc1e136e10d02bb4917c2705cb4da634e5cfa))
+
 ## [1.14.1](https://github.com/cds-snc/ai-answers/compare/v1.14.0...v1.14.1) (2025-07-22)
 
 
