@@ -9,17 +9,12 @@ import EvaluationService from '../services/EvaluationService.js';
 const EvalPage = () => {
   const { t } = useTranslations();
   const { language } = usePageContext();
-  const [embeddingProgress, setEmbeddingProgress] = useState(null);
   const [evalProgress, setEvalProgress] = useState(null);
-  const [isAutoProcessingEmbeddings, setIsAutoProcessingEmbeddings] = useState(false);
   const [isAutoProcessingEvals, setIsAutoProcessingEvals] = useState(false);
   const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
-  const [isRegeneratingEmbeddings] = useState(false);
-  const [isRequestInProgress, setIsRequestInProgress] = useState(false);
   const [isEvalRequestInProgress, setIsEvalRequestInProgress] = useState(false);
   const [expertFeedbackCount, setExpertFeedbackCount] = useState(null);
   const [nonEmptyEvalCount, setNonEmptyEvalCount] = useState(null);
-  // Add state for time range selectors
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
 
@@ -31,49 +26,6 @@ const EvalPage = () => {
       .then(setNonEmptyEvalCount)
       .catch(() => setNonEmptyEvalCount('Error'));
   }, []);
-
-  const handleGenerateEmbeddings = async (isAutoProcess = false, regenerateAll = false, lastId = null) => {
-    if (isRequestInProgress) {
-      return; // Skip if a request is already in progress
-    }
-
-    try {
-      setIsRequestInProgress(true);
-      if (!isAutoProcess) {
-        setIsAutoProcessingEmbeddings(true);
-      }
-
-      const result = await DataStoreService.generateEmbeddings({ lastProcessedId: lastId, regenerateAll });
-      // Only update progress if we got a valid response
-      if (typeof result.remaining === 'number') {
-        setEmbeddingProgress({
-          remaining: result.remaining,
-          lastProcessedId: result.lastProcessedId
-        });
-        // Only continue processing if there are actually items remaining
-        if (result.remaining > 0) {
-          handleGenerateEmbeddings(true, false, result.lastProcessedId);
-        } else {
-          setIsAutoProcessingEmbeddings(false);
-          if (!isAutoProcess) {
-            alert('All embeddings have been generated!');
-          }
-        }
-      } else {
-        // If we don't get a valid remaining count, stop processing
-        setIsAutoProcessingEmbeddings(false);
-        throw new Error('Invalid response format from server');
-      }
-    } catch (error) {
-      console.error('Error generating embeddings:', error);
-      if (!isAutoProcess) {
-        alert('Failed to generate embeddings. Check the console for details.');
-      }
-      setIsAutoProcessingEmbeddings(false);
-    } finally {
-      setIsRequestInProgress(false);
-    }
-  };
 
   const handleGenerateEvals = async (isAutoProcess = false, lastId = null) => {
     if (isEvalRequestInProgress) {
@@ -137,8 +89,6 @@ const EvalPage = () => {
     }
   };
 
-
-  // Delete evaluations in date range
   const handleDeleteEvals = async () => {
     const confirmed = window.confirm(
       'This will delete all evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?'
@@ -152,17 +102,6 @@ const EvalPage = () => {
     }
   };
 
-  const handleRegenerateEmbeddings = () => {
-    const confirmed = window.confirm(
-      'This will delete all existing embeddings and regenerate them from scratch. This operation cannot be undone. Are you sure you want to continue?'
-    );
-    
-    if (confirmed) {
-      handleGenerateEmbeddings(false, true, null);
-    }
-  };
-
-
   return (
     <GcdsContainer size="xl" centered>
       <h1>Evaluation Tools</h1>
@@ -174,7 +113,10 @@ const EvalPage = () => {
       </nav>
 
       <div className="mb-400">
-        <h2>Generate Embeddings</h2>
+        <h2>Similarity-Based Expert Feedback Transfer</h2>
+        <GcdsText>
+          This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.
+        </GcdsText>
         {expertFeedbackCount !== null && (
           <GcdsText>
             <strong>Expert Evaluations in System:</strong> {expertFeedbackCount}
@@ -185,47 +127,6 @@ const EvalPage = () => {
             <strong>Non-Empty Evaluations in System:</strong> {nonEmptyEvalCount}
           </GcdsText>
         )}
-        <GcdsText>
-          Process interactions to generate embeddings.
-        </GcdsText>
-        <div className="button-group">
-          <GcdsButton 
-            onClick={() => handleGenerateEmbeddings(false)}
-            disabled={embeddingProgress?.loading || isAutoProcessingEmbeddings}
-            className="mb-200 mr-200"
-          >
-            {embeddingProgress?.loading && !isAutoProcessingEmbeddings ? 'Processing...' : 'Generate Embeddings'}
-          </GcdsButton>
-          
-          <GcdsButton 
-            onClick={handleRegenerateEmbeddings}
-            disabled={embeddingProgress?.loading || isAutoProcessingEmbeddings}
-            variant="danger"
-            className="mb-200 mr-200"
-          >
-            {isRegeneratingEmbeddings ? 'Regenerating...' : 'Regenerate Embeddings'}
-          </GcdsButton>
-        </div>
-        
-        {embeddingProgress && (
-          <div className="mb-200">
-            <p>
-              {embeddingProgress.remaining !== undefined && (
-                <span> • Remaining: {embeddingProgress.remaining}</span>
-              )}
-              {isAutoProcessingEmbeddings && (
-                <span> • <strong>Auto-processing active</strong></span>
-              )}
-            </p>
-          </div>
-        )}
-      </div>
-      
-      <div className="mb-400">
-        <h2>Similarity-Based Expert Feedback Transfer</h2>
-        <GcdsText>
-          This approach automatically evaluates new interactions by finding similar expert-evaluated interactions and transferring feedback scores and explanations. If sentence-level matching fails, the system will fall back to using a highly similar question+answer match with a high expert score.
-        </GcdsText>
         <GcdsDetails detailsTitle="Detailed Evaluation Process" className="mt-400">
           <ol className="mb-200">
             <li><strong>Initial Validation:</strong> The system first validates that the interaction has question and answer content, then checks if an evaluation already exists.</li>
@@ -267,7 +168,6 @@ const EvalPage = () => {
           </ol>
         </GcdsDetails>
         <br/>
-        {/* Date range selectors above the button group */}
         <div style={{ display: "flex", gap: "1rem", margin: "1rem 0" }}>
           <label>
             Start Date:

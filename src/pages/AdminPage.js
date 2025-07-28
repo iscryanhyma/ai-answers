@@ -48,7 +48,7 @@ const AdminPage = ({ lang = 'en' }) => {
           </li>
           <li>
             <GcdsLink href={`/${lang}/eval`}>
-              {t('admin.navigation.eval', 'Evaluation Tools')}
+              {t('admin.navigation.eval', 'Evaluation Administration')}
             </GcdsLink>
           </li>
           <li>
