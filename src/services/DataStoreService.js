@@ -379,6 +379,18 @@ class DataStoreService {
       throw error;
     }
   }
+
+  static async getSiteStatus() {
+    try {
+      const response = await fetch(getApiUrl('db-public-site-status'));
+      if (!response.ok) throw new Error('Failed to fetch site status');
+      const data = await response.json();
+      return data.value;
+    } catch (error) {
+      console.error('Error fetching site status:', error);
+      return 'unavailable';
+    }
+  }
 }
 
 export default DataStoreService;
