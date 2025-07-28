@@ -56,7 +56,7 @@ const HomePage = ({ lang = 'en' }) => {
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
 
   useEffect(() => {
-    DataStoreService.getSetting('siteStatus', 'available').then(status => {
+    DataStoreService.getSiteStatus().then(status => {
       if (status === 'available') {
         setServiceStatus({ isAvailable: true, message: '' });
       } else if (status === 'unavailable') {
