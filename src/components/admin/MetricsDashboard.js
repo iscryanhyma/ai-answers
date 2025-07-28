@@ -118,9 +118,9 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const processMetrics = (logs) => {
     // Use a local Set to track unique chatIds
     const uniqueChatIds = new Set();
-    // Track unique chatIds by language
     const uniqueChatIdsEn = new Set();
     const uniqueChatIdsFr = new Set();
+
     // Initialize metrics object
     const metrics = {
       totalSessions: logs.length,
@@ -163,7 +163,19 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         hasError: { total: 0, en: 0, fr: 0 }
       },
       byDepartment: {},
-      publicFeedbackReasons: {},
+      publicFeedbackReasons: {
+        yes: {},
+        no: {},
+      },
+      publicFeedbackTotals: {
+        yes: 0,
+        no: 0,
+        totalQuestionsWithFeedback: 0,
+        enYes: 0,
+        enNo: 0,
+        frYes: 0,
+        frNo: 0,
+      },
       publicFeedbackScores: {},
       publicFeedbackReasonsByLang: { en: {}, fr: {} }
     };
@@ -252,47 +264,56 @@ const MetricsDashboard = ({ lang = 'en' }) => {
           
           metrics.byDepartment[department].expertScored.total++;
           
-          if (interaction.expertFeedback.sentence1Rating === 'good' || 
-              interaction.expertFeedback.sentence2Rating === 'good' || 
-              interaction.expertFeedback.sentence3Rating === 'good' || 
-              interaction.expertFeedback.sentence4Rating === 'good' || 
-              interaction.expertFeedback.citationRating === 'good') {
-            metrics.expertScored.correct.total++;
-            if (pageLanguage === 'en') metrics.expertScored.correct.en++;
-            if (pageLanguage === 'fr') metrics.expertScored.correct.fr++;
-            metrics.byDepartment[department].expertScored.correct++;
+          // Update expert feedback calculations
+          const feedbackFields = [
+            { score: interaction.expertFeedback.sentence1Score, harmful: interaction.expertFeedback.sentence1Harmful },
+            { score: interaction.expertFeedback.sentence2Score, harmful: interaction.expertFeedback.sentence2Harmful },
+            { score: interaction.expertFeedback.sentence3Score, harmful: interaction.expertFeedback.sentence3Harmful },
+            { score: interaction.expertFeedback.sentence4Score, harmful: interaction.expertFeedback.sentence4Harmful },
+          ];
+
+          let highestCategory = null;
+          feedbackFields.forEach(({ score, harmful }) => {
+            if (harmful) {
+              highestCategory = 'harmful';
+            } else if (score === 0 && highestCategory !== 'harmful') {
+              highestCategory = 'hasError';
+            } else if (score === 80 && highestCategory !== 'harmful' && highestCategory !== 'hasError') {
+              highestCategory = 'needsImprovement';
+            }
+          });
+
+          // Include citationScore in the evaluation
+          if (interaction.expertFeedback.citationScore !== null) {
+            const citationScore = interaction.expertFeedback.citationScore;
+            if (citationScore === 0) {
+              highestCategory = 'hasError';
+            } else if (citationScore === 20 && highestCategory !== 'hasError') {
+              highestCategory = 'needsImprovement';
+            } else if (citationScore === 25 && highestCategory === null) {
+              highestCategory = 'correct';
+            }
           }
-          
-          if (interaction.expertFeedback.sentence1Rating === 'needs-improvement' || 
-              interaction.expertFeedback.sentence2Rating === 'needs-improvement' || 
-              interaction.expertFeedback.sentence3Rating === 'needs-improvement' || 
-              interaction.expertFeedback.sentence4Rating === 'needs-improvement' || 
-              interaction.expertFeedback.citationRating === 'needs-improvement') {
-            metrics.expertScored.needsImprovement.total++;
-            if (pageLanguage === 'en') metrics.expertScored.needsImprovement.en++;
-            if (pageLanguage === 'fr') metrics.expertScored.needsImprovement.fr++;
-            metrics.byDepartment[department].expertScored.needsImprovement++;
-          }
-          
-          if (interaction.expertFeedback.sentence1Rating === 'incorrect' || 
-              interaction.expertFeedback.sentence2Rating === 'incorrect' || 
-              interaction.expertFeedback.sentence3Rating === 'incorrect' || 
-              interaction.expertFeedback.sentence4Rating === 'incorrect' || 
-              interaction.expertFeedback.citationRating === 'incorrect') {
+
+          if (highestCategory === 'harmful') {
+            metrics.expertScored.harmful.total++;
+            if (pageLanguage === 'en') metrics.expertScored.harmful.en++;
+            if (pageLanguage === 'fr') metrics.expertScored.harmful.fr++;
+          } else if (highestCategory === 'hasError') {
             metrics.expertScored.hasError.total++;
             if (pageLanguage === 'en') metrics.expertScored.hasError.en++;
             if (pageLanguage === 'fr') metrics.expertScored.hasError.fr++;
             metrics.byDepartment[department].expertScored.hasError++;
-          }
-          
-          if (interaction.expertFeedback.sentence1Rating === 'harmful' || 
-              interaction.expertFeedback.sentence2Rating === 'harmful' || 
-              interaction.expertFeedback.sentence3Rating === 'harmful' || 
-              interaction.expertFeedback.sentence4Rating === 'harmful' || 
-              interaction.expertFeedback.citationRating === 'harmful') {
-            metrics.expertScored.harmful.total++;
-            if (pageLanguage === 'en') metrics.expertScored.harmful.en++;
-            if (pageLanguage === 'fr') metrics.expertScored.harmful.fr++;
+          } else if (highestCategory === 'needsImprovement') {
+            metrics.expertScored.needsImprovement.total++;
+            if (pageLanguage === 'en') metrics.expertScored.needsImprovement.en++;
+            if (pageLanguage === 'fr') metrics.expertScored.needsImprovement.fr++;
+            metrics.byDepartment[department].expertScored.needsImprovement++;
+          } else {
+            metrics.expertScored.correct.total++;
+            if (pageLanguage === 'en') metrics.expertScored.correct.en++;
+            if (pageLanguage === 'fr') metrics.expertScored.correct.fr++;
+            metrics.byDepartment[department].expertScored.correct++;
           }
         }
         
@@ -318,48 +339,90 @@ const MetricsDashboard = ({ lang = 'en' }) => {
         }
         
         // Process AI self-assessment
-        if (interaction.aiFeedback) {
+        if (interaction.autoEval?.expertFeedback) {
           metrics.aiScored.total.total++;
           if (pageLanguage === 'en') metrics.aiScored.total.en++;
           if (pageLanguage === 'fr') metrics.aiScored.total.fr++;
-          
-          if (interaction.aiFeedback.rating === 'correct') {
-            metrics.aiScored.correct.total++;
-            if (pageLanguage === 'en') metrics.aiScored.correct.en++;
-            if (pageLanguage === 'fr') metrics.aiScored.correct.fr++;
-          } else if (interaction.aiFeedback.rating === 'needs-improvement') {
-            metrics.aiScored.needsImprovement.total++;
-            if (pageLanguage === 'en') metrics.aiScored.needsImprovement.en++;
-            if (pageLanguage === 'fr') metrics.aiScored.needsImprovement.fr++;
-          } else if (interaction.aiFeedback.rating === 'incorrect') {
+
+          const feedbackFields = [
+            { score: interaction.autoEval.expertFeedback.sentence1Score, harmful: interaction.autoEval.expertFeedback.sentence1Harmful },
+            { score: interaction.autoEval.expertFeedback.sentence2Score, harmful: interaction.autoEval.expertFeedback.sentence2Harmful },
+            { score: interaction.autoEval.expertFeedback.sentence3Score, harmful: interaction.autoEval.expertFeedback.sentence3Harmful },
+            { score: interaction.autoEval.expertFeedback.sentence4Score, harmful: interaction.autoEval.expertFeedback.sentence4Harmful },
+          ];
+
+          // Update AI scoring logic to match expert feedback scoring
+          let highestCategory = null;
+          feedbackFields.forEach(({ score, harmful }) => {
+            if (harmful) {
+              highestCategory = 'harmful';
+            } else if (score === 0 && highestCategory !== 'harmful') {
+              highestCategory = 'hasError';
+            } else if (score === 80 && highestCategory !== 'harmful' && highestCategory !== 'hasError') {
+              highestCategory = 'needsImprovement';
+            }
+          });
+
+          // Include citationScore in the evaluation
+          if (interaction.autoEval.expertFeedback.citationScore !== null) {
+            const citationScore = interaction.autoEval.expertFeedback.citationScore;
+            if (citationScore === 0) {
+              highestCategory = 'hasError';
+            } else if (citationScore === 20 && highestCategory !== 'hasError') {
+              highestCategory = 'needsImprovement';
+            } else if (citationScore === 25 && highestCategory === null) {
+              highestCategory = 'correct';
+            }
+          }
+
+          if (highestCategory === 'harmful') {
+            metrics.aiScored.harmful.total++;
+            if (pageLanguage === 'en') metrics.aiScored.harmful.en++;
+            if (pageLanguage === 'fr') metrics.aiScored.harmful.fr++;
+          } else if (highestCategory === 'hasError') {
             metrics.aiScored.hasError.total++;
             if (pageLanguage === 'en') metrics.aiScored.hasError.en++;
             if (pageLanguage === 'fr') metrics.aiScored.hasError.fr++;
+          } else if (highestCategory === 'needsImprovement') {
+            metrics.aiScored.needsImprovement.total++;
+            if (pageLanguage === 'en') metrics.aiScored.needsImprovement.en++;
+            if (pageLanguage === 'fr') metrics.aiScored.needsImprovement.fr++;
+          } else {
+            metrics.aiScored.correct.total++;
+            if (pageLanguage === 'en') metrics.aiScored.correct.en++;
+            if (pageLanguage === 'fr') metrics.aiScored.correct.fr++;
           }
         }
         
         // Process public feedback
         if (interaction.publicFeedback) {
-          const reason = interaction.publicFeedback.reason || 'other';
-          const score = interaction.publicFeedback.score || 'neutral';
-          
-          // Count by reason
-          if (!metrics.publicFeedbackReasons[reason]) {
-            metrics.publicFeedbackReasons[reason] = 0;
+          const feedbackType = interaction.publicFeedback.feedback === 'yes' ? 'yes' : 'no';
+          const reason = interaction.publicFeedback.publicFeedbackReason || 'other';
+
+          // Count by reason and feedback type
+          if (!metrics.publicFeedbackReasons[feedbackType][reason]) {
+            metrics.publicFeedbackReasons[feedbackType][reason] = 0;
           }
-          metrics.publicFeedbackReasons[reason]++;
-          
-          // Count by score
-          if (!metrics.publicFeedbackScores[score]) {
-            metrics.publicFeedbackScores[score] = 0;
+          metrics.publicFeedbackReasons[feedbackType][reason]++;
+
+          // Increment totals
+          metrics.publicFeedbackTotals[feedbackType]++;
+          metrics.publicFeedbackTotals.totalQuestionsWithFeedback++;
+
+          // Increment language-specific yes/no counts
+          if (chat.pageLanguage === 'en') {
+            if (feedbackType === 'yes') {
+              metrics.publicFeedbackTotals.enYes++;
+            } else {
+              metrics.publicFeedbackTotals.enNo++;
+            }
+          } else if (chat.pageLanguage === 'fr') {
+            if (feedbackType === 'yes') {
+              metrics.publicFeedbackTotals.frYes++;
+            } else {
+              metrics.publicFeedbackTotals.frNo++;
+            }
           }
-          metrics.publicFeedbackScores[score]++;
-          
-          // Count by reason and language
-          if (!metrics.publicFeedbackReasonsByLang[pageLanguage][reason]) {
-            metrics.publicFeedbackReasonsByLang[pageLanguage][reason] = 0;
-          }
-          metrics.publicFeedbackReasonsByLang[pageLanguage][reason]++;
         }
       });
     });
