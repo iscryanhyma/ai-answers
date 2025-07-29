@@ -361,7 +361,8 @@
       "interactionsFound": "chats. Téléchargez les journaux pour voir l'ensemble complet et les détails.",
       "date": "Date",
       "chatId": "ID de chat",
-      "interactions": "Interactions"
+      "interactions": "Interactions",
+      "loadingRecordsLeft": "Chargement des journaux : {recordsLeft} enregistrements restants à charger ({totalCount} enregistrements au total)"
     }
   },
   "signup": {

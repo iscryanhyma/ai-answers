@@ -19,6 +19,7 @@ async function chatLogsHandler(req, res) {
       days, startDate, endDate,
       filterType, presetValue,
       department, referringUrl,
+      limit = 100, lastId
     } = req.query;
 
 
@@ -26,6 +27,12 @@ async function chatLogsHandler(req, res) {
     if (startDate && endDate) {
       dateFilter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
     }
+
+    if (lastId && lastId !== 'null' && lastId !== null) {
+      dateFilter._id = { $gt: lastId };
+    }
+
+    const totalCount = await Chat.countDocuments(dateFilter);
 
     const chatPopulate = [
       { path: 'user', select: 'email' },
@@ -196,13 +203,16 @@ async function chatLogsHandler(req, res) {
     } else {
       let query = Chat.find(dateFilter)
         .populate(chatPopulate)
-        .sort({ createdAt: -1 });
+        .sort({ _id: 1 }) // Ensure consistent ordering for pagination
+        .limit(Number(limit));
       chats = await query;
     }
 
-    const response = { 
-      success: true, 
-      logs: chats
+    const response = {
+      success: true,
+      logs: chats,
+      lastId: chats.length ? chats[chats.length - 1]._id.toString() : null,
+      totalCount
     };
     return res.status(200).json(response);
 

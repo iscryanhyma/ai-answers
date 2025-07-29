@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
 import '../../styles/App.css';
-import DataStoreService from '../../services/DataStoreService.js';
+import MetricsService from '../../services/MetricsService.js';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import ExportService from '../../services/ExportService.js';
@@ -16,23 +16,36 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   const [loading, setLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [progress, setProgress] = useState('0%');
+  const [totalCount, setTotalCount] = useState(0);
 
-
-  const fetchLogs = async (filters = null) => {
+  const fetchLogs = async (filters = null, append = false) => {
     setLoading(true);
+    if (!append) {
+      setLogs([]); // Clear previous logs
+      setProgress('0%'); // Reset progress
+      setTotalCount(0); // Reset total count
+      setHasLoadedData(false); // Reset loaded state
+    }
+
+    let lastId = append && logs.length ? logs[logs.length - 1]._id : null;
+    const limit = 100;
     try {
       console.log('Fetching logs with params:', filters);
-      const data = await DataStoreService.getChatLogs(filters || {});
-      console.log('API response:', data);
-      if (data.success) {
-        const logsData = data.logs || [];
-        setLogs(logsData);
-        setHasLoadedData(true);
-        console.log('Set logs:', logsData);
-      } else {
-        console.error('API returned error:', data.error);
-        alert(data.error || 'Failed to fetch logs');
-      }
+      do {
+        const data = await MetricsService.getChatLogs(filters, limit, lastId);
+        console.log('API response:', data);
+        if (data.success) {
+          const logsData = data.logs || [];
+          setLogs((prevLogs) => append ? [...prevLogs, ...logsData] : [...prevLogs, ...logsData]);
+          setProgress(data.progress || '0%');
+          setTotalCount(data.totalCount || 0);
+          lastId = data.lastId; // Update lastId for the next iteration
+        } else {
+          throw new Error(data.error || 'Failed to fetch logs');
+        }
+      } while (lastId);
+      setHasLoadedData(true); // Only show download interface after all chunks are loaded
     } catch (error) {
       console.error('Error fetching logs:', error);
       alert(`Failed to fetch logs: ${error.message}`);
@@ -46,7 +59,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   };
 
   const handleApplyFilters = (filters) => {
-    fetchLogs(filters);
+    fetchLogs(filters, false); // Start fetching logs
   };
 
   const handleClearFilters = () => {
@@ -85,6 +98,11 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
 
   return (
     <div className="space-y-6">
+      {loading && (
+        <div className="loading-indicator">
+          Loading logs: {totalCount} records left to load
+        </div>
+      )}
       {!hasLoadedData && (
         <div className="bg-white shadow rounded-lg p-4">
           <GcdsButton
@@ -105,7 +123,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         />
       )}
 
-      {logs.length > 0 && (
+      {logs.length > 0 && hasLoadedData && (
         <div className="flex items-center gap-4 flex-wrap">
           <div className="mrgn-tp-1r">
             {t('admin.chatLogs.found')} {logs.length} {t('admin.chatLogs.interactionsFound')}
