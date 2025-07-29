@@ -14,6 +14,7 @@ class DocDBVectorService {
   constructor() {
     ServerLoggingService.debug('Constructor: creating DocDBVectorService instance', 'vector-service');
     this.isInitialized = false;
+    this.initializingPromise = null; // Guard for concurrent initialization
     this.collection = null;
     this.stats = {
       searches: 0,
@@ -105,89 +106,96 @@ class DocDBVectorService {
       ServerLoggingService.info('initialize: already initialized, skipping', 'vector-service');
       return;
     }
+    if (this.initializingPromise) return this.initializingPromise;
 
-    ServerLoggingService.info('Initializing DocDBVectorService...', 'vector-service');
-    await dbConnect();
-    ServerLoggingService.debug('Database connected', 'vector-service');
+    this.initializingPromise = (async () => {
+      ServerLoggingService.info('Initializing DocDBVectorService...', 'vector-service');
+      await dbConnect();
+      ServerLoggingService.debug('Database connected', 'vector-service');
 
-    this.collection = mongoose.connection.collection('embeddings');
-    ServerLoggingService.debug('Obtained collection reference', 'vector-service');
+      this.collection = mongoose.connection.collection('embeddings');
+      ServerLoggingService.debug('Obtained collection reference', 'vector-service');
 
-    // Infer embedding dimensionality from a sample doc
-    ServerLoggingService.debug('Finding sample embedding document', 'vector-service');
-    const sample = await Embedding.findOne({ questionsAnswerEmbedding: { $exists: true } }).lean();
-    if (!sample) {
-      ServerLoggingService.error('initialize: no sample embedding found', 'vector-service');
-      throw new Error('No embeddings found to infer dimension');
-    }
-    const dim = sample.questionsAnswerEmbedding.length;
-    ServerLoggingService.info(`Inferred embedding dimensionality: ${dim}`, 'vector-service');
+      // Infer embedding dimensionality from a sample doc
+      ServerLoggingService.debug('Finding sample embedding document', 'vector-service');
+      const sample = await Embedding.findOne({ questionsAnswerEmbedding: { $exists: true } }).lean();
+      if (!sample) {
+        ServerLoggingService.error('initialize: no sample embedding found', 'vector-service');
+        this.initializingPromise = null;
+        throw new Error('No embeddings found to infer dimension');
+      }
+      const dim = sample.questionsAnswerEmbedding.length;
+      ServerLoggingService.info(`Inferred embedding dimensionality: ${dim}`, 'vector-service');
 
-    // Ensure indexes
-    const qaOptions = { type: 'hnsw', similarity: 'cosine', dimensions: dim, m: 16, efConstruction: 64 };
-    await this._ensureIndex('qa_vector_index', { questionsAnswerEmbedding: 'vector' }, qaOptions);
+      // Ensure indexes
+      const qaOptions = { type: 'hnsw', similarity: 'cosine', dimensions: dim, m: 16, efConstruction: 64 };
+      await this._ensureIndex('qa_vector_index', { questionsAnswerEmbedding: 'vector' }, qaOptions);
 
-    const sentOptions = { type: 'hnsw', similarity: 'cosine', dimensions: dim, m: 16, efConstruction: 64 };
-    await this._ensureIndex('sentence_vector_index', { sentenceEmbeddings: 'vector' }, sentOptions);
+      const sentOptions = { type: 'hnsw', similarity: 'cosine', dimensions: dim, m: 16, efConstruction: 64 };
+      await this._ensureIndex('sentence_vector_index', { sentenceEmbeddings: 'vector' }, sentOptions);
 
-    // Collect statistics counts
-    const query = {
-      questionsAnswerEmbedding: { $exists: true, $ne: null },
-      sentenceEmbeddings: { $exists: true, $not: { $size: 0 } }
-    };
-    ServerLoggingService.debug('Counting QA embeddings', 'vector-service', { query });
-    this.stats.embeddings = await Embedding.countDocuments(query);
-    ServerLoggingService.info(`QA embeddings count: ${this.stats.embeddings}`, 'vector-service');
-
-    ServerLoggingService.debug('Counting sentence embeddings total', 'vector-service');
-    this.stats.sentences = await Embedding.aggregate([
-      { $match: query },
-      { $group: { _id: null, total: { $sum: { $size: '$sentenceEmbeddings' } } } }
-    ]).then(r => r[0]?.total || 0);
-    ServerLoggingService.info(`Sentence embeddings count: ${this.stats.sentences}`, 'vector-service');
-
-    this.stats.lastInitTime = new Date();
-    ServerLoggingService.debug('Stats lastInitTime set', 'vector-service', { lastInitTime: this.stats.lastInitTime });
-
-    // Load metadata
-    ServerLoggingService.debug('Loading metadata docs', 'vector-service');
-    const metaDocs = await Embedding.find(query)
-      .select('_id interactionId chatId questionId answerId createdAt sentenceEmbeddings')
-      .lean();
-    ServerLoggingService.debug(`Retrieved ${metaDocs.length} metadata docs`, 'vector-service');
-
-    metaDocs.forEach(doc => {
-      const idStr = doc._id.toString();
-      const qaMeta = {
-        interactionId: doc.interactionId.toString(),
-        chatId: doc.chatId.toString(),
-        questionId: doc.questionId.toString(),
-        answerId: doc.answerId.toString(),
-        createdAt: doc.createdAt
+      // Collect statistics counts
+      const query = {
+        questionsAnswerEmbedding: { $exists: true, $ne: null },
+        sentenceEmbeddings: { $exists: true, $not: { $size: 0 } }
       };
-      this.embeddingMetadatas.set(idStr, qaMeta);
-      ServerLoggingService.debug('Stored QA metadata', 'vector-service', { idStr, qaMeta });
+      ServerLoggingService.debug('Counting QA embeddings', 'vector-service', { query });
+      this.stats.embeddings = await Embedding.countDocuments(query);
+      ServerLoggingService.info(`QA embeddings count: ${this.stats.embeddings}`, 'vector-service');
 
-      doc.sentenceEmbeddings.forEach((_, idx) => {
-        const sentId = `${idStr}:${idx}`;
-        const sentMeta = {
+      ServerLoggingService.debug('Counting sentence embeddings total', 'vector-service');
+      this.stats.sentences = await Embedding.aggregate([
+        { $match: query },
+        { $group: { _id: null, total: { $sum: { $size: '$sentenceEmbeddings' } } } }
+      ]).then(r => r[0]?.total || 0);
+      ServerLoggingService.info(`Sentence embeddings count: ${this.stats.sentences}`, 'vector-service');
+
+      this.stats.lastInitTime = new Date();
+      ServerLoggingService.debug('Stats lastInitTime set', 'vector-service', { lastInitTime: this.stats.lastInitTime });
+
+      // Load metadata
+      ServerLoggingService.debug('Loading metadata docs', 'vector-service');
+      const metaDocs = await Embedding.find(query)
+        .select('_id interactionId chatId questionId answerId createdAt sentenceEmbeddings')
+        .lean();
+      ServerLoggingService.debug(`Retrieved ${metaDocs.length} metadata docs`, 'vector-service');
+
+      metaDocs.forEach(doc => {
+        const idStr = doc._id.toString();
+        const qaMeta = {
           interactionId: doc.interactionId.toString(),
           chatId: doc.chatId.toString(),
           questionId: doc.questionId.toString(),
           answerId: doc.answerId.toString(),
-          createdAt: doc.createdAt,
-          sentenceIndex: idx
+          createdAt: doc.createdAt
         };
-        this.sentenceMetadatas.set(sentId, sentMeta);
-        ServerLoggingService.debug('Stored sentence metadata', 'vector-service', { sentId, sentMeta });
-      });
-    });
+        this.embeddingMetadatas.set(idStr, qaMeta);
+        ServerLoggingService.debug('Stored QA metadata', 'vector-service', { idStr, qaMeta });
 
-    this.isInitialized = true;
-    ServerLoggingService.info(
-      `DocDBVectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors.`,
-      'vector-service'
-    );
+        doc.sentenceEmbeddings.forEach((_, idx) => {
+          const sentId = `${idStr}:${idx}`;
+          const sentMeta = {
+            interactionId: doc.interactionId.toString(),
+            chatId: doc.chatId.toString(),
+            questionId: doc.questionId.toString(),
+            answerId: doc.answerId.toString(),
+            createdAt: doc.createdAt,
+            sentenceIndex: idx
+          };
+          this.sentenceMetadatas.set(sentId, sentMeta);
+          ServerLoggingService.debug('Stored sentence metadata', 'vector-service', { sentId, sentMeta });
+        });
+      });
+
+      this.isInitialized = true;
+      this.initializingPromise = null;
+      ServerLoggingService.info(
+        `DocDBVectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors.`,
+        'vector-service'
+      );
+    })();
+
+    return this.initializingPromise;
   }
 
   /**
