@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.19.0](https://github.com/cds-snc/ai-answers/compare/v1.18.0...v1.19.0) (2025-07-29)
+
+
+### Features
+
+* Increase log fetch limit to 500 and add 'harmful' metric tracking ([3591566](https://github.com/cds-snc/ai-answers/commit/3591566a63b0fea55e6e1039ce4b34e8665ce85f))
+
 ## [1.18.0](https://github.com/cds-snc/ai-answers/compare/v1.17.0...v1.18.0) (2025-07-29)
 
 
