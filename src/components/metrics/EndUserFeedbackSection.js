@@ -33,30 +33,30 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
           data={[
             {
               metric: t('metrics.dashboard.userScored.total'),
-              count: metrics.userScored.total.total,
+              count: metrics.publicFeedbackTotals.totalQuestionsWithFeedback,
               percentage: '100%',
-              enCount: metrics.userScored.total.en,
-              enPercentage: metrics.userScored.total.total ? Math.round((metrics.userScored.total.en / metrics.userScored.total.total) * 100) + '%' : '0%',
-              frCount: metrics.userScored.total.fr,
-              frPercentage: metrics.userScored.total.total ? Math.round((metrics.userScored.total.fr / metrics.userScored.total.total) * 100) + '%' : '0%'
+              enCount: metrics.publicFeedbackTotals.enYes + metrics.publicFeedbackTotals.enNo,
+              enPercentage: '100%',
+              frCount: metrics.publicFeedbackTotals.frYes + metrics.publicFeedbackTotals.frNo,
+              frPercentage: '100%'
             },
             {
               metric: t('metrics.dashboard.userScored.helpful'),
-              count: metrics.userScored.helpful.total,
-              percentage: metrics.userScored.total.total ? Math.round((metrics.userScored.helpful.total / metrics.userScored.total.total) * 100) + '%' : '0%',
-              enCount: metrics.userScored.helpful.en,
-              enPercentage: metrics.userScored.total.total ? Math.round((metrics.userScored.helpful.en / metrics.userScored.total.total) * 100) + '%' : '0%',
-              frCount: metrics.userScored.helpful.fr,
-              frPercentage: metrics.userScored.total.total ? Math.round((metrics.userScored.helpful.fr / metrics.userScored.total.total) * 100) + '%' : '0%'
+              count: metrics.publicFeedbackTotals.yes,
+              percentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.yes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
+              enCount: metrics.publicFeedbackTotals.enYes,
+              enPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.enYes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
+              frCount: metrics.publicFeedbackTotals.frYes,
+              frPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.frYes / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%'
             },
             {
               metric: t('metrics.dashboard.userScored.unhelpful'),
-              count: metrics.userScored.unhelpful.total,
-              percentage: metrics.userScored.total.total ? Math.round((metrics.userScored.unhelpful.total / metrics.userScored.total.total) * 100) + '%' : '0%',
-              enCount: metrics.userScored.unhelpful.en,
-              enPercentage: metrics.userScored.total.total ? Math.round((metrics.userScored.unhelpful.en / metrics.userScored.total.total) * 100) + '%' : '0%',
-              frCount: metrics.userScored.unhelpful.fr,
-              frPercentage: metrics.userScored.total.total ? Math.round((metrics.userScored.unhelpful.fr / metrics.userScored.total.total) * 100) + '%' : '0%'
+              count: metrics.publicFeedbackTotals.no,
+              percentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.no / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
+              enCount: metrics.publicFeedbackTotals.enNo,
+              enPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.enNo / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%',
+              frCount: metrics.publicFeedbackTotals.frNo,
+              frPercentage: metrics.publicFeedbackTotals.totalQuestionsWithFeedback ? Math.round((metrics.publicFeedbackTotals.frNo / metrics.publicFeedbackTotals.totalQuestionsWithFeedback) * 100) + '%' : '0%'
             }
           ]}
           columns={[
