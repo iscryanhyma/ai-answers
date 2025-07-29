@@ -177,22 +177,9 @@ class DataStoreService {
     }
   }
 
-  static async getChatLogs(filters = {}) {
-    try {
-      const queryParams = new URLSearchParams(filters).toString();
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-chat-logs?${queryParams}`));
-      if (!response.ok) throw new Error('Failed to get chat logs');
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting chat logs:', error);
-      throw error;
-    }
-  }
-
   static async getLogs(chatId) {
     try {
       const response = await AuthService.fetchWithAuth(getApiUrl(`db-log?chatId=${chatId}`));
-      
       if (!response.ok) throw new Error('Failed to get logs');
       return await response.json();
     } catch (error) {

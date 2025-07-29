@@ -1,11 +1,13 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/apiToUrl.js';
-import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@cdssnc/gcds-components-react';
 import AuthService from '../services/AuthService.js';
 import DataStoreService from '../services/DataStoreService.js';
 import streamSaver from 'streamsaver';
+import { useTranslations } from '../hooks/useTranslations.js';
 
 const DatabasePage = ({ lang }) => {
+  const { t } = useTranslations(lang);
   const [isExporting, setIsExporting] = useState(false);
   const [collections, setCollections] = useState([]);
   const [selectedCollection, setSelectedCollection] = useState('All');
@@ -392,6 +394,11 @@ const DatabasePage = ({ lang }) => {
   return (
     <GcdsContainer  size="xl" centered>
       <GcdsHeading tag="h1">Database Management</GcdsHeading>
+      <nav className="mb-400">
+        <GcdsLink href={`/${lang}/admin`}>
+          {t('common.backToAdmin', 'Back to Admin')}
+        </GcdsLink>
+      </nav>
       {/* Table counts display */}
       <div style={{ marginBottom: 24 }}>
         <GcdsHeading tag="h2">{lang === 'en' ? 'Table Record Counts' : 'Nombre d\'enregistrements par table'}</GcdsHeading>

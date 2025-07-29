@@ -1,14 +1,13 @@
 import React, { useState } from 'react';
 import { GcdsButton, GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
 import '../../styles/App.css';
-import DataStoreService from '../../services/DataStoreService.js';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
-import ExportService from '../../services/ExportService.js';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import EndUserFeedbackSection from '../metrics/EndUserFeedbackSection.js';
 import FilterPanel from './FilterPanel.js';
+import MetricsService from '../../services/MetricsService.js';
 
 DataTable.use(DT);
 
@@ -18,47 +17,44 @@ const MetricsDashboard = ({ lang = 'en' }) => {
   const [loading, setLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
-
+  const [currentFilters, setCurrentFilters] = useState(null);
+  const [totalCount, setTotalCount] = useState(0);
 
   const fetchMetrics = async (filters = null) => {
     setLoading(true);
+    setMetrics([]);
+    setTotalCount(0);
+    let allLogs = [];
+    let lastId = null;
+    const limit = 100;
     try {
-      const data = await DataStoreService.getChatLogs(filters || {});
-      if (data.success) {
-        // Process the logs to calculate metrics
-        const logsData = data.logs || [];
-        const processedMetrics = processMetrics(logsData);
-        setMetrics(processedMetrics);
-        setHasLoadedData(true);
-        // Only show filter panel if we have data or if this is a subsequent filter request
-        if (logsData.length > 0 || filters) {
-          setShowFilterPanel(true);
+      do {
+        const data = await MetricsService.getChatLogs(filters || {}, limit, lastId);
+        if (data.success) {
+          const logsChunk = data.logs || [];
+          allLogs = allLogs.concat(logsChunk);
+          setTotalCount(allLogs.length);
+          lastId = data.lastId || null; 
+        } else {
+          throw new Error(data.error || 'Failed to fetch metrics');
         }
-      } else {
-        console.error('API returned error:', data.error);
-        alert(data.error || 'Failed to fetch metrics');
-        // Don't show filter panel on error
-        setShowFilterPanel(false);
-      }
+      } while (lastId);
+      const metricsResult = MetricsService.calculateMetrics(allLogs);
+      setMetrics(metricsResult || []);
+      setHasLoadedData(true);
     } catch (error) {
       console.error('Error fetching metrics:', error);
       alert(`Failed to fetch metrics: ${error.message}`);
-      // Don't show filter panel on error
-      setShowFilterPanel(false);
     }
     setLoading(false);
   };
 
   const handleGetMetrics = () => {
-    const today = new Date();
-    const todayFilters = {
-      startDate: today,
-      endDate: today
-    };
-    fetchMetrics(todayFilters);
+    setShowFilterPanel(true);
   };
 
   const handleApplyFilters = (filters) => {
+    setCurrentFilters(filters);
     fetchMetrics(filters);
   };
 
@@ -68,355 +64,17 @@ const MetricsDashboard = ({ lang = 'en' }) => {
       startDate: today,
       endDate: today
     };
+    setCurrentFilters(todayFilters);
     fetchMetrics(todayFilters);
-  };
-
-  const processMetrics = (logs) => {
-    // Use a local Set to track unique chatIds
-    const uniqueChatIds = new Set();
-    const uniqueChatIdsEn = new Set();
-    const uniqueChatIdsFr = new Set();
-
-    // Initialize metrics object
-    const metrics = {
-      totalSessions: logs.length,
-      totalQuestions: 0,
-      totalQuestionsEn: 0,
-      totalQuestionsFr: 0,
-      totalConversations: 0,
-      totalConversationsEn: 0,
-      totalConversationsFr: 0,
-      totalOutputTokens: 0,
-      totalOutputTokensEn: 0,
-      totalOutputTokensFr: 0,
-      sessionsByQuestionCount: {
-        singleQuestion: { total: 0, en: 0, fr: 0 },
-        twoQuestions: { total: 0, en: 0, fr: 0 },
-        threeQuestions: { total: 0, en: 0, fr: 0 }
-      },
-      answerTypes: {
-        normal: { total: 0, en: 0, fr: 0 },
-        'clarifying-question': { total: 0, en: 0, fr: 0 },
-        'pt-muni': { total: 0, en: 0, fr: 0 },
-        'not-gc': { total: 0, en: 0, fr: 0 }
-      },
-      expertScored: {
-        total: { total: 0, en: 0, fr: 0 },
-        correct: { total: 0, en: 0, fr: 0 },
-        needsImprovement: { total: 0, en: 0, fr: 0 },
-        hasError: { total: 0, en: 0, fr: 0 },
-        harmful: { total: 0, en: 0, fr: 0 }
-      },
-      userScored: {
-        total: { total: 0, en: 0, fr: 0 },
-        helpful: { total: 0, en: 0, fr: 0 },
-        unhelpful: { total: 0, en: 0, fr: 0 }
-      },
-      aiScored: {
-        total: { total: 0, en: 0, fr: 0 },
-        correct: { total: 0, en: 0, fr: 0 },
-        needsImprovement: { total: 0, en: 0, fr: 0 },
-        hasError: { total: 0, en: 0, fr: 0 }
-      },
-      byDepartment: {},
-      publicFeedbackReasons: {
-        yes: {},
-        no: {},
-      },
-      publicFeedbackTotals: {
-        yes: 0,
-        no: 0,
-        totalQuestionsWithFeedback: 0,
-        enYes: 0,
-        enNo: 0,
-        frYes: 0,
-        frNo: 0,
-      },
-      publicFeedbackScores: {},
-      publicFeedbackReasonsByLang: { en: {}, fr: {} }
-    };
-
-    // Process each chat document
-    logs.forEach(chat => {
-      // Track unique chatIds from the chat document
-      if (chat.chatId) {
-        uniqueChatIds.add(chat.chatId);
-        if (chat.pageLanguage === 'en') uniqueChatIdsEn.add(chat.chatId);
-        if (chat.pageLanguage === 'fr') uniqueChatIdsFr.add(chat.chatId);
-      }
-
-      // Count questions for this session
-      const questionCount = chat.interactions?.length || 0;
-      const pageLanguage = chat.pageLanguage || 'en';
-      
-      if (questionCount === 1) {
-        metrics.sessionsByQuestionCount.singleQuestion.total++;
-        if (pageLanguage === 'en') metrics.sessionsByQuestionCount.singleQuestion.en++;
-        if (pageLanguage === 'fr') metrics.sessionsByQuestionCount.singleQuestion.fr++;
-      } else if (questionCount === 2) {
-        metrics.sessionsByQuestionCount.twoQuestions.total++;
-        if (pageLanguage === 'en') metrics.sessionsByQuestionCount.twoQuestions.en++;
-        if (pageLanguage === 'fr') metrics.sessionsByQuestionCount.twoQuestions.fr++;
-      } else if (questionCount === 3) {
-        metrics.sessionsByQuestionCount.threeQuestions.total++;
-        if (pageLanguage === 'en') metrics.sessionsByQuestionCount.threeQuestions.en++;
-        if (pageLanguage === 'fr') metrics.sessionsByQuestionCount.threeQuestions.fr++;
-      }
-
-      // Process each interaction in the chat
-      chat.interactions?.forEach(interaction => {
-        // Count total questions
-        metrics.totalQuestions++;
-        if (pageLanguage === 'en') metrics.totalQuestionsEn++;
-        if (pageLanguage === 'fr') metrics.totalQuestionsFr++;
-        
-        // Count output tokens
-        const tokens = Number(interaction.context?.outputTokens);
-        if (!isNaN(tokens)) {
-          metrics.totalOutputTokens += tokens;
-          if (pageLanguage === 'en') metrics.totalOutputTokensEn += tokens;
-          if (pageLanguage === 'fr') metrics.totalOutputTokensFr += tokens;
-        }
-        
-        // Count answer types (per language)
-        if (interaction.answer?.answerType) {
-          const answerType = interaction.answer.answerType;
-          if (Object.prototype.hasOwnProperty.call(metrics.answerTypes, answerType)) {
-            metrics.answerTypes[answerType].total++;
-            if (pageLanguage === 'en') metrics.answerTypes[answerType].en++;
-            if (pageLanguage === 'fr') metrics.answerTypes[answerType].fr++;
-          }
-        }
-        
-        // Get department
-        const department = interaction.context?.department || 'Unknown';
-        
-        // Initialize department metrics if not exists
-        if (!metrics.byDepartment[department]) {
-          metrics.byDepartment[department] = {
-            total: 0,
-            expertScored: {
-              total: 0,
-              correct: 0,
-              needsImprovement: 0,
-              hasError: 0
-            },
-            userScored: {
-              total: 0,
-              helpful: 0,
-              unhelpful: 0
-            }
-          };
-        }
-        
-        // Count department interactions
-        metrics.byDepartment[department].total++;
-        
-        // Process expert feedback
-        if (interaction.expertFeedback) {
-          metrics.expertScored.total.total++;
-          if (pageLanguage === 'en') metrics.expertScored.total.en++;
-          if (pageLanguage === 'fr') metrics.expertScored.total.fr++;
-          
-          metrics.byDepartment[department].expertScored.total++;
-          
-          // Update expert feedback calculations
-          const feedbackFields = [
-            { score: interaction.expertFeedback.sentence1Score, harmful: interaction.expertFeedback.sentence1Harmful },
-            { score: interaction.expertFeedback.sentence2Score, harmful: interaction.expertFeedback.sentence2Harmful },
-            { score: interaction.expertFeedback.sentence3Score, harmful: interaction.expertFeedback.sentence3Harmful },
-            { score: interaction.expertFeedback.sentence4Score, harmful: interaction.expertFeedback.sentence4Harmful },
-          ];
-
-          let highestCategory = null;
-          feedbackFields.forEach(({ score, harmful }) => {
-            if (harmful) {
-              highestCategory = 'harmful';
-            } else if (score === 0 && highestCategory !== 'harmful') {
-              highestCategory = 'hasError';
-            } else if (score === 80 && highestCategory !== 'harmful' && highestCategory !== 'hasError') {
-              highestCategory = 'needsImprovement';
-            }
-          });
-
-          // Include citationScore in the evaluation
-          if (interaction.expertFeedback.citationScore !== null) {
-            const citationScore = interaction.expertFeedback.citationScore;
-            if (citationScore === 0) {
-              highestCategory = 'hasError';
-            } else if (citationScore === 20 && highestCategory !== 'hasError') {
-              highestCategory = 'needsImprovement';
-            } else if (citationScore === 25 && highestCategory === null) {
-              highestCategory = 'correct';
-            }
-          }
-
-          if (highestCategory === 'harmful') {
-            metrics.expertScored.harmful.total++;
-            if (pageLanguage === 'en') metrics.expertScored.harmful.en++;
-            if (pageLanguage === 'fr') metrics.expertScored.harmful.fr++;
-          } else if (highestCategory === 'hasError') {
-            metrics.expertScored.hasError.total++;
-            if (pageLanguage === 'en') metrics.expertScored.hasError.en++;
-            if (pageLanguage === 'fr') metrics.expertScored.hasError.fr++;
-            metrics.byDepartment[department].expertScored.hasError++;
-          } else if (highestCategory === 'needsImprovement') {
-            metrics.expertScored.needsImprovement.total++;
-            if (pageLanguage === 'en') metrics.expertScored.needsImprovement.en++;
-            if (pageLanguage === 'fr') metrics.expertScored.needsImprovement.fr++;
-            metrics.byDepartment[department].expertScored.needsImprovement++;
-          } else {
-            metrics.expertScored.correct.total++;
-            if (pageLanguage === 'en') metrics.expertScored.correct.en++;
-            if (pageLanguage === 'fr') metrics.expertScored.correct.fr++;
-            metrics.byDepartment[department].expertScored.correct++;
-          }
-        }
-        
-        // Process user feedback
-        if (interaction.userFeedback) {
-          metrics.userScored.total.total++;
-          if (pageLanguage === 'en') metrics.userScored.total.en++;
-          if (pageLanguage === 'fr') metrics.userScored.total.fr++;
-          
-          metrics.byDepartment[department].userScored.total++;
-          
-          if (interaction.userFeedback.rating === 'helpful') {
-            metrics.userScored.helpful.total++;
-            if (pageLanguage === 'en') metrics.userScored.helpful.en++;
-            if (pageLanguage === 'fr') metrics.userScored.helpful.fr++;
-            metrics.byDepartment[department].userScored.helpful++;
-          } else if (interaction.userFeedback.rating === 'unhelpful') {
-            metrics.userScored.unhelpful.total++;
-            if (pageLanguage === 'en') metrics.userScored.unhelpful.en++;
-            if (pageLanguage === 'fr') metrics.userScored.unhelpful.fr++;
-            metrics.byDepartment[department].userScored.unhelpful++;
-          }
-        }
-        
-        // Process AI self-assessment
-        if (interaction.autoEval?.expertFeedback) {
-          metrics.aiScored.total.total++;
-          if (pageLanguage === 'en') metrics.aiScored.total.en++;
-          if (pageLanguage === 'fr') metrics.aiScored.total.fr++;
-
-          const feedbackFields = [
-            { score: interaction.autoEval.expertFeedback.sentence1Score, harmful: interaction.autoEval.expertFeedback.sentence1Harmful },
-            { score: interaction.autoEval.expertFeedback.sentence2Score, harmful: interaction.autoEval.expertFeedback.sentence2Harmful },
-            { score: interaction.autoEval.expertFeedback.sentence3Score, harmful: interaction.autoEval.expertFeedback.sentence3Harmful },
-            { score: interaction.autoEval.expertFeedback.sentence4Score, harmful: interaction.autoEval.expertFeedback.sentence4Harmful },
-          ];
-
-          // Update AI scoring logic to match expert feedback scoring
-          let highestCategory = null;
-          feedbackFields.forEach(({ score, harmful }) => {
-            if (harmful) {
-              highestCategory = 'harmful';
-            } else if (score === 0 && highestCategory !== 'harmful') {
-              highestCategory = 'hasError';
-            } else if (score === 80 && highestCategory !== 'harmful' && highestCategory !== 'hasError') {
-              highestCategory = 'needsImprovement';
-            }
-          });
-
-          // Include citationScore in the evaluation
-          if (interaction.autoEval.expertFeedback.citationScore !== null) {
-            const citationScore = interaction.autoEval.expertFeedback.citationScore;
-            if (citationScore === 0) {
-              highestCategory = 'hasError';
-            } else if (citationScore === 20 && highestCategory !== 'hasError') {
-              highestCategory = 'needsImprovement';
-            } else if (citationScore === 25 && highestCategory === null) {
-              highestCategory = 'correct';
-            }
-          }
-
-          if (highestCategory === 'harmful') {
-            metrics.aiScored.harmful.total++;
-            if (pageLanguage === 'en') metrics.aiScored.harmful.en++;
-            if (pageLanguage === 'fr') metrics.aiScored.harmful.fr++;
-          } else if (highestCategory === 'hasError') {
-            metrics.aiScored.hasError.total++;
-            if (pageLanguage === 'en') metrics.aiScored.hasError.en++;
-            if (pageLanguage === 'fr') metrics.aiScored.hasError.fr++;
-          } else if (highestCategory === 'needsImprovement') {
-            metrics.aiScored.needsImprovement.total++;
-            if (pageLanguage === 'en') metrics.aiScored.needsImprovement.en++;
-            if (pageLanguage === 'fr') metrics.aiScored.needsImprovement.fr++;
-          } else {
-            metrics.aiScored.correct.total++;
-            if (pageLanguage === 'en') metrics.aiScored.correct.en++;
-            if (pageLanguage === 'fr') metrics.aiScored.correct.fr++;
-          }
-        }
-        
-        // Process public feedback
-        if (interaction.publicFeedback) {
-          const feedbackType = interaction.publicFeedback.feedback === 'yes' ? 'yes' : 'no';
-          const reason = interaction.publicFeedback.publicFeedbackReason || 'other';
-
-          // Count by reason and feedback type
-          if (!metrics.publicFeedbackReasons[feedbackType][reason]) {
-            metrics.publicFeedbackReasons[feedbackType][reason] = 0;
-          }
-          metrics.publicFeedbackReasons[feedbackType][reason]++;
-
-          // Increment totals
-          metrics.publicFeedbackTotals[feedbackType]++;
-          metrics.publicFeedbackTotals.totalQuestionsWithFeedback++;
-
-          // Increment language-specific yes/no counts
-          if (chat.pageLanguage === 'en') {
-            if (feedbackType === 'yes') {
-              metrics.publicFeedbackTotals.enYes++;
-            } else {
-              metrics.publicFeedbackTotals.enNo++;
-            }
-          } else if (chat.pageLanguage === 'fr') {
-            if (feedbackType === 'yes') {
-              metrics.publicFeedbackTotals.frYes++;
-            } else {
-              metrics.publicFeedbackTotals.frNo++;
-            }
-          }
-        }
-      });
-    });
-
-    // Set total conversations based on unique chatIds
-    metrics.totalConversations = uniqueChatIds.size;
-    metrics.totalConversationsEn = uniqueChatIdsEn.size;
-    metrics.totalConversationsFr = uniqueChatIdsFr.size;
-
-    return metrics;
-  };
-
-  const filename = (ext) => {
-    let name = 'metrics-' + new Date().toISOString();
-    return name + '.' + ext;
-  };
-
-  const downloadJSON = () => {
-    const json = JSON.stringify(metrics, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename('json');
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const downloadCSV = () => {
-    ExportService.export(metrics, filename('csv'));
-  };
-
-  const downloadExcel = () => {
-    ExportService.export(metrics, filename('xlsx'));
   };
 
   return (
     <GcdsContainer size="xl" className="space-y-6">
+      {loading && (
+        <div className="loading-indicator">
+          Loading metrics: {totalCount} total records
+        </div>
+      )}
       {!hasLoadedData && (
         <div className="bg-white shadow rounded-lg p-4">
           <p className="mb-4 text-gray-600">
@@ -437,6 +95,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
           onApplyFilters={handleApplyFilters}
           onClearFilters={handleClearFilters}
           isVisible={true}
+          filters={currentFilters}
         />
       )}
 
@@ -643,7 +302,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                   <h3 className="mb-300">{t('metrics.dashboard.aiScored.title')}</h3>
                   <GcdsText className="mb-300">{t('metrics.dashboard.aiScored.description')}</GcdsText>
                   <div className="bg-gray-50 p-4 rounded-lg">
-                    <DataTable
+                   <DataTable
                       data={[
                         {
                           metric: t('metrics.dashboard.aiScored.total'),
