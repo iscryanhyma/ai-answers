@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/cds-snc/ai-answers/compare/v1.15.0...v1.16.0) (2025-07-29)
+
+
+### Features
+
+* add EndUserFeedbackSection component for displaying user feedba… ([58c5da7](https://github.com/cds-snc/ai-answers/commit/58c5da7a8234b772b0ee870e9adb5e313c21bc2e))
+
 ## [1.15.0](https://github.com/cds-snc/ai-answers/compare/v1.14.1...v1.15.0) (2025-07-28)
 
 
