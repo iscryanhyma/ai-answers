@@ -60,7 +60,8 @@ class MetricsService {
         total: { total: 0, en: 0, fr: 0 },
         correct: { total: 0, en: 0, fr: 0 },
         needsImprovement: { total: 0, en: 0, fr: 0 },
-        hasError: { total: 0, en: 0, fr: 0 }
+        hasError: { total: 0, en: 0, fr: 0 },
+        harmful: { total: 0, en: 0, fr: 0 }
       },
       byDepartment: {},
       publicFeedbackReasons: {
@@ -158,12 +159,16 @@ class MetricsService {
         
         // Process expert feedback
         if (interaction.expertFeedback) {
+          // Defensive: ensure all expertScored properties exist before incrementing
+          ['total', 'correct', 'needsImprovement', 'hasError', 'harmful'].forEach(key => {
+            if (!metrics.expertScored[key]) metrics.expertScored[key] = { total: 0, en: 0, fr: 0 };
+            if (!metrics.byDepartment[department].expertScored[key] && key !== 'harmful') metrics.byDepartment[department].expertScored[key] = 0;
+          });
           metrics.expertScored.total.total++;
           if (pageLanguage === 'en') metrics.expertScored.total.en++;
           if (pageLanguage === 'fr') metrics.expertScored.total.fr++;
-          
           metrics.byDepartment[department].expertScored.total++;
-          
+
           // Update expert feedback calculations
           const feedbackFields = [
             { score: interaction.expertFeedback.sentence1Score, harmful: interaction.expertFeedback.sentence1Harmful },
@@ -219,12 +224,16 @@ class MetricsService {
         
         // Process user feedback
         if (interaction.userFeedback) {
+          // Defensive: ensure all userScored properties exist before incrementing
+          ['total', 'helpful', 'unhelpful'].forEach(key => {
+            if (!metrics.userScored[key]) metrics.userScored[key] = { total: 0, en: 0, fr: 0 };
+            if (!metrics.byDepartment[department].userScored[key]) metrics.byDepartment[department].userScored[key] = 0;
+          });
           metrics.userScored.total.total++;
           if (pageLanguage === 'en') metrics.userScored.total.en++;
           if (pageLanguage === 'fr') metrics.userScored.total.fr++;
-          
           metrics.byDepartment[department].userScored.total++;
-          
+
           if (interaction.userFeedback.rating === 'helpful') {
             metrics.userScored.helpful.total++;
             if (pageLanguage === 'en') metrics.userScored.helpful.en++;
@@ -240,6 +249,10 @@ class MetricsService {
         
         // Process AI self-assessment
         if (interaction.autoEval?.expertFeedback) {
+          // Defensive: ensure all aiScored properties exist before incrementing
+          ['total', 'correct', 'needsImprovement', 'hasError', 'harmful'].forEach(key => {
+            if (!metrics.aiScored[key]) metrics.aiScored[key] = { total: 0, en: 0, fr: 0 };
+          });
           metrics.aiScored.total.total++;
           if (pageLanguage === 'en') metrics.aiScored.total.en++;
           if (pageLanguage === 'fr') metrics.aiScored.total.fr++;
