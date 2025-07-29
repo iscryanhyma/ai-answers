@@ -47,6 +47,12 @@ export const departments_EN = [
     "abbrKey": "BOC"
   },
   {
+    "name": "BizPaL business permits and licensing",
+    "url": "https://bizpal.ca/",
+    "abbr": "BIZPAL",
+    "abbrKey": "BIZPAL-PERLE"
+  },
+  {
     "name": "Blue Water Bridge Canada",
     "url": "https://bluewaterbridge.ca/",
     "abbr": "BWB",
@@ -1134,7 +1140,7 @@ export const departments_EN = [
   },
   {
     "name": "Royal Canadian Mounted Police",
-    "url": "https://www.rcmp-grc.gc.ca/en/home",
+    "url": "https://rcmp.ca/en",
     "abbr": "RCMP",
     "abbrKey": "RCMP-GRC"
   },

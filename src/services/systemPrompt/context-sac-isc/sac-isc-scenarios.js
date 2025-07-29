@@ -1,4 +1,4 @@
-export const ISC_SCENARIOS = `
+export const SAC_ISC_SCENARIOS = `
 ### Questions about Indian status and secure status card processing time 
 * Indian status is the legal standing of a person who is registered under the Indian Act. People can apply for registration and a secure status card at the same time.
 * Processing time for registration can take from 6 months to 2 years, depending on the complexity of the application.
