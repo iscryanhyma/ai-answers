@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.0](https://github.com/cds-snc/ai-answers/compare/v1.17.0...v1.18.0) (2025-07-29)
+
+
+### Features
+
+* add concurrent initialization guard to VectorService classes ([5022fab](https://github.com/cds-snc/ai-answers/commit/5022fab71f901a7ae5374714695e0fe2d6041c2f))
+
 ## [1.17.0](https://github.com/cds-snc/ai-answers/compare/v1.16.0...v1.17.0) (2025-07-29)
 
 
