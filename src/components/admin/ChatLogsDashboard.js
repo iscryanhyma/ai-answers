@@ -29,7 +29,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
     }
 
     let lastId = append && logs.length ? logs[logs.length - 1]._id : null;
-    const limit = 100;
+    const limit = 500;
     try {
       console.log('Fetching logs with params:', filters);
       do {

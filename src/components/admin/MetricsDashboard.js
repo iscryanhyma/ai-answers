@@ -26,7 +26,7 @@ const MetricsDashboard = ({ lang = 'en' }) => {
     setTotalCount(0);
     let allLogs = [];
     let lastId = null;
-    const limit = 100;
+    const limit = 500;
     try {
       do {
         const data = await MetricsService.getChatLogs(filters || {}, limit, lastId);
