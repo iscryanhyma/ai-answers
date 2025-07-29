@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.17.0](https://github.com/cds-snc/ai-answers/compare/v1.16.0...v1.17.0) (2025-07-29)
+
+
+### Features
+
+* Enhance chat logs and metrics handling ([2acb313](https://github.com/cds-snc/ai-answers/commit/2acb3132abfd1365682a033a91e2a0cdc3e05969))
+* Enhance chat logs and metrics handling ([7b330a4](https://github.com/cds-snc/ai-answers/commit/7b330a4570346e53f453e4428111a6d5275d39c4))
+
 ## [1.16.0](https://github.com/cds-snc/ai-answers/compare/v1.15.0...v1.16.0) (2025-07-29)
 
 
