@@ -18,6 +18,7 @@ class IMVectorService {
     this.qaDB = new VectorDB();
     this.sentenceDB = new VectorDB();
     this.isInitialized = false;
+    this.initializingPromise = null; // Guard for concurrent initialization
     this.embeddingMetadatas = new Map();
     this.sentenceMetadatas = new Map();
     this.stats = { searches:0, qaSearches:0, sentenceSearches:0, totalSearchTime:0, lastInitTime:null, embeddings:0, sentences:0, vectorMemoryUsage: {} };
@@ -109,62 +110,71 @@ class IMVectorService {
 
   async initialize() {
     if (this.isInitialized) return;
+    if (this.initializingPromise) return this.initializingPromise;
 
-    ServerLoggingService.info('Initializing VectorService...', 'vector-service');
-    await dbConnect();
+    this.initializingPromise = (async () => {
+      ServerLoggingService.info('Initializing VectorService...', 'vector-service');
+      await dbConnect();
 
-    const expertFeedbacks = await ExpertFeedback.find({ type: 'expert' }).select('_id').lean();
-    if (!expertFeedbacks.length) {
-      ServerLoggingService.warn('No expert feedback found—service remains empty.', 'vector-service');
-      this.isInitialized = true;
-      return;
-    }
+      const expertFeedbacks = await ExpertFeedback.find({ type: 'expert' }).select('_id').lean();
+      if (!expertFeedbacks.length) {
+        ServerLoggingService.warn('No expert feedback found—service remains empty.', 'vector-service');
+        this.isInitialized = true;
+        this.initializingPromise = null;
+        return;
+      }
 
-    const interactions = await Interaction.find({ expertFeedback: { $in: expertFeedbacks.map(f => f._id) } })
-      .select('_id expertFeedback').lean();
+      const interactions = await Interaction.find({ expertFeedback: { $in: expertFeedbacks.map(f => f._id) } })
+        .select('_id expertFeedback').lean();
 
-    if (!interactions.length) {
-      ServerLoggingService.warn('No interactions found—service remains empty.', 'vector-service');
-      this.isInitialized = true;
-      return;
-    }
+      if (!interactions.length) {
+        ServerLoggingService.warn('No interactions found—service remains empty.', 'vector-service');
+        this.isInitialized = true;
+        this.initializingPromise = null;
+        return;
+      }
 
-    const interactionIds = interactions.map(i => i._id.toString());
-    const query = {
-      interactionId: { $in: interactionIds },
-      questionsAnswerEmbedding: { $exists: true, $ne: null },
-      sentenceEmbeddings: { $exists: true, $not: { $size: 0 } }
-    };
+      const interactionIds = interactions.map(i => i._id.toString());
+      const query = {
+        interactionId: { $in: interactionIds },
+        questionsAnswerEmbedding: { $exists: true, $ne: null },
+        sentenceEmbeddings: { $exists: true, $not: { $size: 0 } }
+      };
 
-    const totalEmbeddings = await Embedding.countDocuments(query);
+      const totalEmbeddings = await Embedding.countDocuments(query);
 
-    if (!totalEmbeddings) {
-      ServerLoggingService.warn('No embeddings found—service remains empty.', 'vector-service');
-      this.isInitialized = true;
-      return;
-    }
+      if (!totalEmbeddings) {
+        ServerLoggingService.warn('No embeddings found—service remains empty.', 'vector-service');
+        this.isInitialized = true;
+        this.initializingPromise = null;
+        return;
+      }
 
-    const chunkSize = 10;
-    let embeddingDocs;
-    for (let i = 0; i < totalEmbeddings; i += chunkSize) {
-      embeddingDocs = await Embedding.find(query).skip(i).limit(chunkSize).lean();
+      const chunkSize = 10;
+      let embeddingDocs;
+      for (let i = 0; i < totalEmbeddings; i += chunkSize) {
+        embeddingDocs = await Embedding.find(query).skip(i).limit(chunkSize).lean();
 
-      embeddingDocs.forEach((doc) => {
-        const feedback = interactions.find(n => n._id.toString() === doc.interactionId.toString())?.expertFeedback;
-        this.addExpertFeedbackEmbedding({
-          interactionId: doc.interactionId.toString(),
-          expertFeedbackId: feedback?._id.toString(),
-          createdAt: doc.createdAt,
-          questionsAnswerEmbedding: doc.questionsAnswerEmbedding,
-          sentenceEmbeddings: doc.sentenceEmbeddings
+        embeddingDocs.forEach((doc) => {
+          const feedback = interactions.find(n => n._id.toString() === doc.interactionId.toString())?.expertFeedback;
+          this.addExpertFeedbackEmbedding({
+            interactionId: doc.interactionId.toString(),
+            expertFeedbackId: feedback?._id.toString(),
+            createdAt: doc.createdAt,
+            questionsAnswerEmbedding: doc.questionsAnswerEmbedding,
+            sentenceEmbeddings: doc.sentenceEmbeddings
+          });
         });
-      });
-    }
+      }
 
-    this.stats.lastInitTime = new Date();
-    this.isInitialized = true;
-    this._calculateVectorMemoryUsage(embeddingDocs);
-    ServerLoggingService.info(`VectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors loaded.`, 'vector-service');
+      this.stats.lastInitTime = new Date();
+      this.isInitialized = true;
+      this.initializingPromise = null;
+      this._calculateVectorMemoryUsage(embeddingDocs);
+      ServerLoggingService.info(`VectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors loaded.`, 'vector-service');
+    })();
+
+    return this.initializingPromise;
   }
 
   _calculateVectorMemoryUsage(embeddingDocs) {
