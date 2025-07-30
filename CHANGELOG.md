@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.21.0](https://github.com/cds-snc/ai-answers/compare/v1.20.0...v1.21.0) (2025-07-30)
+
+
+### Features
+
+* add User-Agent header to URL check requests ([9d7e630](https://github.com/cds-snc/ai-answers/commit/9d7e630dc90e04cf786c58edb6590ca499a8eae2))
+* enhance expert feedback handling in QA match fallback ([422e8e6](https://github.com/cds-snc/ai-answers/commit/422e8e63932295dc202a9f31811c37e8697ab288))
+* implement URL validation handler for Canada.ca domains and integrate with existing services ([c7ff67d](https://github.com/cds-snc/ai-answers/commit/c7ff67d8c026acfda40aff8ca02affe738c6473a))
+* remove logging of the database connection string ([fdf0d5c](https://github.com/cds-snc/ai-answers/commit/fdf0d5cecf9e83600423b60e35e26a27efb8032e))
+
+
+### Bug Fixes
+
+* update search page URL pattern to allow query parameters in citation scoring ([fbc0cf9](https://github.com/cds-snc/ai-answers/commit/fbc0cf957333189f056149b1cda80d954c12e872))
+
 ## [1.20.0](https://github.com/cds-snc/ai-answers/compare/v1.19.1...v1.20.0) (2025-07-30)
 
 
