@@ -51,6 +51,8 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbedding
                 });
                 return false;
             }
+            // Use matchedExpertFeedback for clarity
+            const matchedExpertFeedback = matchedHighScoreMatch.embedding.interactionId.expertFeedback;
             // Minimal evaluation: only QA match info
             const newExpertFeedback = new ExpertFeedback({
                 totalScore: null, // will be recalculated below
@@ -58,17 +60,14 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbedding
                 citationScore: bestCitationMatch.score,
                 citationExplanation: bestCitationMatch.explanation,
                 answerImprovement: '',
-                expertCitationUrl: bestCitationMatch.url,
+                expertCitationUrl: matchedExpertFeedback?.expertCitationUrl ?? '',
                 feedback: 'qa-high-score-fallback'
             });
-            // Recalculate totalScore using the new citation score
-            // Use sentence scores from the matched expertFeedback if present, else default to 100
-            const origFeedback = matchedHighScoreMatch.embedding.interactionId.expertFeedback;
             // Copy up to 4 sentence scores/explanations/harmful flags
             for (let i = 1; i <= 4; i++) {
-                newExpertFeedback[`sentence${i}Score`] = origFeedback?.[`sentence${i}Score`] ?? 100;
-                newExpertFeedback[`sentence${i}Explanation`] = origFeedback?.[`sentence${i}Explanation`] ?? '';
-                newExpertFeedback[`sentence${i}Harmful`] = origFeedback?.[`sentence${i}Harmful`] ?? false;
+                newExpertFeedback[`sentence${i}Score`] = matchedExpertFeedback?.[`sentence${i}Score`] ?? 100;
+                newExpertFeedback[`sentence${i}Explanation`] = matchedExpertFeedback?.[`sentence${i}Explanation`] ?? '';
+                newExpertFeedback[`sentence${i}Harmful`] = matchedExpertFeedback?.[`sentence${i}Harmful`] ?? false;
             }
             // Recalculate totalScore using computeTotalScore
             const recalculatedScore = computeTotalScore(newExpertFeedback, 4);
@@ -319,10 +318,11 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
         score: null,
         explanation: '',
         url: '',
-        similarity: 0
+        similarity: 0,
+        expertCitationUrl: ''
     };
     // Always score the search page as zero
-    const searchPagePattern = /^https:\/\/www\.canada\.ca\/(en|fr)\/sr\/srb\.html$/i;
+    const searchPagePattern = /^https:\/\/www\.canada\.ca\/(en|fr)\/sr\/srb\.html(\?.*)?$/i;
     if (searchPagePattern.test(sourceUrl)) {
         bestCitationMatch.score = 0;
         bestCitationMatch.explanation = 'Search page citations are always scored zero.';
@@ -349,14 +349,15 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
         if (
             matchUrl &&
             sourceUrl.toLowerCase() === matchUrl.toLowerCase()
-            
         ) {
             bestCitationMatch.score = expertFeedback?.citationScore;
             bestCitationMatch.explanation = expertFeedback?.citationExplanation;
             bestCitationMatch.url = matchUrl;
             bestCitationMatch.similarity = 1;
+            bestCitationMatch.expertCitationUrl = expertFeedback?.expertCitationUrl;
             break;
         }
+        
     }
     ServerLoggingService.debug('Citation matching result (worker):', 'system', {
         sourceUrl,
@@ -402,7 +403,7 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
         citationScore: bestCitationMatch.score,
         citationExplanation: bestCitationMatch.explanation,
         answerImprovement: '',
-        expertCitationUrl: bestCitationMatch.url,
+        expertCitationUrl: bestCitationMatch.expertCitationUrl,
         feedback: ''
     });
     const sentenceTrace = [];

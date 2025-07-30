@@ -143,7 +143,8 @@ export const ChatPipelineService = {
         lang,
         userMessage,
         department,
-        translationF
+        translationF,
+        chatId
       );
 
       // Extract the URL correctly depending on whether it's a valid URL or a fallback
@@ -192,15 +193,16 @@ export const ChatPipelineService = {
       confidenceRating: confidenceRating,
     };
   },
-  verifyCitation: async (originalCitationUrl, lang, redactedText, selectedDepartment, t) => {
+  verifyCitation: async (originalCitationUrl, lang, redactedText, selectedDepartment, t, chatId = null) => {
     const validationResult = await urlToSearch.validateAndCheckUrl(
       originalCitationUrl,
       lang,
       redactedText,
       selectedDepartment,
-      t
+      t,
+      chatId
     );
-    await LoggingService.info(null, 'Validated URL:', validationResult);
+    await LoggingService.info(chatId, 'Validated URL:', validationResult);
     return validationResult;
   },
   processRedaction: async (userMessage, lang) => {
