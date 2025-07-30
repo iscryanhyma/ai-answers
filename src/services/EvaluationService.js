@@ -21,12 +21,13 @@ class EvaluationService {
     }
   }
 
-  static async deleteEvals({ startTime, endTime }) {
+  static async deleteEvals({ startTime, endTime, onlyEmpty = false }) {
     try {
       const payload = {};
       if (startTime) payload.startTime = startTime;
       if (endTime) payload.endTime = endTime;
       payload.action = 'delete';
+      if (onlyEmpty) payload.onlyEmpty = true;
       const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-evals'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

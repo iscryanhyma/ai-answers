@@ -102,6 +102,20 @@ const EvalPage = () => {
     }
   };
 
+  // New handler for deleting only empty evals
+  const handleDeleteEmptyEvals = async () => {
+    const confirmed = window.confirm(
+      'This will delete only EMPTY evaluations (and associated expert feedback) within the selected date range. This operation cannot be undone. Are you sure you want to continue?'
+    );
+    if (!confirmed) return;
+    try {
+      const result = await EvaluationService.deleteEvals({ startTime: startTime || undefined, endTime: endTime || undefined, onlyEmpty: true });
+      alert(`Deleted ${result.deleted} empty evaluations and ${result.expertFeedbackDeleted} expert feedback records.`);
+    } catch (error) {
+      alert('Failed to delete empty evaluations. Check the console for details.');
+    }
+  };
+
   return (
     <GcdsContainer size="xl" centered>
       <h1>Evaluation Tools</h1>
@@ -203,6 +217,14 @@ const EvalPage = () => {
             className="mb-200 mr-200"
           >
             Delete Evaluations
+          </GcdsButton>
+          <GcdsButton 
+            onClick={handleDeleteEmptyEvals}
+            disabled={evalProgress?.loading || isAutoProcessingEvals}
+            variant="danger"
+            className="mb-200"
+          >
+            Delete Empty Evaluations
           </GcdsButton>
         </div>
           {evalProgress && (

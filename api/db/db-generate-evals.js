@@ -10,7 +10,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    const { action, startTime, endTime, lastProcessedId } = req.body;
+    const { action, startTime, endTime, lastProcessedId, onlyEmpty } = req.body;
     const duration = config.evalBatchProcessingDuration;
 
     try {
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
 
         if (action === 'delete') {
             // Delegate to EvaluationService for deletion
-            const result = await EvaluationService.deleteEvaluations({ timeFilter });
+            const result = await EvaluationService.deleteEvaluations({ timeFilter, onlyEmpty });
             return res.status(200).json(result);
         }
 

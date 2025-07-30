@@ -32,24 +32,44 @@ class EvaluationService {
      * @param {Object} options - { timeFilter }
      * @returns {Object} - { deleted, expertFeedbackDeleted }
      */
-    async deleteEvaluations({ timeFilter }) {
+    async deleteEvaluations({ timeFilter, onlyEmpty = false }) {
         await dbConnect();
-        const interactionQuery = timeFilter && Object.keys(timeFilter).length > 0
-            ? { ...timeFilter, autoEval: { $exists: true, $ne: null } }
-            : { autoEval: { $exists: true, $ne: null } };
-        const interactions = await Interaction.find(interactionQuery).select('autoEval');
-        const evalIdsToDelete = interactions.map(i => i.autoEval).filter(Boolean);
+        let evalQuery = {};
+        if (onlyEmpty) {
+            // Only delete empty evals: processed, hasMatches: false, noMatchReasonType present, and no expertFeedback
+            evalQuery = {
+                processed: true,
+                hasMatches: false,
+                noMatchReasonType: { $exists: true, $ne: null, $ne: '' },
+                expertFeedback: { $exists: false }
+            };
+            if (timeFilter && Object.keys(timeFilter).length > 0) {
+                evalQuery = { ...evalQuery, ...timeFilter };
+            }
+        } else {
+            // All evals for interactions in the time range
+            evalQuery = timeFilter && Object.keys(timeFilter).length > 0
+                ? { ...timeFilter }
+                : {};
+        }
+        const evalsToDelete = await Eval.find(evalQuery).select('_id');
+        const evalIdsToDelete = evalsToDelete.map(e => e._id);
         let expertFeedbackDeleted = 0;
         if (evalIdsToDelete.length > 0) {
-            const evals = await Eval.find({ _id: { $in: evalIdsToDelete } }).select('expertFeedback');
-            const expertFeedbackIds = evals.map(e => e.expertFeedback).filter(Boolean);
-            const deletedEvals = await Eval.deleteMany({ _id: { $in: evalIdsToDelete } });
+            // Remove autoEval from interactions
             await Interaction.updateMany({ autoEval: { $in: evalIdsToDelete } }, { $unset: { autoEval: "" } });
-            if (expertFeedbackIds.length > 0) {
-                const deletedExpertFeedback = await ExpertFeedback.deleteMany({ _id: { $in: expertFeedbackIds } });
-                expertFeedbackDeleted = deletedExpertFeedback.deletedCount || 0;
+            // Delete evals
+            const deletedEvals = await Eval.deleteMany({ _id: { $in: evalIdsToDelete } });
+            // For non-empty evals, delete associated expert feedback
+            if (!onlyEmpty) {
+                const evals = await Eval.find({ _id: { $in: evalIdsToDelete } }).select('expertFeedback');
+                const expertFeedbackIds = evals.map(e => e.expertFeedback).filter(Boolean);
+                if (expertFeedbackIds.length > 0) {
+                    const deletedExpertFeedback = await ExpertFeedback.deleteMany({ _id: { $in: expertFeedbackIds } });
+                    expertFeedbackDeleted = deletedExpertFeedback.deletedCount || 0;
+                }
             }
-            return { deleted: deletedEvals.deletedCount || 0, expertFeedbackDeleted };
+            return { deleted: evalIdsToDelete.length, expertFeedbackDeleted };
         }
         return { deleted: 0, expertFeedbackDeleted: 0 };
     }
