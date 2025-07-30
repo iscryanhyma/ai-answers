@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.20.0](https://github.com/cds-snc/ai-answers/compare/v1.19.1...v1.20.0) (2025-07-30)
+
+
+### Features
+
+* add support for deleting only empty evaluations and update related services ([02f68fc](https://github.com/cds-snc/ai-answers/commit/02f68fc7359748b28ab41d14dc2e72171b0dedfa))
+* remove unused dbDeleteEvalsHandler import and endpoint ([1a0dee7](https://github.com/cds-snc/ai-answers/commit/1a0dee748846bcac39e350917a7ff431b4c9c26c))
+* remove unused dbDeleteEvalsHandler import and endpoint ([579a114](https://github.com/cds-snc/ai-answers/commit/579a114b8ce170ec0d67144036220b286d6048b1))
+* track initialization duration in IMVectorService and update logging ([7503a66](https://github.com/cds-snc/ai-answers/commit/7503a6660d54249723c717c5d41c644e63c8a409))
+* update memory usage reporting and enhance stats retrieval in IMVectorService ([36e2888](https://github.com/cds-snc/ai-answers/commit/36e2888553daddabb0e0195a838507435b4cca76))
+* update VectorService initialization to allow usage during startup ([de3ea29](https://github.com/cds-snc/ai-answers/commit/de3ea29be1038ef531e6ec97745f4d2ff22c2937))
+
+
+### Bug Fixes
+
+* hide feedback at start ([84904ec](https://github.com/cds-snc/ai-answers/commit/84904eca964b1011fc638a27b34cf40d9c540b9e))
+
 ## [1.19.1](https://github.com/cds-snc/ai-answers/compare/v1.19.0...v1.19.1) (2025-07-30)
 
 
