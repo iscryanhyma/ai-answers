@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.19.1](https://github.com/cds-snc/ai-answers/compare/v1.19.0...v1.19.1) (2025-07-30)
+
+
+### Bug Fixes
+
+* add business benefits finder ([c4ab992](https://github.com/cds-snc/ai-answers/commit/c4ab9923c8a3ddadda3157020c7cc80ab573842d))
+* add business benefits finder ([db187e1](https://github.com/cds-snc/ai-answers/commit/db187e17be83cb6d07215e696456fce12b78e955))
+* department-context-bilingual ([990f12b](https://github.com/cds-snc/ai-answers/commit/990f12b3d63cb3b28de9bc974c03366443df3585))
+* department-context-bilingual ([da32567](https://github.com/cds-snc/ai-answers/commit/da32567b89428298284a96068e83bb548194b39e))
+* political questions in agenticBase ([da32567](https://github.com/cds-snc/ai-answers/commit/da32567b89428298284a96068e83bb548194b39e))
+
 ## [1.19.0](https://github.com/cds-snc/ai-answers/compare/v1.18.0...v1.19.0) (2025-07-29)
 
 
