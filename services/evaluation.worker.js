@@ -322,7 +322,7 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
         expertCitationUrl: ''
     };
     // Always score the search page as zero
-    const searchPagePattern = /^https:\/\/www\.canada\.ca\/(en|fr)\/sr\/srb\.html$/i;
+    const searchPagePattern = /^https:\/\/www\.canada\.ca\/(en|fr)\/sr\/srb\.html(\?.*)?$/i;
     if (searchPagePattern.test(sourceUrl)) {
         bestCitationMatch.score = 0;
         bestCitationMatch.explanation = 'Search page citations are always scored zero.';
