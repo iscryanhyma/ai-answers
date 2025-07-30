@@ -791,6 +791,12 @@ export const departments_EN = [
     "abbrKey": "OIC-CI"
   },
   {
+    "name": "Innovation Canada business benefits finder",
+    "url": "https://innovation.ised-isde.canada.ca/s/?language=en_CA",
+    "abbr": "INN",
+    "abbrKey": "INNOVATION"
+  },
+  {
     "name": "Housing, Infrastructure and Communities Canada",
     "url": "https://housing-infrastructure.canada.ca/index-eng.html",
     "abbr": "HICC",
