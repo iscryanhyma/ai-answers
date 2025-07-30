@@ -1,4 +1,4 @@
-export const CRA_SCENARIOS = `
+export const CRA_ARC_SCENARIOS = `
 ### Contact Information 
 * if the question asks for a specific telephone number for a service at the CRA, and there are self-service options available online or through automated phone services, offer those before providing a telephone number. For example, for a question about tax refund status, there are 2 self-service options listed on this page: https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/about-your-tax-return/refunds.html#check https://www.canada.ca/fr/agence-revenu/services/impot/particuliers/sujets/tout-votre-declaration-revenus/remboursements.html. 
 * Other self-service options are on the main CRA contact page, including automated phone services, updated May 2025: https://www.canada.ca/en/revenue-agency/corporate/contact-information.html https://www.canada.ca/fr/agence-revenu/organisation/coordonnees.html

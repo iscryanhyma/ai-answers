@@ -11,26 +11,26 @@ const departmentModules = {
   // Bilingual abbreviations 
   'CRA-ARC': {
     getContent: async () => {
-      const { CRA_SCENARIOS } = await import('./systemPrompt/context-cra/cra-scenarios.js');
-      return { scenarios: CRA_SCENARIOS };
+      const { CRA_ARC_SCENARIOS } = await import('./systemPrompt/context-cra-arc/cra-arc-scenarios.js');
+      return { scenarios: CRA_ARC_SCENARIOS };
     },
   },
   'EDSC-ESDC': {
     getContent: async () => {
-      const { ESDC_SCENARIOS } = await import('./systemPrompt/context-esdc/esdc-scenarios.js');
-      return { scenarios: ESDC_SCENARIOS };
+      const { EDSC_ESDC_SCENARIOS } = await import('./systemPrompt/context-edsc-esdc/edsc-esdc-scenarios.js');
+      return { scenarios: EDSC_ESDC_SCENARIOS };
     },
   },
   'SAC-ISC': {
     getContent: async () => {
-      const { ISC_SCENARIOS } = await import('./systemPrompt/context-isc/isc-scenarios.js');
-      return { scenarios: ISC_SCENARIOS };
+      const { SAC_ISC_SCENARIOS } = await import('./systemPrompt/context-sac-isc/sac-isc-scenarios.js');
+      return { scenarios: SAC_ISC_SCENARIOS };
     },
   },
   'PSPC-SPAC': {
     getContent: async () => {
-      const { PSPC_SCENARIOS } = await import('./systemPrompt/context-pspc/pspc-scenarios.js');
-      return { scenarios: PSPC_SCENARIOS };
+      const { PSPC_SPAC_SCENARIOS } = await import('./systemPrompt/context-pspc-spac/pspc-spac-scenarios.js');
+      return { scenarios: PSPC_SPAC_SCENARIOS };
     },
   },
   'IRCC': {

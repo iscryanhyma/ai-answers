@@ -750,7 +750,7 @@ export const departments_FR = [
   },
   {
     "name": "Gendarmerie royale du Canada",
-    "url": "https://www.rcmp-grc.gc.ca/fr",
+    "url": "https://grc.ca/fr",
     "abbr": "GRC",
     "abbrKey": "RCMP-GRC"
   },
@@ -969,6 +969,12 @@ export const departments_FR = [
     "url": "https://www.investissementsrpc.com/fr/",
     "abbr": "OIRPC",
     "abbrKey": "CPPIB-OIRPC"
+  },
+  {
+    "name": "PerLE permis et licences d'exploitation d'entreprise",
+    "url": "https://bizpal.ca/fr/",
+    "abbr": "PERLE",
+    "abbrKey": "BIZPAL-PERLE"
   },
   {
     "name": "Régie de l'énergie du Canada",

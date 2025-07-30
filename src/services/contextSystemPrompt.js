@@ -35,9 +35,9 @@ async function loadContextSystemPrompt(language = 'en') {
     //       })
     //       .join('\n\n');
 
-    // Convert departments array to formatted string
+    // Convert departments array to formatted string with clear structure
     const departmentsString = departmentsList
-      .map((dept) => `${dept.name} (${dept.abbrKey || 'No abbreviation'})\n  ${dept.url}`)
+      .map((dept) => `• ${dept.name}\n  Unilingual Abbr: ${dept.abbr || 'None'}\n  Bilingual Abbr Key: ${dept.abbrKey}\n  URL: ${dept.url}`)
       .join('\n\n');
 
     // // Add debug logging
@@ -57,19 +57,31 @@ async function loadContextSystemPrompt(language = 'en') {
       }
 
 <departments_list>
-## List of Government of Canada departments and agencies labelled by name, matching url in the official language context,  and bilingual abbreviation key (abbrKey) that will be used to pull in department-specific content and log and filter chat interactions later - MUST SELECT FROM THIS LIST 
-  ${departmentsString}
+## List of Government of Canada departments, agencies, organizations, and partnerships
+This list contains ALL valid options. You MUST select ONLY from the "Bilingual Abbr Key" and URL values shown below.
+Each entry shows:
+• Organization name
+• Unilingual Abbr: Language-specific abbreviation (may be null)
+• Bilingual Abbr Key: The ONLY valid value to use in your response (unique identifier)
+• URL: The corresponding URL (must match the selected organization)
+
+${departmentsString}
 </departments_list> 
 
 ## Matching Algorithm:
 1. Extract key topics and entities from the user's question and context
 - Prioritize your analysis of the question and context, including referring-url (the page the user was on when they asked the question) over the <searchResults> 
 - <referring-url> often identifies the department in a segment but occasionally may betray a misunderstanding. For example, the user may be on the MSCA sign in page but their question is how to sign in to get their Notice of Assessment, which is done through their CRA account.
-2. Compare and select ONLY from <departments_list> or from the list of CDS-SNC cross-department canada.ca pages below
-3. DO NOT match to programs, benefits, or services - only match to their administering department from the <departments_list>
-4. If multiple departments could be responsible:
-   - Select the department that most likely directly administers and delivers web content for the program/service
-   - OR if applicable, set the department abbreviation to CDS-SNC and select one of these cross-department canada.ca urls as the departmentUrl in the matching page-language (CDS-SNC is responsible for these cross-department services):
+
+2. Compare and select an organization from <departments_list> or from the list of CDS-SNC cross-department canada.ca pages below
+- You MUST ONLY use the exact "Bilingual Abbr Key" values from the departments_list above
+- You MUST output BOTH the department abbreviation AND the matching URL from the same entry
+- You CANNOT use program names, service names, or benefit names as department codes unless they are listed in the <departments_list>
+- Examples of INVALID responses: "PASSPORT" (program name,not in the list), "CRA" or "ESDC" (unilingual abbreviations)
+
+4. If multiple organizations could be responsible:
+   - Select the organization that most likely directly administers and delivers web content for the program/service
+   - OR if applicable, set the bilingual abbreviation key to CDS-SNC and select one of these cross-department canada.ca urls as the departmentUrl in the matching page-language (CDS-SNC is responsible for these cross-department services):
       Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
       GCKey help/Aide pour GCKey: https://www.canada.ca/en/government/sign-in-online-account/gckey.html or fr: https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne/clegc.html
       Response to US tariffs: https://international.canada.ca/en/global-affairs/campaigns/canada-us-engagement or fr: https://international.canada.ca/fr/affaires-mondiales/campagnes/engagement-canada-etats-unis
@@ -77,15 +89,16 @@ async function loadContextSystemPrompt(language = 'en') {
      All Government of Canada departments and agencies: https://www.canada.ca/en/government/dept.html or fr:  https://www.canada.ca/fr/gouvernement/min.html
      All Government of Canada services (updated April 2025): https://www.canada.ca/en/services.html or fr: https://www.canada.ca/fr/services.html
 
-5. If no clear department match exists and no cross-department canada.ca url is relevant, return empty values  
+5. If no clear organization match exists and no cross-department canada.ca url is relevant, return empty values for both department and departmentUrl  
 
 ## Examples of Program-to-Department Mapping:
-- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → ESDC (administering department)
+- Canada Pension Plan (CPP), OAS, Disability pension, EI, Canadian Dental Care Plan → EDSC-ESDC (administering department)
 - Canada Child Benefit → CRA-ARC (administering department)
 - Job Bank, Apprenticeships, Student Loans→ EDSC-ESDC (administering department)
 - Weather Forecasts → ECCC (administering department)
 - My Service Canada Account (MSCA) → EDSC-ESDC (administering department)
-- Visa, ETA, entry to Canada → IRCC (administering department)
+- Visa, ETA, entry to Canada, immigration, refugees, citizenship → IRCC (administering department)
+- Canadian passports → IRCC (administering department)
 - Ontario Trillium Benefit → CRA-ARC (administering department)
 - Canadian Armed Forces Pensions → PSPC-SPAC (administering department)
 - Veterans benefits → VAC-ACC (administering department)
@@ -98,11 +111,13 @@ async function loadContextSystemPrompt(language = 'en') {
 - Travel advice and travel advisories for Canadians travelling abroad → GAC-AMC (on GAC's travel.gc.ca site)
 - Collection and assessment of duties and import taxes, CARM (GRCA in French) → CBSA-ASFC (administering department)
 - Find a member of Parliament →  HOC-CDC (administering department)
+- Find permits and licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
+
 
 ## Response Format:
 <analysis>
-<department>[EXACT department abbrKey from departments_list (e.g., CRA-ARC, EDSC-ESDC) OR empty string]</department>
-<departmentUrl>[EXACT department matching URL from departments_list OR empty string]</departmentUrl>
+<department>[EXACT "Bilingual Abbr Key" value from departments_list above (e.g., CRA-ARC, EDSC-ESDC) OR empty string if no match found]</department>
+<departmentUrl>[EXACT matching URL from the SAME entry in departments_list OR empty string]</departmentUrl>
 </analysis>
 
 ## Examples:

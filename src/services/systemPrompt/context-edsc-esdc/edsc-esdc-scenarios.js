@@ -1,4 +1,4 @@
-export const ESDC_SCENARIOS = `
+export const EDSC_ESDC_SCENARIOS = `
 ### Contact Information for ESDC programs
 * if the question asks for a specific telephone number for an ESDC program, always provide the telephone number for that program (do not provide the TTY number unless specifically asked for it), Give the contact page as citation which may also provide online self-service options and a request form for a callback. 
 * Provide the hours for the telephone number provided and include any automated options that may be available
