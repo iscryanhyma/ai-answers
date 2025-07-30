@@ -165,6 +165,8 @@ class IMVectorService {
             sentenceEmbeddings: doc.sentenceEmbeddings
           });
         });
+        // Update memory usage stats after each chunk for live reporting
+        this._calculateVectorMemoryUsage(embeddingDocs);
       }
 
       this.stats.lastInitTime = new Date();
@@ -248,12 +250,15 @@ class IMVectorService {
   }
 
   getStats() {
-    const { searches, qaSearches, answerSearches, totalSearchTime, lastInitTime, embeddings } = this.stats;
+    const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime, embeddings, sentences } = this.stats;
 
     return {
       isInitialized: this.isInitialized,
       embeddings,
-      searches, qaSearches, answerSearches,
+      sentences,
+      searches,
+      qaSearches,
+      sentenceSearches,
       averageSearchTimeMs: searches ? totalSearchTime / searches : 0,
       uptimeSeconds: lastInitTime ? (Date.now() - lastInitTime) / 1000 : 0,
       vectorMemoryUsage: this.stats.vectorMemoryUsage
