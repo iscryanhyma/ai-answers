@@ -113,6 +113,7 @@ class IMVectorService {
     if (this.initializingPromise) return this.initializingPromise;
 
     this.initializingPromise = (async () => {
+      const initStart = Date.now();
       ServerLoggingService.info('Initializing VectorService...', 'vector-service');
       await dbConnect();
 
@@ -170,10 +171,11 @@ class IMVectorService {
       }
 
       this.stats.lastInitTime = new Date();
+      this.stats.initDurationMs = Date.now() - initStart;
       this.isInitialized = true;
       this.initializingPromise = null;
       this._calculateVectorMemoryUsage(embeddingDocs);
-      ServerLoggingService.info(`VectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors loaded.`, 'vector-service');
+      ServerLoggingService.info(`VectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors loaded. Initialization took ${this.stats.initDurationMs}ms.`, 'vector-service');
     })();
 
     return this.initializingPromise;
@@ -250,7 +252,7 @@ class IMVectorService {
   }
 
   getStats() {
-    const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime, embeddings, sentences } = this.stats;
+    const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime, embeddings, sentences, initDurationMs } = this.stats;
 
     return {
       isInitialized: this.isInitialized,
@@ -261,6 +263,7 @@ class IMVectorService {
       sentenceSearches,
       averageSearchTimeMs: searches ? totalSearchTime / searches : 0,
       uptimeSeconds: lastInitTime ? (Date.now() - lastInitTime) / 1000 : 0,
+      initDurationMs,
       vectorMemoryUsage: this.stats.vectorMemoryUsage
     };
   }
