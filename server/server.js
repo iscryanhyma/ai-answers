@@ -1,3 +1,4 @@
+import checkUrlHandler from '../api/util/util-check-url.js';
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
 import express from 'express';
 import cors from 'cors';
@@ -83,6 +84,7 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "Healthy" });
 });
 
+
 app.get("*", (req, res, next) => {
   if (req.url.startsWith("/api")) {
     next();
@@ -91,6 +93,7 @@ app.get("*", (req, res, next) => {
   res.sendFile(path.join(__dirname, "../build", "index.html"));
 });
 
+app.get('/api/util/util-check-url', checkUrlHandler);
 app.post('/api/vector/vector-reinitialize', vectorReinitializeHandler);
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
