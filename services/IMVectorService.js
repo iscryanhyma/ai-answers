@@ -211,7 +211,10 @@ class IMVectorService {
   }
 
   async search(vector, k, indexType = 'qa') {
-    if (!this.isInitialized) await this.initialize();
+    // Allow usage during initialization: only trigger initialization if not started
+    if (!this.isInitialized && !this.initializingPromise) {
+      this.initialize();
+    }
 
     // Always convert to a plain array to strip Proxy/typed array wrappers
     let plainVector = Array.isArray(vector) ? Array.from(vector) : vector;
