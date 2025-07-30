@@ -113,6 +113,7 @@ class IMVectorService {
     if (this.initializingPromise) return this.initializingPromise;
 
     this.initializingPromise = (async () => {
+      const initStart = Date.now();
       ServerLoggingService.info('Initializing VectorService...', 'vector-service');
       await dbConnect();
 
@@ -165,13 +166,16 @@ class IMVectorService {
             sentenceEmbeddings: doc.sentenceEmbeddings
           });
         });
+        // Update memory usage stats after each chunk for live reporting
+        this._calculateVectorMemoryUsage(embeddingDocs);
       }
 
       this.stats.lastInitTime = new Date();
+      this.stats.initDurationMs = Date.now() - initStart;
       this.isInitialized = true;
       this.initializingPromise = null;
       this._calculateVectorMemoryUsage(embeddingDocs);
-      ServerLoggingService.info(`VectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors loaded.`, 'vector-service');
+      ServerLoggingService.info(`VectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors loaded. Initialization took ${this.stats.initDurationMs}ms.`, 'vector-service');
     })();
 
     return this.initializingPromise;
@@ -207,7 +211,10 @@ class IMVectorService {
   }
 
   async search(vector, k, indexType = 'qa') {
-    if (!this.isInitialized) await this.initialize();
+    // Allow usage during initialization: only trigger initialization if not started
+    if (!this.isInitialized && !this.initializingPromise) {
+      this.initialize();
+    }
 
     // Always convert to a plain array to strip Proxy/typed array wrappers
     let plainVector = Array.isArray(vector) ? Array.from(vector) : vector;
@@ -248,14 +255,18 @@ class IMVectorService {
   }
 
   getStats() {
-    const { searches, qaSearches, answerSearches, totalSearchTime, lastInitTime, embeddings } = this.stats;
+    const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime, embeddings, sentences, initDurationMs } = this.stats;
 
     return {
       isInitialized: this.isInitialized,
       embeddings,
-      searches, qaSearches, answerSearches,
+      sentences,
+      searches,
+      qaSearches,
+      sentenceSearches,
       averageSearchTimeMs: searches ? totalSearchTime / searches : 0,
       uptimeSeconds: lastInitTime ? (Date.now() - lastInitTime) / 1000 : 0,
+      initDurationMs,
       vectorMemoryUsage: this.stats.vectorMemoryUsage
     };
   }
