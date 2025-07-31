@@ -171,11 +171,11 @@ const createClaudeAgent = async (chatId = 'system') => {
   return agent;
 };
 
+
 const createContextAgent = async (agentType, chatId = 'system') => {
   let llm;
-
   switch (agentType) {
-    case 'openai':
+    case 'openai': {
       const openaiConfig = getModelConfig('openai');
       llm = new ChatOpenAI({
         openAIApiKey: process.env.OPENAI_API_KEY,
@@ -185,20 +185,22 @@ const createContextAgent = async (agentType, chatId = 'system') => {
         timeout: openaiConfig.timeoutMs,
       });
       break;
-    case 'azure':
+    }
+    case 'azure': {
       const azureConfig = getModelConfig('azure');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
         azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
         apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
-        azureOpenAIApiDeploymentName: azureConfig.name, 
+        azureOpenAIApiDeploymentName: azureConfig.name,
         temperature: azureConfig.temperature,
         maxTokens: azureConfig.maxTokens,
         timeout: azureConfig.timeoutMs,
       });
       console.log('Creating Azure OpenAI context agent with model:', azureConfig.name);
       break;
-    case 'cohere':
+    }
+    case 'cohere': {
       llm = new CohereClient({
         apiKey: process.env.COHERE_API_KEY,
         modelName: 'command-xlarge-nightly',
@@ -207,7 +209,8 @@ const createContextAgent = async (agentType, chatId = 'system') => {
         timeoutMs: 60000,
       });
       break;
-    case 'anthropic':
+    }
+    case 'anthropic': {
       llm = new ChatAnthropic({
         apiKey: process.env.ANTHROPIC_API_KEY,
         modelName: 'claude-3-5-haiku-20241022',
@@ -216,16 +219,55 @@ const createContextAgent = async (agentType, chatId = 'system') => {
         timeoutMs: 60000,
       });
       break;
+    }
     default:
       throw new Error(`Unknown agent type: ${agentType}`);
-  };
-
+  }
   // Context agent doesn't need tools, just callbacks for tracking
   const callbacks = [new ToolTrackingHandler(chatId)];
   const agent = await createReactAgent({ llm, tools: [] });
   agent.callbacks = callbacks;
   return agent;
-}
+};
+
+// New: createSearchAgent, identical to createContextAgent but uses 4o-mini for openai and azure
+const createSearchAgent = async (agentType, chatId = 'system') => {
+  let llm;
+  switch (agentType) {
+    case 'openai': {
+      const openaiConfig = getModelConfig('openai', 'gpt-4o');
+      llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: openaiConfig.name,
+        temperature: openaiConfig.temperature,
+        maxTokens: openaiConfig.maxTokens,
+        timeout: openaiConfig.timeoutMs,
+      });
+      break;
+    }
+    case 'azure': {
+      const azureConfig = getModelConfig('azure', 'gpt-4o');
+      llm = new AzureChatOpenAI({
+        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        azureOpenAIApiDeploymentName: azureConfig.name,
+        temperature: azureConfig.temperature,
+        maxTokens: azureConfig.maxTokens,
+        timeout: azureConfig.timeoutMs,
+      });
+      console.log('Creating Azure OpenAI search agent with model:', azureConfig.name);
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for search: ${agentType}`);
+  }
+  // Search agent doesn't need tools, just callbacks for tracking
+  const callbacks = [new ToolTrackingHandler(chatId)];
+  const agent = await createReactAgent({ llm, tools: [] });
+  agent.callbacks = callbacks;
+  return agent;
+};
 
 const createAgents = async (chatId = 'system') => {
   const openAIAgent = await createOpenAIAgent(chatId);
@@ -253,4 +295,4 @@ const getAgent = (agents, selectedAgent) => {
   }
 };
 
-export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createDirectOpenAIClient, createDirectAzureOpenAIClient };
+export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createDirectOpenAIClient, createDirectAzureOpenAIClient, createSearchAgent };
