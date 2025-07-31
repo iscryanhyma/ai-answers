@@ -6,23 +6,45 @@ import LoggingService from './ClientLoggingService.js';
 const ROLE = `## Role
 You are an AI assistant named "AI Answers" located on a Canada.ca page. You specialize in information found on Canada.ca and sites with the domain suffix "gc.ca". Your primary function is to help site visitors by providing brief helpful answers to their Government of Canada questions that correct misunderstandings if necessary, and that provide a citation to help them take the next step of their task and verify the answer. You prioritize factual accuracy sourced from Government of Canada content over being agreeable.`;
 
-// Helper function to create department content getters
-const createContentGetter = (importPath, exportName) => ({
-  getContent: async () => {
-    const module = await import(importPath);
-    return { scenarios: module[exportName] };
-  },
-});
-
 // Create a map of department-specific content imports using bilingual abbreviations
 const departmentModules = {
   // Bilingual abbreviations 
-  'CRA-ARC': createContentGetter('./systemPrompt/context-cra-arc/cra-arc-scenarios.js', 'CRA_ARC_SCENARIOS'),
-  'EDSC-ESDC': createContentGetter('./systemPrompt/context-edsc-esdc/edsc-esdc-scenarios.js', 'EDSC_ESDC_SCENARIOS'),
-  'SAC-ISC': createContentGetter('./systemPrompt/context-sac-isc/sac-isc-scenarios.js', 'SAC_ISC_SCENARIOS'),
-  'RCAANC-CIRNAC': createContentGetter('./systemPrompt/context-sac-isc/sac-isc-scenarios.js', 'SAC_ISC_SCENARIOS'),
-  'PSPC-SPAC': createContentGetter('./systemPrompt/context-pspc-spac/pspc-spac-scenarios.js', 'PSPC_SPAC_SCENARIOS'),
-  'IRCC': createContentGetter('./systemPrompt/context-ircc/ircc-scenarios.js', 'IRCC_SCENARIOS'),
+  'CRA-ARC': {
+    getContent: async () => {
+      const { CRA_ARC_SCENARIOS } = await import('./systemPrompt/context-cra-arc/cra-arc-scenarios.js');
+      return { scenarios: CRA_ARC_SCENARIOS };
+    },
+  },
+  'EDSC-ESDC': {
+    getContent: async () => {
+      const { EDSC_ESDC_SCENARIOS } = await import('./systemPrompt/context-edsc-esdc/edsc-esdc-scenarios.js');
+      return { scenarios: EDSC_ESDC_SCENARIOS };
+    },
+  },
+  'SAC-ISC': {
+    getContent: async () => {
+      const { SAC_ISC_SCENARIOS } = await import('./systemPrompt/context-sac-isc/sac-isc-scenarios.js');
+      return { scenarios: SAC_ISC_SCENARIOS };
+    },
+  },
+  'RCAANC-CIRNAC': {
+    getContent: async () => {
+      const { SAC_ISC_SCENARIOS } = await import('./systemPrompt/context-sac-isc/sac-isc-scenarios.js');
+      return { scenarios: SAC_ISC_SCENARIOS };
+    },
+  },
+  'PSPC-SPAC': {
+    getContent: async () => {
+      const { PSPC_SPAC_SCENARIOS } = await import('./systemPrompt/context-pspc-spac/pspc-spac-scenarios.js');
+      return { scenarios: PSPC_SPAC_SCENARIOS };
+    },
+  },
+  'IRCC': {
+    getContent: async () => {
+      const { IRCC_SCENARIOS } = await import('./systemPrompt/context-ircc/ircc-scenarios.js');
+      return { scenarios: IRCC_SCENARIOS };
+    },
+  },
 };
 
 async function loadSystemPrompt(language = 'en', context) {
