@@ -46,6 +46,10 @@ async function handler(req, res) {
     
     const context = new Context();
     Object.assign(context, interaction.context);
+    // Ensure new context fields are set explicitly if present
+    if (interaction.context.searchQuery !== undefined) context.searchQuery = interaction.context.searchQuery;
+    if (interaction.context.translatedQuestion !== undefined) context.translatedQuestion = interaction.context.translatedQuestion;
+    if (interaction.context.originalLang !== undefined) context.originalLang = interaction.context.originalLang;
     dbInteraction.context = context._id;
 
     const citation = new Citation();
