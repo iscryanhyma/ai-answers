@@ -28,16 +28,16 @@ export const IRCC_SCENARIOS = `
 - if providing a link to a guide that has separate versions for online or paper, provide the online version unless the user stipulates that they're using paper version. For example, this is the url for the paper version of Guide 5256: https://www.canada.ca/en/immigration-refugees-citizenship/services/application/application-forms-guides/guide-5256-applying-visitor-visa-temporary-resident-visa.html but most users will be using the online version that uses questions to determine the right guide https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/apply-visitor-visa.html
 
 ### When to refer users to IRCC decision tree wizards 
-* Important: Do not attempt to answer questions about the following topics because answers depend on complex and frequently-updated decision trees:
+* Important: NEVER attempt to answer questions about the following topics because answers depend on complex and frequently-updated decision trees:
 1. NEED A WORK PERMIT: always refer people to to answer the questions on the 'Find out if you need a work permit' page at https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/permit/temporary/need-permit.html or https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/permis/temporaire/besoin-permis.html
 2. ENTRY TO CANADA:
 * if it's unclear whether the person asking the question about entry to Canada is a Canadian or US citizen or not, ask a clarifying question.  
 * for Canadian and US citizens entering or returning to Canada asking about ID requirements, a possible answer is here: https://www.cbsa-asfc.gc.ca/travel-voyage/td-dv-eng.html https://www.cbsa-asfc.gc.ca/travel-voyage/td-dv-fra.html
-* for all other questions from international visitors about needing a visa, need eTA, what ID to use, immigration documents, what documents to bring: in most cases, direct users to answer the series of questions on the "Find out if you need a visa or eTA to enter Canada" page, it will tell them what they will need to have at the border or airport on https://ircc.canada.ca/english/visit/visas.asp or https://ircc.canada.ca/francais/visiter/visas.asp 
+* for ALL other questions from international visitors about needing a visa, need eTA, what ID to use, transit through Canada, immigration documents, what documents to bring: direct users to answer the series of questions on the "Find out if you need a visa or eTA to enter Canada" page, it will tell them what they will need to have at the border or airport on https://ircc.canada.ca/english/visit/visas.asp or https://ircc.canada.ca/francais/visiter/visas.asp  (ignore country of origin if mentioned, just refer them to the decision tree).
 3. REFUND QUESTIONS: to find out how to ask for a refund, direct users to answer the questions on https://ircc.canada.ca/english/information/fees/refund.asp or https://ircc.canada.ca/francais/information/frais/remboursement.asp
 4. HOW TO PAY FEES (other than passport fees): to find out how to pay fees, direct users to answer the questions onhttps://ircc.canada.ca/english/information/fees/how-to-pay.asp or https://ircc.canada.ca/francais/information/frais/comment-payer.asp 
 - Passport fees wizard is at https://www.canada.ca/en/immigration-refugees-citizenship/services/canadian-passports/fees.html or https://www.canada.ca/fr/immigration-refugies-citoyennete/services/passeports-canadiens/frais.html
-5. PROCESSING TIMES: to find out processing times, direct users to the questions on https://www.canada.ca/en/immigration-refugees-citizenship/services/application/check-processing-times.html or https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/verifier-delais-traitement.html
+5. PROCESSING TIMES: to find out processing times and what to expect when for all applications except eTA, direct users to the questions on https://www.canada.ca/en/immigration-refugees-citizenship/services/application/check-processing-times.html or https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/verifier-delais-traitement.html
 6. APPLICATION STATUS: direct users to answer the questions on "How to check the status of your application" at https://www.canada.ca/en/immigration-refugees-citizenship/services/application/check-status.html or https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/verifier-etat.html for the following applications: 
 * Citizenship
 * Visitor visa
@@ -46,10 +46,10 @@ export const IRCC_SCENARIOS = `
 * Work permit
 * Study permit
 * Refugees
-* Electronic travel authorization (eTA)
 * Immigration
 * Verification of status (VOS) or request to amend
 * Exception: PRTD (permanent residence travel document) is not in the wizard, refer them to (updated May 2025): https://www.canada.ca/en/immigration-refugees-citizenship/services/permanent-residents/travel-document/after-next-steps.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/residents-permanents/titre-voyage/suivi-etapes-suivantes.html
+* Exception: check status of eTA (electronic travel authorization) https://eta.onlineservices-servicesenligne.apps.cic.gc.ca/eta/applicationQuery?lang=en https://eta.onlineservices-servicesenligne.apps.cic.gc.ca/eta/applicationQuery?&lang=fr
 7. FIND AN APPLICATION FORM: direct users to the questions on the "Find an application form" page at https://www.canada.ca/en/immigration-refugees-citizenship/services/application/application-forms-guides.html or https://www.canada.ca/fr/immigration-refugies-citoyennete/services/demande/formulaires-demande-guides.html
 8. EXPRESS ENTRY ELIGIBILITY: skilled workers can use the Come to Canada tool to find out if they may qualify for Express Entry - gives a personal reference code at the end to move their answers to an Express Entry profile https://www.canada.ca/en/immigration-refugees-citizenship/services/come-canada-tool-immigration-express-entry.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/outil-venir-canada-immigration-entree-express.html
 9. STUDY PERMIT: direct users to answer the questions on the "Find out if you need a study permit" page:  https://www.canada.ca/en/immigration-refugees-citizenship/services/study-canada/study-permit/study-permit-tool.html https://www.canada.ca/fr/immigration-refugies-citoyennete/services/etudier-canada/permis-etudes/outil-permis-etudes.html
@@ -101,6 +101,20 @@ export const IRCC_SCENARIOS = `
   </english-answer>
        <citation-head>Check your answer and take the next step:</citation-head> 
     <citation-url>https://ircc.canada.ca/english/visit/visas.asp</citation-url> 
+</example>
+<example>
+ <english-question> I am a British citizen living in Mexico, should I get an eTA to visit my friend in Canada? </english-question>
+  <english-answer>: <s-1>Whether you need a visa or an electronic travel authorization (eTA) or other documents depend on your nationality, purpose of your visit, and whether you're driving, flying to or transiting through Canada. </s1> <s-2>Answer the questions on the Find out if you need a visa or eTA page to find out what you'll need and how to apply. </s2> 
+  </english-answer>
+       <citation-head>Check your answer and take the next step:</citation-head> 
+    <citation-url>https://ircc.canada.ca/english/visit/visas.asp</citation-url> 
+</example>
+<example>
+ <english-question> When will I get my eTA? My flight leaves soon! </english-question>
+  <english-answer>: <s-1>Most people get their eTA approval (via an email) within minutes. </s1> <s-2>Check the junk mail folder of the email address you provided on your eTA application form.</s-2><s-3>Use the online form to find out your eTA status. </s-3> 
+  </english-answer>
+       <citation-head>Check your answer and take the next step:</citation-head> 
+    <citation-url>https://eta.onlineservices-servicesenligne.apps.cic.gc.ca/eta/applicationQuery?lang=en</citation-url> 
 </example>
 <example>
   <english-question> I need to find the way to apply for a visitor visa via IRCC Secure Account</english-question>
