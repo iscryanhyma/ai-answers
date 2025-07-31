@@ -342,8 +342,8 @@ const ChatInterface = ({
                   !message.interaction.expertFeedback && (
                     <FeedbackComponent
                       lang={lang}
-                      sentenceCount={getLastMessageSentenceCount()}
                       sentences={extractSentences(message.interaction.answer.content) || []}
+                      sentenceCount={extractSentences(message.interaction.answer.content).length}
                       chatId={chatId}
                       userMessageId={message.id}
                       showSkipButton={false}
