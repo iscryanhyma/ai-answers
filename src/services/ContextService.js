@@ -78,7 +78,7 @@ const ContextService = {
     }
   },
 
-  contextSearch: async (message, searchProvider, lang = 'en', chatId = 'system') => {
+  contextSearch: async (message, searchProvider, lang = 'en', chatId = 'system', agentType = 'openai') => {
     try {
       const searchResponse = await fetch(getApiUrl('search-context'), {
         method: 'POST',
@@ -86,10 +86,11 @@ const ContextService = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          query: message,
+          message: message,
           lang: lang,
           searchService: searchProvider,
           chatId,
+          agentType,
         }),
       });
 
@@ -113,7 +114,8 @@ const ContextService = {
     referringUrl,
     searchProvider,
     conversationHistory = [],
-    chatId = 'system'
+    chatId = 'system',
+    
   ) => {
     try {
       await LoggingService.info(
@@ -125,13 +127,16 @@ const ContextService = {
         question,
         searchProvider,
         lang,
-        chatId
+        chatId,
+        aiProvider
       );
       await LoggingService.info(chatId, 'Executed Search:', {
         query: question,
         provider: searchProvider,
       });
-      return ContextService.parseContext(
+      // Extract agent values from searchResults
+      const { query: searchQuery, translatedQuestion, originalLang } = searchResults;
+      const parsedContext = ContextService.parseContext(
         await ContextService.sendMessage(
           aiProvider,
           question,
@@ -144,6 +149,13 @@ const ContextService = {
           chatId
         )
       );
+      // Add agent values to context object
+      return {
+        ...parsedContext,
+        searchQuery,
+        translatedQuestion,
+        originalLang
+      };
     } catch (error) {
       await LoggingService.error(chatId, 'Error deriving context:', error);
       throw error;
