@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.21.1](https://github.com/cds-snc/ai-answers/compare/v1.21.0...v1.21.1) (2025-07-31)
+
+
+### Bug Fixes
+
+* add-CIRNAC-to-ISC-Scenarios ([0e90c5b](https://github.com/cds-snc/ai-answers/commit/0e90c5b6c216a8d0f66ac37a80cd6354560fd8e6))
+* optimize evaluation deletion logic and improve expert feedback h… ([49121f1](https://github.com/cds-snc/ai-answers/commit/49121f19dc6e88eb3483686fc0a49d9d40fa574b))
+* optimize evaluation deletion logic and improve expert feedback handling ([66dc31b](https://github.com/cds-snc/ai-answers/commit/66dc31be052ee13760f4837af07fbb67104d1d06))
+
 ## [1.21.0](https://github.com/cds-snc/ai-answers/compare/v1.20.0...v1.21.0) (2025-07-30)
 
 
