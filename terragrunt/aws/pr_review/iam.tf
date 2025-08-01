@@ -45,7 +45,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
       "ssm:GetParameters",
       "ssm:GetParametersByPath"
     ]
-    effect  = "Allow"
+    effect = "Allow"
     resources = [
       "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/docdb_uri",
       "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/docdb_username",

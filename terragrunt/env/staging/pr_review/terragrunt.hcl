@@ -21,12 +21,12 @@ dependency "network" {
 dependency "database" {
   config_path = "../database"
   mock_outputs = {
-    ai_answers_docdb_security_group_id = "sg-00000000"
+    aws_docdb_security_group_id = "sg-00000000"
   }
 }
 
 inputs = {
   vpc_id                                 = dependency.network.outputs.vpc_id
-  ai_answers_docdb_security_group_id     = dependency.database.outputs.ai_answers_docdb_security_group_id
+  ai_answers_docdb_security_group_id     = dependency.database.outputs.aws_docdb_security_group_id
   ai_answers_lambda_client_iam_role_name = "ai-answers-lambda-client"
 }
