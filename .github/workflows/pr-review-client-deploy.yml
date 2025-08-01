@@ -64,7 +64,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE }}:${{ env.PR_NUMBER }} \
-            -f Dockerfile .
+            -f Dockerfile.lambda .
 
       - name: Push Docker image to ECR
         run: |
