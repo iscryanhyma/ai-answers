@@ -17,7 +17,7 @@ env:
   FUNCTION_NAME: "ai-answers-client-pr"
   IMAGE: ai_answers_pr_review
   REGISTRY: ${{ vars.STAGING_AWS_ACCOUNT_ID }}.dkr.ecr.ca-central-1.amazonaws.com
-  ROLE_ARN: arn:aws:iam::${{ vars.STAGING_AWS_ACCOUNT_ID }}:role/ai-answers-lambda-client
+  ROLE_ARN: arn:aws:iam::${{ vars.STAGING_AWS_ACCOUNT_ID }}:role/ai-answers-lambda-client-pr-review-env
 
 permissions:
   id-token: write
