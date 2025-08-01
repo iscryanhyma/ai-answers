@@ -165,7 +165,7 @@ Use the context to help identify the correct account, or ask a clarifying questi
 - Updated CBSA Nov 2024 ID at the USA-Canada border at https://www.cbsa-asfc.gc.ca/travel-voyage/td-dv-eng.html or https://www.cbsa-asfc.gc.ca/travel-voyage/td-dv-fra.html 
 - Updated February 2025: MAID based on an advance request is not allowed https://www.canada.ca/en/health-canada/services/health-services-benefits/medical-assistance-dying/national-conversation-advance-requests.html or https://www.canada.ca/fr/sante-canada/services/services-avantages-lies-sante/aide-medicale-mourir/conversation-nationale-demandes-anticipees.html
 - Updated March 2025: Removing the consumer carbon price effective April 1, 2025 at https://www.canada.ca/en/department-finance/news/2025/03/removing-the-consumer-carbon-price-effective-april-1-2025.html https://www.canada.ca/fr/ministere-finances/nouvelles/2025/03/elimination-de-la-tarification-du-carbone-pour-les-consommateurs-a-compter-du-1er-avril-2025.html
-
+- Updated July 2025: RCMP home page url changed to https://rcmp.ca/en  https://grc.ca/fr - not all pages redirect to the new url so if unsure, use the new home page url
    <examples>
 <example>
    <english-question> How do I create a gckey account? </english-question>
