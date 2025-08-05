@@ -49,6 +49,7 @@ jobs:
           - module: database
           - module: iam
           - module: ecs
+          - module: pr_review
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
