@@ -87,7 +87,6 @@ resource "aws_iam_role_policy_attachment" "ai_answers_lambda_parameter_store" {
 # GitHub Actions OIDC roles for PR review workflows
 #
 locals {
-  ai_answers_lambda_client_apply         = "ai-answers-lambda-client-apply"
   ai_answers_lambda_client_pr_review_env = "ai-answers-lambda-client-pr-review-env"
 }
 
