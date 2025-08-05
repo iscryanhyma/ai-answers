@@ -39,21 +39,39 @@ USER_AGENT=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="user_agent") 
 GOOGLE_API_KEY=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="google_api_key") | .Value')
 GOOGLE_SEARCH_ENGINE_ID=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="google_search_engine_id") | .Value')
 
+# Validate that all required parameters were extracted
+if [ -z "$DOCDB_URI" ] || [ -z "$AZURE_OPENAI_API_KEY" ] || [ -z "$AZURE_OPENAI_ENDPOINT" ] || [ -z "$JWT_SECRET_KEY" ]; then
+  echo "Error: One or more required parameters are empty after extraction"
+  echo "DOCDB_URI: ${DOCDB_URI:+SET}"
+  echo "AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:+SET}"
+  echo "AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:+SET}"
+  echo "JWT_SECRET_KEY: ${JWT_SECRET_KEY:+SET}"
+  exit 1
+fi
+
 # Check if the function already exists
 if aws lambda get-function --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&1; then
   echo "Function exists. Updating code and environment variables..."
   
-  aws lambda update-function-code \
+  echo "Updating function code..."
+  if ! aws lambda update-function-code \
     --function-name "$FULL_FUNCTION_NAME" \
-    --image-uri "${REGISTRY}/${IMAGE}:${IMAGE_TAG}" > /dev/null 2>&1
+    --image-uri "${REGISTRY}/${IMAGE}:${IMAGE_TAG}" > /dev/null 2>&1; then
+    echo "Error: Failed to update function code"
+    exit 1
+  fi
     
-  aws lambda update-function-configuration \
+  echo "Updating function configuration..."
+  if ! aws lambda update-function-configuration \
     --function-name "$FULL_FUNCTION_NAME" \
-    --environment "Variables={NODE_ENV=production,PORT=3001,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" > /dev/null 2>&1
+    --environment "Variables={NODE_ENV=production,PORT=3001,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" > /dev/null 2>&1; then
+    echo "Error: Failed to update function configuration"
+    exit 1
+  fi
 else
   echo "Function does not exist. Creating new Lambda function..."
   
-  aws lambda create-function \
+  if ! aws lambda create-function \
     --function-name "$FULL_FUNCTION_NAME" \
     --package-type Image \
     --role "$ROLE_ARN" \
@@ -61,27 +79,41 @@ else
     --memory-size 1024 \
     --code ImageUri="${REGISTRY}/${IMAGE}:${IMAGE_TAG}" \
     --environment "Variables={NODE_ENV=production,PORT=3001,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" \
-    --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" > /dev/null 2>&1
+    --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" > /dev/null 2>&1; then
+    echo "Error: Failed to create Lambda function"
+    exit 1
+  fi
 
   echo "Waiting for function to become active..."
-  aws lambda wait function-active --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&1
+  if ! aws lambda wait function-active --function-name "$FULL_FUNCTION_NAME" 2>/dev/null; then
+    echo "Error: Function failed to become active"
+    exit 1
+  fi
 
-  echo "Setting up function URL..."
-  aws lambda add-permission \
+  echo "Setting up function URL permissions..."
+  if ! aws lambda add-permission \
     --function-name "$FULL_FUNCTION_NAME" \
     --statement-id FunctionURLAllowPublicAccess \
     --action lambda:InvokeFunctionUrl \
     --principal "*" \
-    --function-url-auth-type NONE > /dev/null 2>&1
+    --function-url-auth-type NONE > /dev/null 2>&1; then
+    echo "Error: Failed to add function URL permissions"
+    exit 1
+  fi
 
   echo "Creating function URL configuration..."
-  aws lambda create-function-url-config \
+  if ! aws lambda create-function-url-config \
     --function-name "$FULL_FUNCTION_NAME" \
-    --auth-type NONE > /dev/null 2>&1
+    --auth-type NONE > /dev/null 2>&1; then
+    echo "Error: Failed to create function URL configuration"
+    exit 1
+  fi
 
   echo "Setting up logs..."
-  aws logs create-log-group --log-group-name /aws/lambda/"$FULL_FUNCTION_NAME" || true > /dev/null 2>&1
-  aws logs put-retention-policy --log-group-name /aws/lambda/"$FULL_FUNCTION_NAME" --retention-in-days 7 > /dev/null 2>&1
+  aws logs create-log-group --log-group-name /aws/lambda/"$FULL_FUNCTION_NAME" 2>/dev/null || true
+  if ! aws logs put-retention-policy --log-group-name /aws/lambda/"$FULL_FUNCTION_NAME" --retention-in-days 7 > /dev/null 2>&1; then
+    echo "Warning: Failed to set log retention policy"
+  fi
 fi
 
 echo "Lambda function $FULL_FUNCTION_NAME deployed successfully"
