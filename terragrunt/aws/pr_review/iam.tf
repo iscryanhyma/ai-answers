@@ -47,18 +47,18 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
     ]
     effect = "Allow"
     resources = [
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/docdb_uri",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/docdb_username",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/docdb_password",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/azure_openai_api_key",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/azure_openai_endpoint",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/azure_openai_api_version",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/canada_ca_search_uri",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/canada_ca_search_api_key",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/jwt_secret_key",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/user_agent",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/google_api_key",
-      "arn:aws:ssm:ca-central-1:${var.account_id}:parameter/google_search_engine_id"
+      var.docdb_uri_arn,
+      var.docdb_username_arn,
+      var.docdb_password_arn,
+      var.azure_openai_api_key_arn,
+      var.azure_openai_endpoint_arn,
+      var.azure_openai_api_version_arn,
+      var.canada_ca_search_uri_arn,
+      var.canada_ca_search_api_key_arn,
+      var.jwt_secret_key_arn,
+      var.user_agent_arn,
+      var.google_api_key_arn,
+      var.google_search_engine_id_arn
     ]
   }
 }
@@ -106,7 +106,7 @@ module "github_workflow_roles" {
     {
       name      = local.ai_answers_lambda_client_pr_review_env
       repo_name = "ai-answers"
-      claim     = "*"
+      claim     = "pull_request"
     }
   ]
 }
