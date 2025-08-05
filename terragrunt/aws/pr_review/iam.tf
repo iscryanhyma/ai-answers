@@ -141,3 +141,12 @@ resource "aws_iam_role_policy_attachment" "lambda_client_pr_review_management" {
   policy_arn = aws_iam_policy.lambda_management[0].arn
   depends_on = [module.github_workflow_roles[0]]
 }
+
+# Attach SSM parameter store access to GitHub Actions role
+resource "aws_iam_role_policy_attachment" "lambda_client_pr_review_parameter_store" {
+  count = var.env == "staging" ? 1 : 0
+
+  role       = local.ai_answers_lambda_client_pr_review_env
+  policy_arn = aws_iam_policy.ai_answers_lambda_parameter_store[0].arn
+  depends_on = [module.github_workflow_roles[0]]
+}
