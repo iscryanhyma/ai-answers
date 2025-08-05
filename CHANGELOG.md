@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.26.1](https://github.com/cds-snc/ai-answers/compare/v1.26.0...v1.26.1) (2025-08-05)
+
+
+### Bug Fixes
+
+* example simplified ([e25182f](https://github.com/cds-snc/ai-answers/commit/e25182f78f8850aae5ba1e815cd3994c8627060c))
+* update need-permit url ([e99a132](https://github.com/cds-snc/ai-answers/commit/e99a132b50fe9d1d8b4c22c1b263fa05c1efe338))
+
 ## [1.26.0](https://github.com/cds-snc/ai-answers/compare/v1.25.0...v1.26.0) (2025-08-05)
 
 
