@@ -1,3 +1,4 @@
+import dbDeleteExpertEvalHandler from '../api/db/db-delete-expert-eval.js';
 import checkUrlHandler from '../api/util/util-check-url.js';
 import similarChatsHandler from '../api/vector/vector-similar-chats.js';
 import express from 'express';
@@ -110,6 +111,7 @@ app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-chat-logs', dbChatLogsHandler);
+app.post('/api/db/db-delete-expert-eval', dbDeleteExpertEvalHandler);
 app.post('/api/db/db-auth-signup', signupHandler);
 app.post('/api/db/db-auth-login', loginHandler);
 app.all('/api/db/db-users', dbUsersHandler);
