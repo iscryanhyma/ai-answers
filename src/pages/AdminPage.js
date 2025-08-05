@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext.js';
 import ChatLogsDashboard from '../components/admin/ChatLogsDashboard.js';
 import DeleteChatSection from '../components/admin/DeleteChatSection.js';
 
+import DeleteExpertEval from '../components/DeleteExpertEval.js';
+
 const AdminPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const { logout } = useAuth();
@@ -80,6 +82,8 @@ const AdminPage = ({ lang = 'en' }) => {
       </nav>
 
       <DeleteChatSection lang={lang} />
+
+      <DeleteExpertEval lang={lang} />
 
       <section id="chat-logs" className="mb-600">
         <h2 className="mt-400 mb-400">{t('admin.chatLogs.title', 'Recent Chat Interactions')}</h2>
