@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.25.0](https://github.com/cds-snc/ai-answers/compare/v1.24.0...v1.25.0) (2025-08-05)
+
+
+### Features
+
+* implement delete expert evaluation functionality with UI component ([aa4f8e6](https://github.com/cds-snc/ai-answers/commit/aa4f8e6d97bc199e6a3921cf0d2d5c6c25b7320d))
+
 ## [1.24.0](https://github.com/cds-snc/ai-answers/compare/v1.23.0...v1.24.0) (2025-08-05)
 
 
