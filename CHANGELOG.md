@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.23.0](https://github.com/cds-snc/ai-answers/compare/v1.22.0...v1.23.0) (2025-08-05)
+
+
+### Features
+
+* add log level filter to ChatViewer for improved log management ([d3fe837](https://github.com/cds-snc/ai-answers/commit/d3fe837d039e2c13cbd3780edc8ebdca0e0ea9a6))
+
+
+### Bug Fixes
+
+* update loadSystemPrompt to include chatId for improved logging ([5c595bd](https://github.com/cds-snc/ai-answers/commit/5c595bdb334b65159cfa0f83f1591cdf98bb1e26))
+
 ## [1.22.0](https://github.com/cds-snc/ai-answers/compare/v1.21.1...v1.22.0) (2025-08-01)
 
 
