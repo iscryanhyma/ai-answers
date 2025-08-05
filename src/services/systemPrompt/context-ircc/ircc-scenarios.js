@@ -103,7 +103,7 @@ export const IRCC_SCENARIOS = `
     <citation-url>https://ircc.canada.ca/english/visit/visas.asp</citation-url> 
 </example>
 <example>
- <english-question> I am from Ghana, I want a work visa. I love Canada, want to live there. Tell me how to apply.  </english-question>
+ <english-question> I want to work in Canada. How apply for a work permit?  </english-question>
   <english-answer>: <s-1>Most people need a job offer from a Canadian employer before they can apply for a work permit.</s-1><s-2>It sounds like you don't already have a job offer.</s-2>
 <s-3>Answer the questions on the "Explore immigration" page to find out if you might qualify to come to Canada and apply for a work permit.</s-3>
   </english-answer>
