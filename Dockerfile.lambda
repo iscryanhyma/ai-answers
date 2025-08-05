@@ -1,56 +1,55 @@
 # AI Answers that runs as a Lambda function. It is used to create 
 # Lambda function review environments for each PR.
-FROM node:22-alpine as build
+# Use Node.js LTS as the base image
+FROM node:lts AS build
 
-ENV NODE_ENV=production
+# Set working directory
+WORKDIR /app
 
-COPY . /src
-WORKDIR /src
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
+RUN npm install --omit=dev
 
-# Install dependencies and build the React app
-RUN npm ci --only=production --ignore-scripts
+# Copy the rest of the application
+COPY . .
+
+# Build the React app
 RUN npm run build
 
-FROM node:22-alpine as final
-LABEL maintainer="AI Answers Team"
+# Use Node.js for the backend
+FROM node:lts
 
-ENV NODE_ENV=production
-ENV PORT=3001
+# Set working directory
+WORKDIR /app
 
-# Use the LAMBDA_ENV environment variable to determine if the app is running in a Lambda environment
-ENV LAMBDA_ENV=1
+RUN apt-get update \
+ && apt-get install -y socat \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
+# Download AWS DocumentDB certificate bundle
+RUN wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
 
-# Use the REVIEW_ENV environment variable to determine if the app is running in a Review environment
-ENV REVIEW_ENV=1
+# Copy package files and install dependencies
+COPY package.json package-lock.json ./
+COPY server/package.json server/package-lock.json ./server/
+RUN npm install -omit=dev
 
-WORKDIR /src
-
-# Copy built React app
-COPY --from=build /src/build ./build
-
-# Copy server files and dependencies
-COPY --from=build /src/node_modules ./node_modules
-COPY --from=build /src/package*.json ./
-COPY server ./server
-COPY api ./api
-COPY models ./models
-COPY services ./services
-COPY agents ./agents
-COPY middleware ./middleware
-COPY modules ./modules
-COPY config ./config
-
-# Required by the entrypoint.sh to load the SSM ParameterStore environment variables
-RUN apk update && apk add --no-cache aws-cli
+# Copy built frontend and backend code
+COPY --from=build /app/build /app/build
+COPY server /app/server
+COPY api /app/api
+COPY middleware /app/middleware
+COPY agents /app/agents
+COPY config /app/config
+COPY models /app/models
+COPY services /app/services
+COPY src /app/src
 
 # Lambda web adapter: https://github.com/awslabs/aws-lambda-web-adapter
 COPY --from=public.ecr.aws/cds-snc/aws-lambda-adapter:0.9.0@sha256:19cd0b92bc4a376b2b63e3b02d8b9ad3b4031ea3549fd5e54faa848c49948e09 /lambda-adapter /opt/extensions/lambda-adapter
 
-# Create entrypoint script for loading SSM parameters
-RUN echo '#!/bin/sh' > ./entrypoint.sh && \
-    echo 'exec node server/server.js' >> ./entrypoint.sh && \
-    chmod +x ./entrypoint.sh
-
+# Expose only the backend port
 EXPOSE 3001
 
-ENTRYPOINT ["./entrypoint.sh"]
+# Start the backend server
+CMD ["node", "server/server.js"]
