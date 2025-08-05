@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.24.0](https://github.com/cds-snc/ai-answers/compare/v1.23.0...v1.24.0) (2025-08-05)
+
+
+### Features
+
+* implement branch deletion script for merged branches ([f790577](https://github.com/cds-snc/ai-answers/commit/f7905770af1477970f818410c7088cd09a5d801c))
+
 ## [1.23.0](https://github.com/cds-snc/ai-answers/compare/v1.22.0...v1.23.0) (2025-08-05)
 
 
