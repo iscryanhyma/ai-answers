@@ -98,11 +98,6 @@ module "github_workflow_roles" {
 
   roles = [
     {
-      name      = local.ai_answers_lambda_client_apply
-      repo_name = "ai-answers"
-      claim     = "ref:refs/heads/main"
-    },
-    {
       name      = local.ai_answers_lambda_client_pr_review_env
       repo_name = "ai-answers"
       claim     = "pull_request"
@@ -137,14 +132,6 @@ resource "aws_iam_policy" "lambda_management" {
     CostCentre = var.billing_code
     Terraform  = true
   }
-}
-
-resource "aws_iam_role_policy_attachment" "lambda_client_apply_management" {
-  count = var.env == "staging" ? 1 : 0
-
-  role       = local.ai_answers_lambda_client_apply
-  policy_arn = aws_iam_policy.lambda_management[0].arn
-  depends_on = [module.github_workflow_roles[0]]
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_client_pr_review_management" {
