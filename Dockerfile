@@ -1,11 +1,8 @@
 # Use Node.js LTS as the base image
 FROM node:lts AS build
 
-
 # Set working directory
 WORKDIR /app
-
-
 
 # Copy package files and install dependencies
 COPY package.json package-lock.json ./
@@ -50,4 +47,4 @@ COPY src /app/src
 EXPOSE 3001
 
 # Start the backend server
-CMD ["node", "server/server.js"]
+CMD ["node", "server/server.js"] 
