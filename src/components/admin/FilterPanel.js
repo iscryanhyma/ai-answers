@@ -8,9 +8,20 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
   // Helper function to format date for datetime-local input
   const formatDateTimeLocal = (date) => {
     const d = new Date(date);
-    // Subtract timezone offset to get local time
-    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
-    return d.toISOString().slice(0, 16);
+    const pad = (num) => String(num).padStart(2, '0');
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+  };
+  // Helper to parse datetime-local input string into a local Date object
+  const parseDateTimeLocal = (dateTimeLocal) => {
+    const [datePart, timePart] = dateTimeLocal.split('T');
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hours, minutes] = timePart.split(':').map(Number);
+    return new Date(year, month - 1, day, hours, minutes);
   };
 
   // Default to last 24 hours
@@ -106,13 +117,15 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
     if (filterType === 'preset') {
       filters.presetValue = presetValue;
       if (presetValue !== 'all') {
-        filters.startDate = dateRange.startDate + ':00Z';
-        filters.endDate = dateRange.endDate + ':00Z';
+        // Convert local datetime-local input to UTC ISO string
+        filters.startDate = parseDateTimeLocal(dateRange.startDate).toISOString();
+        filters.endDate = parseDateTimeLocal(dateRange.endDate).toISOString();
       }
       // If 'all', do not send startDate/endDate
     } else if (filterType === 'custom') {
-      filters.startDate = dateRange.startDate + ':00Z';
-      filters.endDate = dateRange.endDate + ':00Z';
+      // Convert custom local datetime-local input to UTC ISO string
+      filters.startDate = parseDateTimeLocal(dateRange.startDate).toISOString();
+      filters.endDate = parseDateTimeLocal(dateRange.endDate).toISOString();
     }
     onApplyFilters(filters);
   };
@@ -330,11 +343,11 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
                     <div className="space-y-1">
                       <p>
                         <strong>{t('admin.dateRange.from')}</strong>{' '}
-                        {new Date(dateRange.startDate + ':00Z').toLocaleString(t('locale') === 'fr' ? 'fr-CA' : 'en-CA')}
+                        {parseDateTimeLocal(dateRange.startDate).toLocaleString(t('locale') === 'fr' ? 'fr-CA' : 'en-CA')}
                       </p>
                       <p>
                         <strong>{t('admin.dateRange.to')}</strong>{' '}
-                        {new Date(dateRange.endDate + ':00Z').toLocaleString(t('locale') === 'fr' ? 'fr-CA' : 'en-CA')}
+                        {parseDateTimeLocal(dateRange.endDate).toLocaleString(t('locale') === 'fr' ? 'fr-CA' : 'en-CA')}
                       </p>
                     </div>
                   )}
@@ -404,4 +417,4 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
   );
 };
 
-export default FilterPanel; 
+export default FilterPanel;
