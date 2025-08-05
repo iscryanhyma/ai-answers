@@ -35,8 +35,8 @@ jobs:
 
       - name: Delete lambda function resources
         run: |
-          # Delete the English version of the function (since we're using language-specific names)
-          FULL_FUNCTION_NAME="${FUNCTION_NAME}-${PR_NUMBER}-en"
+          # Delete the PR review Lambda function
+          FULL_FUNCTION_NAME="${FUNCTION_NAME}-${PR_NUMBER}"
 
           echo "Removing Lambda function: $FULL_FUNCTION_NAME"
 
