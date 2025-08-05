@@ -30,28 +30,62 @@ export default async function handler(req, res) {
 
   try {
     const httpsAgent = new Agent({ rejectUnauthorized: false });
-    const response = await axios.get(url, {
-      httpsAgent,
-      maxRedirects: 10,
-      timeout: 5000,
-      headers: {
-        'User-Agent': process.env.USER_AGENT || 'ai-answers',
+    let response;
+    let usedHead = false;
+    try {
+      // Try HEAD first with a fast timeout
+      response = await axios.head(url, {
+        httpsAgent,
+        maxRedirects: 10,
+        timeout: 10000,
+        headers: {
+          'User-Agent': process.env.USER_AGENT || 'ai-answers',
+        }
+      });
+      usedHead = true;
+    } catch (headError) {
+      // If HEAD is not allowed or fails, fall back to GET
+      if (headError.response && headError.response.status === 405) {
+        // 405 Method Not Allowed
+          response = await axios.get(url, {
+            httpsAgent,
+            maxRedirects: 10,
+            timeout: 10000,
+            headers: {
+              'User-Agent': process.env.USER_AGENT || 'ai-answers',
+            }
+          });
+      } else if (headError.code === 'ECONNABORTED' || headError.code === 'ETIMEDOUT') {
+        // HEAD timed out, try GET as fallback
+        response = await axios.get(url, {
+          httpsAgent,
+          maxRedirects: 10,
+          timeout: 10000,
+          headers: {
+            'User-Agent': process.env.USER_AGENT || 'ai-answers',
+          }
+        });
+      } else {
+        // Other errors, rethrow to outer catch
+        throw headError;
       }
-    });
+    }
 
     // Log the check with ServerLoggingService
     ServerLoggingService.info(
-      `Checked URL: ${url} => ${response.status} (${response.request.res.responseUrl})`,
+      `Checked URL: ${url} => ${response.status} (${response.request?.res?.responseUrl || url}) [${usedHead ? 'HEAD' : 'GET'}]`,
       chatId || 'system',
       {
         url,
         status: response.status,
-        finalUrl: response.request.res.responseUrl
+        finalUrl: response.request?.res?.responseUrl || url,
+        method: usedHead ? 'HEAD' : 'GET',
       }
     );
 
     // Check if the final URL (after potential redirects) is a known 404 page
-    if (notFoundPages.some((notFoundUrl) => response.request.res.responseUrl.includes(notFoundUrl))) {
+    const finalUrl = response.request?.res?.responseUrl || url;
+    if (notFoundPages.some((notFoundUrl) => finalUrl.includes(notFoundUrl))) {
       return res.status(200).json({ isValid: false });
     }
 
@@ -62,7 +96,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       isValid: true,
-      url: response.request.res.responseUrl,
+      url: finalUrl,
       confidenceRating: 1,
     });
   } catch (error) {
@@ -77,7 +111,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: `Access forbidden (403): ${url}` });
     } else if (error.response?.status === 404) {
       return res.status(404).json({ error: `Page not found (404): ${url}` });
-    } else if (error.code === 'ETIMEDOUT') {
+    } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
       return res.status(500).json({ error: `Request timed out: ${url}` });
     } else {
       return res.status(500).json({ error: `URL check failed: ${url} - ${error.message}` });
