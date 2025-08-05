@@ -6,7 +6,6 @@ on:
     - cron: "0 4 * * *" # Nightly at 4am
 
 env:
-  AWS_ACCOUNT_ID: ${{ vars.STAGING_AWS_ACCOUNT_ID }}
   AWS_DEFAULT_REGION: ca-central-1
   DELETE_AFTER_DAYS: 21
   FUNCTION_PREFIX: "ai-answers-client-pr"
@@ -23,7 +22,7 @@ jobs:
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
         with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ai-answers-apply
+          role-to-assume: arn:aws:iam::992382783569:role/ai-answers-apply
           role-session-name: PRReviewDeleteUnused
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
