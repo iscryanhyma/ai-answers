@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.26.0](https://github.com/cds-snc/ai-answers/compare/v1.25.0...v1.26.0) (2025-08-05)
+
+
+### Features
+
+* enhance URL checking logic with HEAD request fallback and impro… ([93efe3d](https://github.com/cds-snc/ai-answers/commit/93efe3d978a4e8066557cc272f2441e63afad8d2))
+* enhance URL checking logic with HEAD request fallback and improved error handling ([b233624](https://github.com/cds-snc/ai-answers/commit/b233624a5287ca670be493932e30d8a896199ba0))
+
 ## [1.25.0](https://github.com/cds-snc/ai-answers/compare/v1.24.0...v1.25.0) (2025-08-05)
 
 
