@@ -23,7 +23,7 @@ jobs:
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@b47578312673ae6fa5b5096b330d9fbac3d116df # v4.2.1
         with:
-          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ai-answers-lambda-client-apply
+          role-to-assume: arn:aws:iam::${{ env.AWS_ACCOUNT_ID }}:role/ai-answers-apply
           role-session-name: PRReviewDeleteUnused
           aws-region: ${{ env.AWS_DEFAULT_REGION }}
 
