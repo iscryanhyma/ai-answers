@@ -18,7 +18,7 @@ const AnswerService = {
   ) => {
     ClientLoggingService.info(chatId, `Processing message in ${lang.toUpperCase()}`);
 
-    const SYSTEM_PROMPT = await loadSystemPrompt(lang, context);
+    const SYSTEM_PROMPT = await loadSystemPrompt(lang, context, chatId);
     if (evaluation) {
       message = '<evaluation>' + message + '</evaluation>';
     }

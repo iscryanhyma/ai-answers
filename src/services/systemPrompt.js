@@ -47,7 +47,8 @@ const departmentModules = {
   },
 };
 
-async function loadSystemPrompt(language = 'en', context) {
+
+async function loadSystemPrompt(language = 'en', context, chatId) {
   await LoggingService.info(
     'system',
     `Loading system prompt for language: ${language.toUpperCase()}, context: ${context}`
@@ -62,18 +63,36 @@ async function loadSystemPrompt(language = 'en', context) {
 
     // Try to load content using the bilingual abbreviation
     if (departmentKey && departmentModules[departmentKey]) {
-      content = await departmentModules[departmentKey].getContent().catch((error) => {
-        LoggingService.warn('system', `Failed to load content for ${departmentKey}:`, error);
-        return { scenarios: '' };
-      });
+      content = await departmentModules[departmentKey].getContent()
+        .then((result) => {
+          if (chatId) {
+            LoggingService.info(chatId, `Loaded scenario file for department: ${departmentKey}`);
+          }
+          return result;
+        })
+        .catch((error) => {
+          if (chatId) {
+            LoggingService.warn(chatId, `Failed to load content for ${departmentKey}:`, error);
+          }
+          return { scenarios: '' };
+        });
     } else if (departmentKey && departmentKey.includes('-')) {
       // Fallback: extract English abbreviation (part before hyphen) for backward compatibility
       const englishFallback = departmentKey.split('-')[0];
       if (departmentModules[englishFallback]) {
-        content = await departmentModules[englishFallback].getContent().catch((error) => {
-          LoggingService.warn('system', `Failed to load content for fallback ${englishFallback}:`, error);
-          return { scenarios: '' };
-        });
+        content = await departmentModules[englishFallback].getContent()
+          .then((result) => {
+            if (chatId) {
+              LoggingService.info(chatId, `Loaded scenario file for fallback department: ${englishFallback}`);
+            }
+            return result;
+          })
+          .catch((error) => {
+            if (chatId) {
+              LoggingService.warn(chatId, `Failed to load content for fallback ${englishFallback}:`, error);
+            }
+            return { scenarios: '' };
+          });
       }
     }
 
