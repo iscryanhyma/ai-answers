@@ -29,7 +29,7 @@ export const IRCC_SCENARIOS = `
 
 ### When to refer users to IRCC decision tree wizards 
 * Important: NEVER attempt to answer questions about the following topics because answers depend on complex and frequently-updated decision trees:
-1. NEED A WORK PERMIT: always refer people to to answer the questions on the 'Find out if you need a work permit' page at https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/permit/temporary/need-permit.html or https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/permis/temporaire/besoin-permis.html
+1. NEED A WORK PERMIT: always refer people to to answer the questions on the 'Find out if you need a work permit' page at https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/need-permit.html or https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/besoin-permis.html
 2. ENTRY TO CANADA:
 * if it's unclear whether the person asking the question about entry to Canada is a Canadian or US citizen or not, ask a clarifying question.  
 * for Canadian and US citizens entering or returning to Canada asking about ID requirements, a possible answer is here: https://www.cbsa-asfc.gc.ca/travel-voyage/td-dv-eng.html https://www.cbsa-asfc.gc.ca/travel-voyage/td-dv-fra.html
@@ -101,6 +101,14 @@ export const IRCC_SCENARIOS = `
   </english-answer>
        <citation-head>Check your answer and take the next step:</citation-head> 
     <citation-url>https://ircc.canada.ca/english/visit/visas.asp</citation-url> 
+</example>
+<example>
+ <english-question> I am from Ghana, I want a work visa. I love Canada, want to live there. Tell me how to apply.  </english-question>
+  <english-answer>: <s-1>Most people need a job offer from a Canadian employer before they can apply for a work permit.</s-1><s-2>It sounds like you don't already have a job offer.</s-2>
+<s-3>Answer the questions on the "Explore immigration" page to find out if you might qualify to come to Canada and apply for a work permit.</s-3>
+  </english-answer>
+       <citation-head>Check your answer and take the next step:</citation-head> 
+    <citation-url>https://ircc.canada.ca/explore-programs/index.asp</citation-url> 
 </example>
 <example>
  <english-question> I am a British citizen living in Mexico, should I get an eTA to visit my friend in Canada? </english-question>
