@@ -16,7 +16,8 @@ env:
   FUNCTION_NAME: "ai-answers-client-pr"
   IMAGE: ai_answers_pr_review
   REGISTRY: 992382783569.dkr.ecr.ca-central-1.amazonaws.com
-  ROLE_ARN: arn:aws:iam::992382783569:role/ai-answers-lambda-client-pr-review-env
+  GITHUB_ROLE_ARN: arn:aws:iam::992382783569:role/ai-answers-lambda-client-pr-review-env
+  LAMBDA_EXECUTION_ROLE_ARN: arn:aws:iam::992382783569:role/ai-answers-lambda-client
 
 permissions:
   id-token: write
@@ -37,7 +38,7 @@ jobs:
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@master
         with:
-          role-to-assume: ${{ env.ROLE_ARN }}
+          role-to-assume: ${{ env.GITHUB_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Login to ECR
@@ -77,7 +78,7 @@ jobs:
       - name: Configure AWS credentials using OIDC
         uses: aws-actions/configure-aws-credentials@master
         with:
-          role-to-assume: ${{ env.ROLE_ARN }}
+          role-to-assume: ${{ env.GITHUB_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Deploy Lambda function using script
@@ -88,7 +89,7 @@ jobs:
             "$FUNCTION_NAME" \
             "$REGISTRY" \
             "$IMAGE" \
-            "$ROLE_ARN"
+            "$LAMBDA_EXECUTION_ROLE_ARN"
 
       - name: Get Lambda function URL
         run: |

@@ -70,8 +70,17 @@ if aws lambda get-function --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&
   fi
 else
   echo "Function does not exist. Creating new Lambda function..."
+  echo "Using image: ${REGISTRY}/${IMAGE}:${IMAGE_TAG}"
+  echo "Using role: $ROLE_ARN"
   
-  if ! aws lambda create-function \
+  # First validate the role exists
+  if ! aws iam get-role --role-name "$(basename "$ROLE_ARN")" > /dev/null 2>&1; then
+    echo "Error: IAM role does not exist or is not accessible: $ROLE_ARN"
+    exit 1
+  fi
+  
+  # Try to create the function and capture the error
+  ERROR_OUTPUT=$(aws lambda create-function \
     --function-name "$FULL_FUNCTION_NAME" \
     --package-type Image \
     --role "$ROLE_ARN" \
@@ -79,8 +88,12 @@ else
     --memory-size 1024 \
     --code ImageUri="${REGISTRY}/${IMAGE}:${IMAGE_TAG}" \
     --environment "Variables={NODE_ENV=production,PORT=3001,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" \
-    --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" > /dev/null 2>&1; then
+    --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" 2>&1)
+  
+  if [ $? -ne 0 ]; then
     echo "Error: Failed to create Lambda function"
+    echo "AWS Error details:"
+    echo "$ERROR_OUTPUT" | grep -E "(Error|error|Invalid|invalid|not found|NotFound|AccessDenied|Forbidden)" || echo "$ERROR_OUTPUT"
     exit 1
   fi
 
