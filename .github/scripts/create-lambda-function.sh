@@ -60,12 +60,19 @@ if aws lambda get-function --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&
     echo "Error: Failed to update function code"
     exit 1
   fi
+  
+  echo "Waiting for function to be ready for configuration update..."
+  aws lambda wait function-updated --function-name "$FULL_FUNCTION_NAME" 2>/dev/null || true
     
   echo "Updating function configuration..."
-  if ! aws lambda update-function-configuration \
+  ERROR_OUTPUT=$(aws lambda update-function-configuration \
     --function-name "$FULL_FUNCTION_NAME" \
-    --environment "Variables={NODE_ENV=production,PORT=3001,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" > /dev/null 2>&1; then
+    --environment "Variables={NODE_ENV=production,PORT=3001,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" 2>&1)
+  
+  if [ $? -ne 0 ]; then
     echo "Error: Failed to update function configuration"
+    echo "AWS Error details:"
+    echo "$ERROR_OUTPUT" | grep -E "(Error|error|Invalid|invalid|not found|NotFound|AccessDenied|Forbidden)" || echo "$ERROR_OUTPUT"
     exit 1
   fi
 else
