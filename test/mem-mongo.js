@@ -26,7 +26,7 @@ async function start() {
     apiUrl = `http://localhost:${port}`;
   }
 
-  console.log("API URL:", apiUrl);
+ 
 
   // Only build if the build directory doesn't exist
   const buildPath = path.resolve(__dirname, "../build");
