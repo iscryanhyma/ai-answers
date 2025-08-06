@@ -342,10 +342,10 @@ const ChatInterface = ({
                   !message.interaction.expertFeedback && (
                     <FeedbackComponent
                       lang={lang}
-                      sentenceCount={getLastMessageSentenceCount()}
                       sentences={extractSentences(message.interaction.answer.content) || []}
+                      sentenceCount={extractSentences(message.interaction.answer.content).length}
                       chatId={chatId}
-                      userMessageId={message.id}
+                      userMessageId={turnCount}
                       showSkipButton={false}
                       onSkip={focusTextarea}
                       skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
@@ -365,7 +365,7 @@ const ChatInterface = ({
                         ? message.interaction.answer.paragraphs.flatMap(paragraph => extractSentences(paragraph))
                         : []}
                       chatId={chatId}
-                      userMessageId={message.id}
+                      userMessageId={turnCount}
                       showSkipButton={!readOnly && turnCount < MAX_CONVERSATION_TURNS && !isLoading}
                       onSkip={focusTextarea}
                       skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
