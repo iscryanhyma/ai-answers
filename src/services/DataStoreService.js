@@ -375,7 +375,7 @@ class DataStoreService {
       return data.value;
     } catch (error) {
       console.error('Error fetching site status:', error);
-      return 'unavailable';
+      return 'available';
     }
   }
 }
