@@ -49,6 +49,31 @@ if [ -z "$DOCDB_URI" ] || [ -z "$AZURE_OPENAI_API_KEY" ] || [ -z "$AZURE_OPENAI_
   exit 1
 fi
 
+# Get VPC configuration for Lambda
+echo "Fetching VPC configuration for Lambda..."
+VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=ai-answers" --query 'Vpcs[0].VpcId' --output text 2>/dev/null)
+if [ "$VPC_ID" = "None" ] || [ -z "$VPC_ID" ]; then
+  echo "Error: Could not find ai-answers VPC"
+  exit 1
+fi
+
+# Get private subnet IDs
+SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Name,Values=*private*" --query 'Subnets[].SubnetId' --output text 2>/dev/null)
+if [ -z "$SUBNET_IDS" ]; then
+  echo "Error: Could not find private subnets in VPC $VPC_ID"
+  exit 1
+fi
+
+# Get the Lambda security group ID
+LAMBDA_SG_ID=$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=$VPC_ID" "Name=group-name,Values=ai-answers-lambda-pr-review" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null)
+if [ "$LAMBDA_SG_ID" = "None" ] || [ -z "$LAMBDA_SG_ID" ]; then
+  echo "Warning: Lambda security group not found, Lambda will run without VPC configuration"
+  VPC_CONFIG=""
+else
+  echo "Found VPC configuration (VPC and security group located)"
+  VPC_CONFIG="--vpc-config SubnetIds=$SUBNET_IDS,SecurityGroupIds=$LAMBDA_SG_ID"
+fi
+
 # Check if the function already exists
 if aws lambda get-function --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&1; then
   echo "Function exists. Updating code and environment variables..."
@@ -68,6 +93,7 @@ if aws lambda get-function --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&
   ERROR_OUTPUT=$(aws lambda update-function-configuration \
     --function-name "$FULL_FUNCTION_NAME" \
     --timeout 300 \
+    $VPC_CONFIG \
     --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" 2>&1)
   
   if [ $? -ne 0 ]; then
@@ -94,6 +120,7 @@ else
     --role "$ROLE_ARN" \
     --timeout 300 \
     --memory-size 1024 \
+    $VPC_CONFIG \
     --code ImageUri="${REGISTRY}/${IMAGE}:${IMAGE_TAG}" \
     --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" \
     --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" 2>&1)

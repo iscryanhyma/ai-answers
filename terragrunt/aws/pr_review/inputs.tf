@@ -3,6 +3,10 @@ variable "vpc_id" {
   type        = string
 }
 
+variable "vpc_private_subnet_ids" {
+  description = "List of private subnet IDs where Lambda functions will be deployed"
+  type        = list(string)
+}
 
 variable "ai_answers_docdb_security_group_id" {
   description = "Security group ID for the ai-answers DocumentDB"

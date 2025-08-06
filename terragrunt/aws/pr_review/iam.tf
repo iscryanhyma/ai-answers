@@ -35,6 +35,14 @@ resource "aws_iam_role_policy_attachment" "ai_answers_lambda_basic_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
 
+# Attach VPC execution policy for Lambda
+resource "aws_iam_role_policy_attachment" "ai_answers_lambda_vpc_execution" {
+  count = var.env == "staging" ? 1 : 0
+
+  role       = aws_iam_role.ai_answers_lambda_client[0].name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+}
+
 # SSM Parameter Store access for Lambda
 data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
   count = var.env == "staging" ? 1 : 0
