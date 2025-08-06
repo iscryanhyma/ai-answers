@@ -51,21 +51,23 @@ fi
 
 # Get VPC configuration for Lambda
 echo "Fetching VPC configuration for Lambda..."
-VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=ai-answers" --query 'Vpcs[0].VpcId' --output text 2>/dev/null)
+VPC_ID="$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=ai-answers_vpc" --query 'Vpcs[0].VpcId')"
 if [ "$VPC_ID" = "None" ] || [ -z "$VPC_ID" ]; then
   echo "Error: Could not find ai-answers VPC"
   exit 1
 fi
 
 # Get private subnet IDs
-SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Name,Values=*private*" --query 'Subnets[].SubnetId' --output text 2>/dev/null)
+SUBNET_IDS_RAW="$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" "Name=tag:Name,Values=*private*" --query 'Subnets[].SubnetId' --output text)"
+# Convert tab-separated list to comma-separated list for Lambda
+SUBNET_IDS=$(echo "$SUBNET_IDS_RAW" | tr '\t' ',')
 if [ -z "$SUBNET_IDS" ]; then
   echo "Error: Could not find private subnets in VPC $VPC_ID"
   exit 1
 fi
 
 # Get the Lambda security group ID
-LAMBDA_SG_ID=$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=$VPC_ID" "Name=group-name,Values=ai-answers-lambda-pr-review" --query 'SecurityGroups[0].GroupId' --output text 2>/dev/null)
+LAMBDA_SG_ID=$(aws ec2 describe-security-groups --filters "Name=vpc-id,Values=$VPC_ID" "Name=group-name,Values=ai-answers-lambda-pr-review" --query 'SecurityGroups[0].GroupId' --output text)
 if [ "$LAMBDA_SG_ID" = "None" ] || [ -z "$LAMBDA_SG_ID" ]; then
   echo "Warning: Lambda security group not found, Lambda will run without VPC configuration"
   VPC_CONFIG=""
