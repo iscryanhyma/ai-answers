@@ -45,9 +45,25 @@ const countWords = (text) => {
   return Math.min(words.length, 4);
 };
 
+
 // Helper function to check if query is too short
 const isShortQuery = (wordCount) => {
   return wordCount <= 2;
+};
+
+// Returns true if any previous user message in the conversation history has more than 2 words
+const hasAnyLongUserMessage = (conversationHistory) => {
+  return conversationHistory.some(m => m.sender === 'user' && !m.error && countWords(m.text) > 2);
+};
+
+// Throws ShortQueryValidation if the current user message is too short and no previous user message is long enough
+const validateShortQueryOrThrow = (conversationHistory, userMessage, lang, department, translationF) => {
+  const wordCount = countWords(userMessage);
+  if (!hasAnyLongUserMessage(conversationHistory) && isShortQuery(wordCount)) {
+    // Generate search URL using the same logic as redaction fallback
+    const searchUrl = urlToSearch.generateFallbackSearchUrl(lang, userMessage, department, translationF);
+    throw new ShortQueryValidation('Short query detected', userMessage, searchUrl.fallbackUrl);
+  }
 };
 
 export const ChatPipelineService = {
@@ -69,19 +85,9 @@ export const ChatPipelineService = {
     // Send updated status (displaying "Assessing question")
     sendStatusUpdate(onStatusUpdate, PipelineStatus.MODERATING_QUESTION);
 
-    // Check for short queries: block if first user message is short, or if previous user message was also short
-    // Find the last user message in the conversation history (excluding error/system messages)
-    const lastUserMessage = [...conversationHistory].reverse().find(m => m.sender === 'user' && !m.error);
-    const isFirstUserMessage = !lastUserMessage;
-    const wordCount = countWords(userMessage);
-    // Only allow short queries if the last user message was long enough
-    if (isFirstUserMessage || (lastUserMessage && countWords(lastUserMessage.text) <= 2)) {
-      if (isShortQuery(wordCount)) {
-        // Generate search URL using the same logic as redaction fallback
-        const searchUrl = urlToSearch.generateFallbackSearchUrl(lang, userMessage, department, translationF);
-        throw new ShortQueryValidation('Short query detected', userMessage, searchUrl.fallbackUrl);
-      }
-    }
+
+    // Check for short queries: block if no previous user message is long and current is short
+    validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
     // Do redaction but don't display status
     await ChatPipelineService.processRedaction(userMessage, lang);
