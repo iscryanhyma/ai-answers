@@ -223,13 +223,7 @@ const ChatInterface = ({
   return (
     <div className="chat-container">
       <div className="message-list">
-        {messages.map((message, idx) => {
-          // For AI messages, index is the count of AI messages up to and including this one, minus 1
-          let userMessageIndex = null;
-          if (message.sender === 'ai') {
-            userMessageIndex = messages.slice(0, idx + 1).filter(m => m.sender === 'ai').length - 1;
-          }
-          return (
+        {messages.map((message) => (
           <div key={`message-${message.id}`} className={`message ${message.sender}`}>
             {message.sender === 'user' ? (
               <div
@@ -348,13 +342,13 @@ const ChatInterface = ({
                   !message.interaction.expertFeedback && (
                     <FeedbackComponent
                       lang={lang}
+                      sentenceCount={getLastMessageSentenceCount()}
                       sentences={extractSentences(message.interaction.answer.content) || []}
-                      sentenceCount={extractSentences(message.interaction.answer.content).length}
                       chatId={chatId}
-                      userMessageId={message.interaction.userMessageId}
+                      userMessageId={message.id}
                       showSkipButton={false}
                       onSkip={focusTextarea}
-                      skipButtonLabel={safeT('homepage.chat.textarea.ariaLabel.skipfo')}
+                      skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
                     />
                   )}
 
@@ -371,17 +365,16 @@ const ChatInterface = ({
                         ? message.interaction.answer.paragraphs.flatMap(paragraph => extractSentences(paragraph))
                         : []}
                       chatId={chatId}
-                      userMessageId={message.interaction.userMessageId}
+                      userMessageId={message.id}
                       showSkipButton={!readOnly && turnCount < MAX_CONVERSATION_TURNS && !isLoading}
                       onSkip={focusTextarea}
-                      skipButtonLabel={safeT('homepage.chat.textarea.ariaLabel.skipfo')}
+                      skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
                     />
                   )}
               </>
             )}
           </div>
-        );
-        })}
+        ))}
 
         {isLoading && (
           <>
