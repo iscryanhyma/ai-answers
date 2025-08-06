@@ -351,10 +351,10 @@ const ChatInterface = ({
                       sentences={extractSentences(message.interaction.answer.content) || []}
                       sentenceCount={extractSentences(message.interaction.answer.content).length}
                       chatId={chatId}
-                      userMessageId={userMessageIndex}
+                      userMessageId={message.interaction.userMessageId}
                       showSkipButton={false}
                       onSkip={focusTextarea}
-                      skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
+                      skipButtonLabel={safeT('homepage.chat.textarea.ariaLabel.skipfo')}
                     />
                   )}
 
@@ -371,10 +371,10 @@ const ChatInterface = ({
                         ? message.interaction.answer.paragraphs.flatMap(paragraph => extractSentences(paragraph))
                         : []}
                       chatId={chatId}
-                      userMessageId={userMessageIndex}
+                      userMessageId={message.interaction.userMessageId}
                       showSkipButton={!readOnly && turnCount < MAX_CONVERSATION_TURNS && !isLoading}
                       onSkip={focusTextarea}
-                      skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
+                      skipButtonLabel={safeT('homepage.chat.textarea.ariaLabel.skipfo')}
                     />
                   )}
               </>
