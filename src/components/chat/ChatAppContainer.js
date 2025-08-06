@@ -236,10 +236,12 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       ]);
       try {
         const aiMessageId = messageIdCounter.current++;
+        // Count the number of user messages (excluding errors) for processResponse
+        const userMessageCount = messages.filter(m => m.sender === 'ai' && !m.error).length;
         const interaction = await ChatPipelineService.processResponse(
           chatId,
           userMessage,
-          turnCount,
+          userMessageCount,
           messages,
           lang,
           selectedDepartment,
