@@ -223,7 +223,13 @@ const ChatInterface = ({
   return (
     <div className="chat-container">
       <div className="message-list">
-        {messages.map((message) => (
+        {messages.map((message, idx) => {
+          // For AI messages, index is the count of AI messages up to and including this one, minus 1
+          let userMessageIndex = null;
+          if (message.sender === 'ai') {
+            userMessageIndex = messages.slice(0, idx + 1).filter(m => m.sender === 'ai').length - 1;
+          }
+          return (
           <div key={`message-${message.id}`} className={`message ${message.sender}`}>
             {message.sender === 'user' ? (
               <div
@@ -345,7 +351,7 @@ const ChatInterface = ({
                       sentences={extractSentences(message.interaction.answer.content) || []}
                       sentenceCount={extractSentences(message.interaction.answer.content).length}
                       chatId={chatId}
-                      userMessageId={message.id}
+                      userMessageId={userMessageIndex}
                       showSkipButton={false}
                       onSkip={focusTextarea}
                       skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
@@ -365,7 +371,7 @@ const ChatInterface = ({
                         ? message.interaction.answer.paragraphs.flatMap(paragraph => extractSentences(paragraph))
                         : []}
                       chatId={chatId}
-                      userMessageId={message.id}
+                      userMessageId={userMessageIndex}
                       showSkipButton={!readOnly && turnCount < MAX_CONVERSATION_TURNS && !isLoading}
                       onSkip={focusTextarea}
                       skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
@@ -374,7 +380,8 @@ const ChatInterface = ({
               </>
             )}
           </div>
-        ))}
+        );
+        })}
 
         {isLoading && (
           <>

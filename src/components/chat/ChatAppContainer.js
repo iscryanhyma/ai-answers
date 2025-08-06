@@ -239,7 +239,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         const interaction = await ChatPipelineService.processResponse(
           chatId,
           userMessage,
-          aiMessageId,
+          turnCount,
           messages,
           lang,
           selectedDepartment,
