@@ -8,5 +8,5 @@ export default async function handler(req, res) {
   }
   await dbConnect();
   const setting = await Setting.findOne({ key: 'siteStatus' });
-  return res.status(200).json({ value: setting ? setting.value : 'unavailable' });
+  return res.status(200).json({ value: setting ? setting.value : 'available' });
 }

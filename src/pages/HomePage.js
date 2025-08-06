@@ -73,12 +73,7 @@ const HomePage = ({ lang = "en" }) => {
             isAvailable: false,
             message: t("homepage.errors.serviceUnavailable"),
           });
-        } else {
-          setServiceStatus({
-            isAvailable: false,
-            message: t("homepage.errors.serviceUnavailable"),
-          });
-        }
+        } 
         setIsLoadingSiteStatus(false);
       })
       .catch(() => {
