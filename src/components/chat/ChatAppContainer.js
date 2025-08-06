@@ -268,9 +268,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         if (error instanceof RedactionError) {
           const userMessageId = messageIdCounter.current++;
           const blockedMessageId = messageIdCounter.current++;
-          setMessages(prevMessages => prevMessages.slice(0, -1));
           setMessages(prevMessages => [
-            ...prevMessages,
+            ...prevMessages.slice(0, -1),
             {
               id: userMessageId,
               text: error.redactedText,
@@ -292,24 +291,24 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           setIsLoading(false);
           return;
         } else if (error instanceof ShortQueryValidation) {
-          // Remove the user message that was added before the error
-          setMessages(prevMessages => prevMessages.slice(0, -1));
-          
-          // Decrement turn count since this was caught after it was incremented
-          setTurnCount(prev => prev - 1);
-          
-          // Display short query message (will be filtered out of conversation history)
+          // Remove the user message and any previous system error messages, then add the short query error message
           const shortQueryMessageId = messageIdCounter.current++;
-          setMessages(prevMessages => [
-            ...prevMessages,
-            {
-              id: shortQueryMessageId,
-              text: safeT('homepage.chat.messages.shortQueryMessage'),
-              searchUrl: error.searchUrl,
-              sender: 'system',
-              error: true
-            }
-          ]);
+          setMessages(prevMessages => {
+            // Remove the last user message and any previous system error messages
+            const filtered = prevMessages
+              .slice(0, -1) // remove last user message
+              .filter(m => !(m.error && m.sender === 'system' && m.text === safeT('homepage.chat.messages.shortQueryMessage')));
+            return [
+              ...filtered,
+              {
+                id: shortQueryMessageId,
+                text: safeT('homepage.chat.messages.shortQueryMessage'),
+                searchUrl: error.searchUrl,
+                sender: 'system',
+                error: true
+              }
+            ];
+          });
           clearInput();
           setIsLoading(false);
           return;
