@@ -122,7 +122,10 @@ data "aws_iam_policy_document" "lambda_management" {
       "lambda:*",
       "ecr:*",
       "logs:*",
-      "iam:PassRole"
+      "iam:PassRole",
+      "ec2:DescribeVpcs",
+      "ec2:DescribeSubnets",
+      "ec2:DescribeSecurityGroups"
     ]
     effect    = "Allow"
     resources = ["*"]
