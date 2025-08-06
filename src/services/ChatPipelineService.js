@@ -69,9 +69,13 @@ export const ChatPipelineService = {
     // Send updated status (displaying "Assessing question")
     sendStatusUpdate(onStatusUpdate, PipelineStatus.MODERATING_QUESTION);
 
-    // Check for short queries before redaction (only for first question in session)
-    if (conversationHistory.length === 0) {
-      const wordCount = countWords(userMessage);
+    // Check for short queries: block if first user message is short, or if previous user message was also short
+    // Find the last user message in the conversation history (excluding error/system messages)
+    const lastUserMessage = [...conversationHistory].reverse().find(m => m.sender === 'user' && !m.error);
+    const isFirstUserMessage = !lastUserMessage;
+    const wordCount = countWords(userMessage);
+    // Only allow short queries if the last user message was long enough
+    if (isFirstUserMessage || (lastUserMessage && countWords(lastUserMessage.text) <= 2)) {
       if (isShortQuery(wordCount)) {
         // Generate search URL using the same logic as redaction fallback
         const searchUrl = urlToSearch.generateFallbackSearchUrl(lang, userMessage, department, translationF);
