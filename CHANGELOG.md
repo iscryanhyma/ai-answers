@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.26.3](https://github.com/cds-snc/ai-answers/compare/v1.26.2...v1.26.3) (2025-08-06)
+
+
+### Bug Fixes
+
+* enhance short query validation in ChatPipelineService and update user message count in ChatAppContainer ([854590c](https://github.com/cds-snc/ai-answers/commit/854590c90de4bd11992e6564b96aef8822b3f944))
+* modify short query error handling to append messages instead of removing them ([34081e7](https://github.com/cds-snc/ai-answers/commit/34081e7db77848a96dea6888f3a40eca9591373a))
+* refine userMessageId handling and enhance sentence count extraction in ChatInterface ([c022c2d](https://github.com/cds-snc/ai-answers/commit/c022c2db6e2f8440db2d652cc63ba50583988cba))
+* streamline message rendering in ChatInterface and update userMessageId handling ([c4a5d5e](https://github.com/cds-snc/ai-answers/commit/c4a5d5e7aa41046dc328d424634b3035c0c8a266))
+* update site status return value from 'unavailable' to 'available' ([7f4d7c3](https://github.com/cds-snc/ai-answers/commit/7f4d7c35a5c99a030e054c7e4086a06b1dbb7cfe))
+* update site status return value to 'available' and simplify service status handling ([12f1eab](https://github.com/cds-snc/ai-answers/commit/12f1eab6007283f3bb5dd39c1f9a29b177385338))
+* update userMessageId calculation for AI messages in ChatInterface ([7da3c5a](https://github.com/cds-snc/ai-answers/commit/7da3c5a14c653a0449264d4bbece9693849d944a))
+* update userMessageId handling and improve sentence count extraction in ChatInterface ([6fad5c9](https://github.com/cds-snc/ai-answers/commit/6fad5c96240db7b2ba64b1738f83a64d37442b88))
+* update userMessageId handling in ChatInterface and adjust parameters in processResponse ([cf99d6b](https://github.com/cds-snc/ai-answers/commit/cf99d6bfe5eaadba3a8bc2d787df957a081f2037))
+
 ## [1.26.2](https://github.com/cds-snc/ai-answers/compare/v1.26.1...v1.26.2) (2025-08-06)
 
 
