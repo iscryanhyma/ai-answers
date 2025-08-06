@@ -173,13 +173,16 @@ const PORT = process.env.PORT || 3001;
       });
     const memoryUsage = process.memoryUsage();
     console.log(`Total application memory usage (RSS): ${(memoryUsage.rss / 1024 / 1024).toFixed(2)} MB`);
-    app.listen(PORT, () => {
+    app.listen(PORT, '0.0.0.0', () => {
       console.log(`Server running on port ${PORT}`);
     });
-    fetch(`http://localhost:${PORT}/health`)
-      .then((response) => response.json())
-      .then((data) => console.log("Health check:", data))
-      .catch((error) => console.error("Error:", error));
+    // Skip the self health check in Lambda environment to avoid startup delays
+    if (!process.env.AWS_LAMBDA_RUNTIME_API) {
+      fetch(`http://localhost:${PORT}/health`)
+        .then((response) => response.json())
+        .then((data) => console.log("Health check:", data))
+        .catch((error) => console.error("Error:", error));
+    }
   } catch (error) {
     console.error("Failed to start server:", error);
     process.exit(1);
