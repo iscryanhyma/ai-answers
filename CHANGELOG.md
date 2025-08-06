@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.26.2](https://github.com/cds-snc/ai-answers/compare/v1.26.1...v1.26.2) (2025-08-06)
+
+
+### Bug Fixes
+
+* finesse-search-query ([9bbf84e](https://github.com/cds-snc/ai-answers/commit/9bbf84e549cfde4ecc40e990e1a3769250f79ea1))
+* finesse-search-query ([2389d72](https://github.com/cds-snc/ai-answers/commit/2389d726822edcded79d1f2dcef51e877db5b96f))
+* improve handling of short user queries in chat pipeline ([d89b0a3](https://github.com/cds-snc/ai-answers/commit/d89b0a3ccd0e75dad9a4aef8c8a3504bcac287c2))
+* improve handling of short user queries in chat pipeline ([2117eb5](https://github.com/cds-snc/ai-answers/commit/2117eb59101aa61c40df2fabf45d27784180dc3d))
+
 ## [1.26.1](https://github.com/cds-snc/ai-answers/compare/v1.26.0...v1.26.1) (2025-08-05)
 
 
