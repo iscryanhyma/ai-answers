@@ -116,13 +116,11 @@ if check_function_exists "$FULL_FUNCTION_NAME"; then
   aws lambda wait function-updated --function-name "$FULL_FUNCTION_NAME" 2>/dev/null
     
   echo "Updating function configuration..."
-  aws lambda update-function-configuration \
+  if ! aws lambda update-function-configuration \
     --function-name "$FULL_FUNCTION_NAME" \
     --timeout 300 \
     $VPC_CONFIG \
-    --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" 2>&1
-  
-  if [ $? -ne 0 ]; then
+    --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" > /dev/null 2>&1; then
     echo "Error: Failed to update function configuration"
     exit 1
   fi
@@ -147,10 +145,6 @@ else
     exit 1
   fi
   
-  if [ $? -ne 0 ]; then
-    echo "Error: Failed to create Lambda function"
-    exit 1
-  fi
 
   echo "Waiting for function to become active..."
   if ! aws lambda wait function-active --function-name "$FULL_FUNCTION_NAME" 2>/dev/null; then
