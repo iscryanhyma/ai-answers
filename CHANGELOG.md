@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.27.1](https://github.com/cds-snc/ai-answers/compare/v1.27.0...v1.27.1) (2025-08-07)
+
+
+### Bug Fixes
+
+* add autoEval lookup and expertFeedback population to chat logs retrieval ([9643954](https://github.com/cds-snc/ai-answers/commit/9643954c3adff55f3c61e4381d47361917ee2b22))
+* enhance chat log retrieval by adding answer and citation lookups ([8eadad0](https://github.com/cds-snc/ai-answers/commit/8eadad0ce7966be37376cf77992546a8f25bbf6a))
+* enhance date parsing and validation in FilterPanel component ([b8cac8f](https://github.com/cds-snc/ai-answers/commit/b8cac8f5aec7a63f0f0e25f28036cd55b259ffec))
+
 ## [1.27.0](https://github.com/cds-snc/ai-answers/compare/v1.26.3...v1.27.0) (2025-08-07)
 
 
