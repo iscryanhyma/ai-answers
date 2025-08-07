@@ -133,7 +133,7 @@ else
   
   
   # Try to create the function and capture the error
-  aws lambda create-function \
+  if ! aws lambda create-function \
     --function-name "$FULL_FUNCTION_NAME" \
     --package-type Image \
     --role "$ROLE_ARN" \
@@ -142,7 +142,10 @@ else
     $VPC_CONFIG \
     --code ImageUri="${REGISTRY}/${IMAGE}:${IMAGE_TAG}" \
     --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" \
-    --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" 2>&1
+    --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" > /dev/null 2>&1; then
+    echo "Error: Failed to create Lambda function"
+    exit 1
+  fi
   
   if [ $? -ne 0 ]; then
     echo "Error: Failed to create Lambda function"
