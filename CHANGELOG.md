@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.27.0](https://github.com/cds-snc/ai-answers/compare/v1.26.3...v1.27.0) (2025-08-07)
+
+
+### Features
+
+* branch previews ([66cf791](https://github.com/cds-snc/ai-answers/commit/66cf7913e87cd0ababc025b2a05617977dff8790))
+* delete after 14 days instead of 21 ([760a6a4](https://github.com/cds-snc/ai-answers/commit/760a6a494d84a8309ef755f3a1b8fb6bf3ae0442))
+* delete previous comments for review environment URL ([2830b9d](https://github.com/cds-snc/ai-answers/commit/2830b9db4b38773283f8f8b451c236653792ff06))
+* remove renovate PR exclusion for cleanup workflow ([e079099](https://github.com/cds-snc/ai-answers/commit/e079099f801e9194c83072df52fd92114ccce5a9))
+
+
+### Bug Fixes
+
+* add retry mechanism to prevent Lambda deployment race condition ([5b09c44](https://github.com/cds-snc/ai-answers/commit/5b09c448570d0470d97be33f976c140a57377fa0))
+* add retry mechanism to prevent Lambda deployment race condition ([f16f74f](https://github.com/cds-snc/ai-answers/commit/f16f74f0c3c237d4382f8c5017155b3a9c865cb7))
+* critical fix leaked secrets from script. ([b6e5b93](https://github.com/cds-snc/ai-answers/commit/b6e5b93cb4c76107197d702e3725827c9ed485a4))
+* delete since we want pr review envs for everything. ([d3d71dc](https://github.com/cds-snc/ai-answers/commit/d3d71dc99e3237384a8785610816bdee7fd515d7))
+* dont leak secrets. ([9aaccb7](https://github.com/cds-snc/ai-answers/commit/9aaccb7eb99f85f95fe5363e64c9a1134a5915d3))
+* remove error output var and call command directly. ([9ca7373](https://github.com/cds-snc/ai-answers/commit/9ca737398ff57217b18c06a887e49d25ecc4145b))
+* remove step since the IAM role should always exist ([3c269cb](https://github.com/cds-snc/ai-answers/commit/3c269cb56ee9df96b42bf1a5a5d0510b6f5557a2))
+* remove to prevent accidental secret disclosure in env vars. ([85a4f0d](https://github.com/cds-snc/ai-answers/commit/85a4f0d30f3dfcf913278fc4f7eec8e287349b10))
+* this step should wait or fail. ([1ebfdf4](https://github.com/cds-snc/ai-answers/commit/1ebfdf46b2756f75e1f727dc4ef4fca9de273257))
+
 ## [1.26.3](https://github.com/cds-snc/ai-answers/compare/v1.26.2...v1.26.3) (2025-08-06)
 
 
