@@ -160,6 +160,34 @@ async function chatLogsHandler(req, res) {
           'interactions.question': { $arrayElemAt: ['$interactions.question_doc', 0] }
         }
       });
+      // Add autoEval lookup and nested expertFeedback
+      pipeline.push({
+        $lookup: {
+          from: 'evals',
+          localField: 'interactions.autoEval',
+          foreignField: '_id',
+          as: 'interactions.autoEval'
+        }
+      });
+      pipeline.push({
+        $unwind: {
+          path: '$interactions.autoEval',
+          preserveNullAndEmptyArrays: true
+        }
+      });
+      pipeline.push({
+        $lookup: {
+          from: 'expertfeedbacks',
+          localField: 'interactions.autoEval.expertFeedback',
+          foreignField: '_id',
+          as: 'interactions.autoEval.expertFeedback'
+        }
+      });
+      pipeline.push({
+        $addFields: {
+          'interactions.autoEval.expertFeedback': { $arrayElemAt: ['$interactions.autoEval.expertFeedback', 0] }
+        }
+      });
 
       // Build AND filters
       const andFilters = [];
