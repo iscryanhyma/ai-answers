@@ -26,7 +26,6 @@ permissions:
 
 jobs:
   build-and-push-container:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'Renovate') }}
     runs-on: ubuntu-latest
     steps:
       - name: Set envs
@@ -65,7 +64,6 @@ jobs:
         run: docker logout $REGISTRY
 
   deploy-lambda-function:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'Renovate') }}
     runs-on: ubuntu-latest
     needs: build-and-push-container
     steps:
