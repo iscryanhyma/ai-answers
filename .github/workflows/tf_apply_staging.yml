@@ -85,3 +85,7 @@ jobs:
       - name: Apply ecs
         working-directory: terragrunt/env/staging/ecs
         run: terragrunt apply --terragrunt-non-interactive -auto-approve
+
+      - name: Apply pr_review
+        working-directory: terragrunt/env/staging/pr_review
+        run: terragrunt apply --terragrunt-non-interactive -auto-approve

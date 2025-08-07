@@ -1,4 +1,4 @@
-# Use Node.js LTS as the base image
+# use Node.js LTS as the base image
 FROM node:lts AS build
 
 # Set working directory
@@ -43,8 +43,20 @@ COPY models /app/models
 COPY services /app/services
 COPY src /app/src
 
+# Lambda web adapter: https://github.com/awslabs/aws-lambda-web-adapter
+COPY --from=public.ecr.aws/cds-snc/aws-lambda-adapter:0.9.0@sha256:19cd0b92bc4a376b2b63e3b02d8b9ad3b4031ea3549fd5e54faa848c49948e09 /lambda-adapter /opt/extensions/lambda-adapter
+
+# Configure Lambda Web Adapter
+ENV AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter
+ENV RUST_LOG=info
+ENV READINESS_CHECK_PATH=/health
+ENV READINESS_CHECK_PORT=3001
+ENV READINESS_CHECK_PROTOCOL=http
+ENV READINESS_CHECK_MAX_WAIT=60
+ENV READINESS_CHECK_INTERVAL=1
+
 # Expose only the backend port
 EXPOSE 3001
 
 # Start the backend server
-CMD ["node", "server/server.js"] 
+CMD ["node", "server/server.js"]
