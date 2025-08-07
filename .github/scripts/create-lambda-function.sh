@@ -100,14 +100,13 @@ if aws lambda get-function --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&
   
   if [ $? -ne 0 ]; then
     echo "Error: Failed to update function configuration"
-    echo "AWS Error details:"
-    echo "$ERROR_OUTPUT" | grep -E "(Error|error|Invalid|invalid|not found|NotFound|AccessDenied|Forbidden)" || echo "$ERROR_OUTPUT"
     exit 1
   fi
 else
   echo "Function does not exist. Creating new Lambda function..."
   echo "Using image: ${REGISTRY}/${IMAGE}:${IMAGE_TAG}"
   echo "Using role: $ROLE_ARN"
+  
   
   # Try to create the function and capture the error
   ERROR_OUTPUT=$(aws lambda create-function \
@@ -123,8 +122,6 @@ else
   
   if [ $? -ne 0 ]; then
     echo "Error: Failed to create Lambda function"
-    echo "AWS Error details:"
-    echo "$ERROR_OUTPUT" | grep -E "(Error|error|Invalid|invalid|not found|NotFound|AccessDenied|Forbidden)" || echo "$ERROR_OUTPUT"
     exit 1
   fi
 
