@@ -76,8 +76,32 @@ else
   VPC_CONFIG="--vpc-config SubnetIds=$SUBNET_IDS,SecurityGroupIds=$LAMBDA_SG_ID"
 fi
 
+# Function to check if Lambda function exists with retries
+check_function_exists() {
+  local function_name="$1"
+  local max_attempts=5
+  local attempt=1
+  local wait_time=2
+  
+  while [ $attempt -le $max_attempts ]; do
+    if aws lambda get-function --function-name "$function_name" > /dev/null 2>&1; then
+      return 0  # Function exists
+    fi
+    
+    if [ $attempt -lt $max_attempts ]; then
+      echo "Function check attempt $attempt/$max_attempts - waiting ${wait_time}s for AWS consistency..."
+      sleep $wait_time
+      wait_time=$((wait_time * 2))  # Exponential backoff
+    fi
+    
+    attempt=$((attempt + 1))
+  done
+  
+  return 1  # Function does not exist after all attempts
+}
+
 # Check if the function already exists
-if aws lambda get-function --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&1; then
+if check_function_exists "$FULL_FUNCTION_NAME"; then
   echo "Function exists. Updating code and environment variables..."
   
   echo "Updating function code..."
