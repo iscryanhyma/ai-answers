@@ -89,7 +89,7 @@ if aws lambda get-function --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&
   fi
   
   echo "Waiting for function to be ready for configuration update..."
-  aws lambda wait function-updated --function-name "$FULL_FUNCTION_NAME" 2>/dev/null || true
+  aws lambda wait function-updated --function-name "$FULL_FUNCTION_NAME" 2>/dev/null
     
   echo "Updating function configuration..."
   ERROR_OUTPUT=$(aws lambda update-function-configuration \
