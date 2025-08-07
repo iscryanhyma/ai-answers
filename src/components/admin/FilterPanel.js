@@ -18,10 +18,20 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
   };
   // Helper to parse datetime-local input string into a local Date object
   const parseDateTimeLocal = (dateTimeLocal) => {
-    const [datePart, timePart] = dateTimeLocal.split('T');
-    const [year, month, day] = datePart.split('-').map(Number);
-    const [hours, minutes] = timePart.split(':').map(Number);
-    return new Date(year, month - 1, day, hours, minutes);
+    if (!dateTimeLocal || typeof dateTimeLocal !== 'string') return null;
+    const parts = dateTimeLocal.split('T');
+    if (parts.length !== 2) return null;
+    const [datePart, timePart] = parts;
+    if (!datePart || !timePart) return null;
+    const dateArr = datePart.split('-').map(Number);
+    const timeArr = timePart.split(':').map(Number);
+    if (
+      dateArr.length !== 3 ||
+      timeArr.length < 2 ||
+      dateArr.some(isNaN) ||
+      timeArr.some(isNaN)
+    ) return null;
+    return new Date(dateArr[0], dateArr[1] - 1, dateArr[2], timeArr[0], timeArr[1]);
   };
 
   // Default to last 24 hours
@@ -118,14 +128,18 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
       filters.presetValue = presetValue;
       if (presetValue !== 'all') {
         // Convert local datetime-local input to UTC ISO string
-        filters.startDate = parseDateTimeLocal(dateRange.startDate).toISOString();
-        filters.endDate = parseDateTimeLocal(dateRange.endDate).toISOString();
+        const startObj = parseDateTimeLocal(dateRange.startDate);
+        const endObj = parseDateTimeLocal(dateRange.endDate);
+        filters.startDate = startObj ? startObj.toISOString() : undefined;
+        filters.endDate = endObj ? endObj.toISOString() : undefined;
       }
       // If 'all', do not send startDate/endDate
     } else if (filterType === 'custom') {
       // Convert custom local datetime-local input to UTC ISO string
-      filters.startDate = parseDateTimeLocal(dateRange.startDate).toISOString();
-      filters.endDate = parseDateTimeLocal(dateRange.endDate).toISOString();
+      const startObj = parseDateTimeLocal(dateRange.startDate);
+      const endObj = parseDateTimeLocal(dateRange.endDate);
+      filters.startDate = startObj ? startObj.toISOString() : undefined;
+      filters.endDate = endObj ? endObj.toISOString() : undefined;
     }
     onApplyFilters(filters);
   };
@@ -343,11 +357,17 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
                     <div className="space-y-1">
                       <p>
                         <strong>{t('admin.dateRange.from')}</strong>{' '}
-                        {parseDateTimeLocal(dateRange.startDate).toLocaleString(t('locale') === 'fr' ? 'fr-CA' : 'en-CA')}
+                        {(() => {
+                          const d = parseDateTimeLocal(dateRange.startDate);
+                          return d ? d.toLocaleString(t('locale') === 'fr' ? 'fr-CA' : 'en-CA') : t('admin.dateRange.invalidDate');
+                        })()}
                       </p>
                       <p>
                         <strong>{t('admin.dateRange.to')}</strong>{' '}
-                        {parseDateTimeLocal(dateRange.endDate).toLocaleString(t('locale') === 'fr' ? 'fr-CA' : 'en-CA')}
+                        {(() => {
+                          const d = parseDateTimeLocal(dateRange.endDate);
+                          return d ? d.toLocaleString(t('locale') === 'fr' ? 'fr-CA' : 'en-CA') : t('admin.dateRange.invalidDate');
+                        })()}
                       </p>
                     </div>
                   )}
