@@ -7,7 +7,7 @@ on:
 
 env:
   AWS_DEFAULT_REGION: ca-central-1
-  DELETE_AFTER_DAYS: 21
+  DELETE_AFTER_DAYS: 14
   FUNCTION_PREFIX: "ai-answers-client-pr"
   IMAGE: ai_answers_pr_review
 
