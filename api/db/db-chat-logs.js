@@ -125,12 +125,31 @@ async function chatLogsHandler(req, res) {
         }
       });
 
+      // Lookup full answer documents
       pipeline.push({
         $lookup: {
           from: 'answers',
           localField: 'interactions.answer',
           foreignField: '_id',
-          as: 'interactions.answer_doc'
+          as: 'interactions.answer'
+        }
+      });
+      pipeline.push({
+        $addFields: {
+          'interactions.answer': { $arrayElemAt: ['$interactions.answer', 0] }
+        }
+      });
+      pipeline.push({
+        $lookup: {
+          from: 'citations',
+          localField: 'interactions.answer.citation',
+          foreignField: '_id',
+          as: 'interactions.answer.citation'
+        }
+      });
+      pipeline.push({
+        $addFields: {
+          'interactions.answer.citation': { $arrayElemAt: ['$interactions.answer.citation', 0] }
         }
       });
 
@@ -138,8 +157,35 @@ async function chatLogsHandler(req, res) {
         $addFields: {
           'interactions.expertFeedback': { $arrayElemAt: ['$interactions.expertFeedback_doc', 0] },
           'interactions.publicFeedback': { $arrayElemAt: ['$interactions.publicFeedback_doc', 0] },
-          'interactions.question': { $arrayElemAt: ['$interactions.question_doc', 0] },
-          'interactions.answer': { $arrayElemAt: ['$interactions.answer_doc', 0] }
+          'interactions.question': { $arrayElemAt: ['$interactions.question_doc', 0] }
+        }
+      });
+      // Add autoEval lookup and nested expertFeedback
+      pipeline.push({
+        $lookup: {
+          from: 'evals',
+          localField: 'interactions.autoEval',
+          foreignField: '_id',
+          as: 'interactions.autoEval'
+        }
+      });
+      pipeline.push({
+        $unwind: {
+          path: '$interactions.autoEval',
+          preserveNullAndEmptyArrays: true
+        }
+      });
+      pipeline.push({
+        $lookup: {
+          from: 'expertfeedbacks',
+          localField: 'interactions.autoEval.expertFeedback',
+          foreignField: '_id',
+          as: 'interactions.autoEval.expertFeedback'
+        }
+      });
+      pipeline.push({
+        $addFields: {
+          'interactions.autoEval.expertFeedback': { $arrayElemAt: ['$interactions.autoEval.expertFeedback', 0] }
         }
       });
 
