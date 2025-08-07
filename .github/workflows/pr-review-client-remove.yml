@@ -20,7 +20,6 @@ permissions:
 
 jobs:
   remove-pr-environment:
-    if: ${{ !contains(github.event.pull_request.labels.*.name, 'Renovate') }}
     runs-on: ubuntu-latest
     steps:
       - name: Set envs
