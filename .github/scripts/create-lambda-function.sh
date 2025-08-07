@@ -109,12 +109,6 @@ else
   echo "Using image: ${REGISTRY}/${IMAGE}:${IMAGE_TAG}"
   echo "Using role: $ROLE_ARN"
   
-  # First validate the role exists
-  if ! aws iam get-role --role-name "$(basename "$ROLE_ARN")" > /dev/null 2>&1; then
-    echo "Error: IAM role does not exist or is not accessible: $ROLE_ARN"
-    exit 1
-  fi
-  
   # Try to create the function and capture the error
   ERROR_OUTPUT=$(aws lambda create-function \
     --function-name "$FULL_FUNCTION_NAME" \
