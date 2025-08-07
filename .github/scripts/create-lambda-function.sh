@@ -76,8 +76,32 @@ else
   VPC_CONFIG="--vpc-config SubnetIds=$SUBNET_IDS,SecurityGroupIds=$LAMBDA_SG_ID"
 fi
 
+# Function to check if Lambda function exists with retries
+check_function_exists() {
+  local function_name="$1"
+  local max_attempts=5
+  local attempt=1
+  local wait_time=2
+  
+  while [ $attempt -le $max_attempts ]; do
+    if aws lambda get-function --function-name "$function_name" > /dev/null 2>&1; then
+      return 0  # Function exists
+    fi
+    
+    if [ $attempt -lt $max_attempts ]; then
+      echo "Function check attempt $attempt/$max_attempts - waiting ${wait_time}s for AWS consistency..."
+      sleep $wait_time
+      wait_time=$((wait_time * 2))  # Exponential backoff
+    fi
+    
+    attempt=$((attempt + 1))
+  done
+  
+  return 1  # Function does not exist after all attempts
+}
+
 # Check if the function already exists
-if aws lambda get-function --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&1; then
+if check_function_exists "$FULL_FUNCTION_NAME"; then
   echo "Function exists. Updating code and environment variables..."
   
   echo "Updating function code..."
@@ -92,13 +116,11 @@ if aws lambda get-function --function-name "$FULL_FUNCTION_NAME" > /dev/null 2>&
   aws lambda wait function-updated --function-name "$FULL_FUNCTION_NAME" 2>/dev/null
     
   echo "Updating function configuration..."
-  aws lambda update-function-configuration \
+  if ! aws lambda update-function-configuration \
     --function-name "$FULL_FUNCTION_NAME" \
     --timeout 300 \
     $VPC_CONFIG \
-    --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" 2>&1
-  
-  if [ $? -ne 0 ]; then
+    --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" > /dev/null 2>&1; then
     echo "Error: Failed to update function configuration"
     exit 1
   fi
@@ -109,7 +131,7 @@ else
   
   
   # Try to create the function and capture the error
-  aws lambda create-function \
+  if ! aws lambda create-function \
     --function-name "$FULL_FUNCTION_NAME" \
     --package-type Image \
     --role "$ROLE_ARN" \
@@ -118,12 +140,11 @@ else
     $VPC_CONFIG \
     --code ImageUri="${REGISTRY}/${IMAGE}:${IMAGE_TAG}" \
     --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" \
-    --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" 2>&1
-  
-  if [ $? -ne 0 ]; then
+    --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" > /dev/null 2>&1; then
     echo "Error: Failed to create Lambda function"
     exit 1
   fi
+  
 
   echo "Waiting for function to become active..."
   if ! aws lambda wait function-active --function-name "$FULL_FUNCTION_NAME" 2>/dev/null; then
