@@ -1,7 +1,8 @@
-import { Embedding } from '../models/embedding.js';
-import ServerLoggingService from './ServerLoggingService.js';
-import dbConnect from '../api/db/db-connect.js';
 import mongoose from 'mongoose';
+import dbConnect from '../api/db/db-connect.js';
+import ServerLoggingService from './ServerLoggingService.js';
+import { Interaction } from '../models/interaction.js';
+import { Embedding } from '../models/embedding.js';
 
 /**
  * Utility: validate that a vector is a finite-number array
@@ -23,9 +24,8 @@ class DocDBVectorService {
    * @param {Object} [options.filterQuery] - Override filter for selecting embeddings.
    * @param {boolean} [options.preCheck=false] - If true, scan and report invalid vectors before initialization.
    */
-  constructor({ filterQuery = { expertFeedback: { $exists: true, $ne: null } }, preCheck = true } = {}) {
+  constructor({ preCheck = true } = {}) {
     ServerLoggingService.debug('Constructor: creating DocDBVectorService instance', 'vector-service');
-    this.filterQuery = filterQuery;
     this.preCheck = preCheck;
     this.isInitialized = false;
     this.initializingPromise = null;
@@ -120,10 +120,15 @@ class DocDBVectorService {
       this.collection = mongoose.connection.collection('embeddings');
       ServerLoggingService.debug('initialize: collection acquired', 'vector-service');
 
+      const Interaction = mongoose.model('Interaction');
+      const interactionsWithFeedback = await Interaction.find({ expertFeedback: { $exists: true, $ne: null } }).select('_id').lean();
+      const interactionIds = interactionsWithFeedback.map(i => i._id);
+      ServerLoggingService.debug(`initialize: found interactionIds with expertFeedback: ${JSON.stringify(interactionIds)}`, 'vector-service');
+
       const baseQuery = {
         questionsAnswerEmbedding: { $exists: true, $ne: null },
         sentenceEmbeddings: { $exists: true, $not: { $size: 0 } },
-        ...this.filterQuery
+        interactionId: { $in: interactionIds }
       };
       ServerLoggingService.debug(`initialize: using baseQuery: ${JSON.stringify(baseQuery)}`, 'vector-service');
 
