@@ -95,7 +95,9 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbedding
                 },
                 sentenceMatchTrace: failedSentenceTraces,
                 fallbackType: 'qa-high-score',
-                fallbackSourceChatId: fallbackSourceChatId
+                fallbackSourceChatId: fallbackSourceChatId,
+                matchedCitationInteractionId: bestCitationMatch.matchedCitationInteractionId || '',
+                matchedCitationChatId: bestCitationMatch.matchedCitationChatId || ''
             });
             const savedEval = await newEval.save();
             await Interaction.findByIdAndUpdate(
@@ -319,7 +321,9 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
         explanation: '',
         url: '',
         similarity: 0,
-        expertCitationUrl: ''
+        expertCitationUrl: '',
+        matchedCitationInteractionId: '', // Add field for interactionId string
+        matchedCitationChatId: '' // Add field for chatId string
     };
     // Always score the search page as zero
     const searchPagePattern = /^https:\/\/www\.canada\.ca\/(en|fr)\/sr\/srb\.html(\?.*)?$/i;
@@ -355,6 +359,11 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
             bestCitationMatch.url = matchUrl;
             bestCitationMatch.similarity = 1;
             bestCitationMatch.expertCitationUrl = expertFeedback?.expertCitationUrl;
+            bestCitationMatch.matchedCitationInteractionId = matchInteraction.interactionId || '';
+            // Find chatId for matched interaction
+            const Chat = mongoose.model('Chat');
+            const chatDoc = await Chat.findOne({ interactions: matchInteraction._id }, { chatId: 1 });
+            bestCitationMatch.matchedCitationChatId = chatDoc ? chatDoc.chatId : '';
             break;
         }
         
@@ -362,7 +371,9 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
     ServerLoggingService.debug('Citation matching result (worker):', 'system', {
         sourceUrl,
         matchedUrl: bestCitationMatch.url,
-        score: bestCitationMatch.score
+        score: bestCitationMatch.score,
+        matchedCitationInteractionId: bestCitationMatch.matchedCitationInteractionId,
+        matchedCitationChatId: bestCitationMatch.matchedCitationChatId
     });
     return bestCitationMatch;
 }
@@ -456,7 +467,11 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
         feedbackId: savedFeedback._id,
         totalScore: recalculatedScore,
         citationScore: bestCitationMatch.score
-    });    const newEval = new Eval({
+    });
+    // Find matched citation interactionId and chatId for traceability
+    const matchedCitationInteractionId = bestCitationMatch.matchedCitationInteractionId || '';
+    const matchedCitationChatId = bestCitationMatch.matchedCitationChatId || '';
+    const newEval = new Eval({
         expertFeedback: savedFeedback._id,
         processed: true,
         hasMatches: true,
@@ -464,9 +479,10 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
             sentences: sentenceSimilarities,
             citation: bestCitationMatch.similarity || 0
         },
-        sentenceMatchTrace: sentenceTrace
+        sentenceMatchTrace: sentenceTrace,
+        matchedCitationInteractionId,
+        matchedCitationChatId
     });
-    const savedEval = await newEval.save();
     await Interaction.findByIdAndUpdate(
         interaction._id,
         { autoEval: savedEval._id },
@@ -478,7 +494,8 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
         totalScore: recalculatedScore,
         similarityScores: newEval.similarityScores,
         traceCount: sentenceTrace.length
-    });    return savedEval;
+    });
+    return savedEval;
 }
 
 // Create an evaluation record to mark that an interaction has been processed but no matches were found
