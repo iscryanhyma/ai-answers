@@ -3,7 +3,7 @@ const getApiUrl = (endpoint) => {
     process.env.REACT_APP_API_URL ||
     (process.env.NODE_ENV === "development" ? "http://127.0.0.1:3001/api" : "/api");
   const prefix = endpoint.split("-")[0];
-  console.log("getApiUrl called with endpoint:", endpoint, "=> serverUrl:", serverUrl, "prefix:", prefix);
+  //console.log("getApiUrl called with endpoint:", endpoint, "=> serverUrl:", serverUrl, "prefix:", prefix);
   return `${serverUrl}/${prefix}/${endpoint}`;
 };
 

@@ -235,7 +235,7 @@ const createSearchAgent = async (agentType, chatId = 'system') => {
   let llm;
   switch (agentType) {
     case 'openai': {
-      const openaiConfig = getModelConfig('openai', 'gpt-4o');
+      const openaiConfig = getModelConfig('openai', 'gpt-4.1-mini');
       llm = new ChatOpenAI({
         openAIApiKey: process.env.OPENAI_API_KEY,
         modelName: openaiConfig.name,
@@ -246,7 +246,7 @@ const createSearchAgent = async (agentType, chatId = 'system') => {
       break;
     }
     case 'azure': {
-      const azureConfig = getModelConfig('azure', 'gpt-4o');
+      const azureConfig = getModelConfig('azure', 'openai-gpt41-mini');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
         azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
