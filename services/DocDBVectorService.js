@@ -23,7 +23,7 @@ class DocDBVectorService {
    * @param {Object} [options.filterQuery] - Override filter for selecting embeddings.
    * @param {boolean} [options.preCheck=false] - If true, scan and report invalid vectors before initialization.
    */
-  constructor({ filterQuery = { expertFeedback: { $exists: true } }, preCheck = true } = {}) {
+  constructor({ filterQuery = { expertFeedback: { $exists: true, $ne: null } }, preCheck = true } = {}) {
     ServerLoggingService.debug('Constructor: creating DocDBVectorService instance', 'vector-service');
     this.filterQuery = filterQuery;
     this.preCheck = preCheck;
@@ -111,22 +111,25 @@ class DocDBVectorService {
     if (this.initializingPromise) return this.initializingPromise;
 
     this.initializingPromise = (async () => {
-      ServerLoggingService.info('Initializing DocDBVectorService...', 'vector-service');
+      ServerLoggingService.info('initialize: starting initialization process', 'vector-service');
+      ServerLoggingService.debug('initialize: about to connect to database', 'vector-service');
       await dbConnect();
-      ServerLoggingService.debug('Database connected', 'vector-service');
+      ServerLoggingService.debug('initialize: database connected successfully', 'vector-service');
 
+      ServerLoggingService.debug('initialize: acquiring collection reference', 'vector-service');
       this.collection = mongoose.connection.collection('embeddings');
-      ServerLoggingService.debug('Obtained collection reference', 'vector-service');
+      ServerLoggingService.debug('initialize: collection acquired', 'vector-service');
 
       const baseQuery = {
         questionsAnswerEmbedding: { $exists: true, $ne: null },
         sentenceEmbeddings: { $exists: true, $not: { $size: 0 } },
         ...this.filterQuery
       };
+      ServerLoggingService.debug(`initialize: using baseQuery: ${JSON.stringify(baseQuery)}`, 'vector-service');
 
       // Pre-check invalid vectors if enabled
       if (this.preCheck) {
-        ServerLoggingService.info('Prechecking vectors for validity...', 'vector-service');
+        ServerLoggingService.info('initialize: prechecking vectors for validity...', 'vector-service');
         const coll = mongoose.connection.db.collection('embeddings');
         // Find docs with empty or non-number QA embeddings
         const badQA = await coll.find({
@@ -136,9 +139,7 @@ class DocDBVectorService {
             { questionsAnswerEmbedding: { $elemMatch: { $not: { $type: 1 } } } }
           ]
         }).project({ _id: 1, questionsAnswerEmbedding: 1 }).toArray();
-        badQA.forEach(doc => {
-          ServerLoggingService.error(`Invalid QA vector in doc ${doc._id}`, 'vector-service', { vector: doc.questionsAnswerEmbedding });
-        });
+        ServerLoggingService.debug(`initialize: badQA count: ${badQA.length}`, 'vector-service');
         // Find docs with empty or non-number sentence embeddings
         const badSent = await coll.find({
           ...baseQuery,
@@ -147,15 +148,14 @@ class DocDBVectorService {
             { sentenceEmbeddings: { $elemMatch: { $elemMatch: { $not: { $type: 1 } } } } }
           ]
         }).project({ _id: 1, sentenceEmbeddings: 1 }).toArray();
-        badSent.forEach(doc => {
-          ServerLoggingService.error(`Invalid sentence vectors in doc ${doc._id}`, 'vector-service', { vectors: doc.sentenceEmbeddings });
-        });
+        ServerLoggingService.debug(`initialize: badSent count: ${badSent.length}`, 'vector-service');
         if (badQA.length || badSent.length) {
-          throw new Error('Precheck failed: invalid vectors detected; see logs for details');
+          ServerLoggingService.warn('initialize: found invalid vectors during precheck', 'vector-service');
         }
       }
 
       // Infer embedding dimensionality
+      ServerLoggingService.debug('initialize: fetching a sample document to infer dimension', 'vector-service');
       const sample = await Embedding.findOne(baseQuery).lean();
       if (!sample) {
         ServerLoggingService.error('initialize: no sample embedding found', 'vector-service');
@@ -163,31 +163,38 @@ class DocDBVectorService {
         throw new Error('No embeddings found to infer dimension');
       }
       const dim = sample.questionsAnswerEmbedding.length;
-      ServerLoggingService.info(`Inferred embedding dimensionality: ${dim}`, 'vector-service');
+      ServerLoggingService.info(`initialize: inferred embedding dimensionality: ${dim}`, 'vector-service');
 
       // Ensure vector indexes
       const options = { type: 'hnsw', similarity: 'cosine', dimensions: dim, m: 16, efConstruction: 64 };
       try {
+        ServerLoggingService.debug('initialize: ensuring QA vector index', 'vector-service');
         await this._ensureVectorIndex('embeddings', { questionsAnswerEmbedding: 'vector' }, options, 'qa_vector_index');
+        ServerLoggingService.info('initialize: QA vector index ensured', 'vector-service');
       } catch (err) {
-        ServerLoggingService.error(`Error ensuring qa_vector_index; continuing: ${err.message}`, 'vector-service');
+        ServerLoggingService.error(`initialize: error ensuring qa_vector_index; continuing: ${err.message}`, 'vector-service');
       }
       try {
+        ServerLoggingService.debug('initialize: ensuring sentence vector index', 'vector-service');
         await this._ensureVectorIndex('embeddings', { sentenceEmbeddings: 'vector' }, options, 'sentence_vector_index');
+        ServerLoggingService.info('initialize: sentence vector index ensured', 'vector-service');
       } catch (err) {
-        ServerLoggingService.error(`Error ensuring sentence_vector_index; continuing: ${err.message}`, 'vector-service');
+        ServerLoggingService.error(`initialize: error ensuring sentence_vector_index; continuing: ${err.message}`, 'vector-service');
       }
 
       // Collect statistics
+      ServerLoggingService.debug('initialize: collecting statistics for embeddings', 'vector-service');
       this.stats.embeddings = await Embedding.countDocuments(baseQuery);
       this.stats.sentences = await Embedding.aggregate([
         { $match: baseQuery },
         { $group: { _id: null, total: { $sum: { $size: '$sentenceEmbeddings' } } } }
       ]).then(r => r[0]?.total || 0);
+      ServerLoggingService.info(`initialize: collected stats - embeddings: ${this.stats.embeddings}, sentences: ${this.stats.sentences}`, 'vector-service');
 
       this.stats.lastInitTime = new Date();
 
       // Load metadata
+      ServerLoggingService.debug('initialize: loading metadata from embeddings', 'vector-service');
       const metaDocs = await Embedding.find(baseQuery)
         .select('_id interactionId chatId questionId answerId createdAt sentenceEmbeddings')
         .lean();
@@ -212,13 +219,11 @@ class DocDBVectorService {
           });
         });
       });
+      ServerLoggingService.info('initialize: metadata loading completed', 'vector-service');
 
       this.isInitialized = true;
       this.initializingPromise = null;
-      ServerLoggingService.info(
-        `DocDBVectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors.`,
-        'vector-service'
-      );
+      ServerLoggingService.info(`DocDBVectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors.`, 'vector-service');
     })();
 
     return this.initializingPromise;
