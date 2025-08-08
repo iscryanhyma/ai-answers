@@ -23,7 +23,7 @@ class DocDBVectorService {
    * @param {Object} [options.filterQuery] - Override filter for selecting embeddings.
    * @param {boolean} [options.preCheck=false] - If true, scan and report invalid vectors before initialization.
    */
-  constructor({ filterQuery = { expertFeedback: { $exists: true } }, preCheck = false } = {}) {
+  constructor({ filterQuery = { expertFeedback: { $exists: true } }, preCheck = true } = {}) {
     ServerLoggingService.debug('Constructor: creating DocDBVectorService instance', 'vector-service');
     this.filterQuery = filterQuery;
     this.preCheck = preCheck;
