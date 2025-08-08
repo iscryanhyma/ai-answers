@@ -23,7 +23,7 @@ class DocDBVectorService {
    * @param {Object} [options.filterQuery] - Override filter for selecting embeddings.
    * @param {boolean} [options.preCheck=false] - If true, scan and report invalid vectors before initialization.
    */
-  constructor({ filterQuery = { expertFeedback: { $exists: true } }, preCheck = true } = {}) {
+  constructor({ filterQuery = { expertFeedback: { $exists: true } }, preCheck = false } = {}) {
     ServerLoggingService.debug('Constructor: creating DocDBVectorService instance', 'vector-service');
     this.filterQuery = filterQuery;
     this.preCheck = preCheck;
@@ -127,25 +127,26 @@ class DocDBVectorService {
       // Pre-check invalid vectors if enabled
       if (this.preCheck) {
         ServerLoggingService.info('Prechecking vectors for validity...', 'vector-service');
-        // Check QA embeddings
-        const badQA = await Embedding.find({
+        const coll = mongoose.connection.db.collection('embeddings');
+        // Find docs with empty or non-number QA embeddings
+        const badQA = await coll.find({
           ...baseQuery,
           $or: [
             { questionsAnswerEmbedding: { $size: 0 } },
-            { questionsAnswerEmbedding: { $elemMatch: { $not: { $type: 'double' } } } }
+            { questionsAnswerEmbedding: { $elemMatch: { $not: { $type: 1 } } } }
           ]
-        }).select('_id questionsAnswerEmbedding').lean();
+        }).project({ _id: 1, questionsAnswerEmbedding: 1 }).toArray();
         badQA.forEach(doc => {
           ServerLoggingService.error(`Invalid QA vector in doc ${doc._id}`, 'vector-service', { vector: doc.questionsAnswerEmbedding });
         });
-        // Check sentence embeddings
-        const badSent = await Embedding.find({
+        // Find docs with empty or non-number sentence embeddings
+        const badSent = await coll.find({
           ...baseQuery,
           $or: [
             { sentenceEmbeddings: { $size: 0 } },
-            { sentenceEmbeddings: { $elemMatch: { $elemMatch: { $not: { $type: 'double' } } } } }
+            { sentenceEmbeddings: { $elemMatch: { $elemMatch: { $not: { $type: 1 } } } } }
           ]
-        }).select('_id sentenceEmbeddings').lean();
+        }).project({ _id: 1, sentenceEmbeddings: 1 }).toArray();
         badSent.forEach(doc => {
           ServerLoggingService.error(`Invalid sentence vectors in doc ${doc._id}`, 'vector-service', { vectors: doc.sentenceEmbeddings });
         });
