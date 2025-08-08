@@ -198,8 +198,18 @@ class EmbeddingService {
       };
       await dbConnect();
       const newEmbedding = await Embedding.create(embeddingDoc);
+      // Log embedding dimensions
+      const dims = {
+        questionEmbedding: embeddingDoc.questionEmbedding?.length,
+        questionsEmbedding: embeddingDoc.questionsEmbedding?.length,
+        answerEmbedding: embeddingDoc.answerEmbedding?.length,
+        questionsAnswerEmbedding: embeddingDoc.questionsAnswerEmbedding?.length,
+        sentenceEmbeddings: Array.isArray(embeddingDoc.sentenceEmbeddings)
+          ? embeddingDoc.sentenceEmbeddings.map(e => e?.length)
+          : []
+      };
       ServerLoggingService.info(
-        "Embedding successfully created and saved",
+        `Embedding successfully created and saved. Dimensions: ${JSON.stringify(dims)}`,
         "embedding-service"
       );
 
