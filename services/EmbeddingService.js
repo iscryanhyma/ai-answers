@@ -275,7 +275,8 @@ class EmbeddingService {
   async processEmbeddingForDuration(
     duration,
     skipExisting = true,
-    lastProcessedId = null
+    lastProcessedId = null,
+    provider = "openai"
   ) {
     const startTime = Date.now();
     let lastId = lastProcessedId;
@@ -361,7 +362,7 @@ class EmbeddingService {
         }
 
         try {
-          await this.createEmbedding(interaction);
+          await this.createEmbedding(interaction, provider);
           processedCount++;
         } catch (error) {
           ServerLoggingService.error(

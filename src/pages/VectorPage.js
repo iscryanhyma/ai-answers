@@ -18,6 +18,7 @@ const VectorPage = () => {
   const [isAutoProcessingEmbeddings, setIsAutoProcessingEmbeddings] = useState(false);
   const [isRequestInProgress, setIsRequestInProgress] = useState(false);
   const [isRegeneratingEmbeddings, setIsRegeneratingEmbeddings] = useState(false);
+  const [provider, setProvider] = useState("openai");
 
   // Fetch vector stats using VectorService
   const fetchVectorStats = async () => {
@@ -45,7 +46,7 @@ const VectorPage = () => {
         setIsAutoProcessingEmbeddings(true);
       }
 
-      const result = await DataStoreService.generateEmbeddings({ lastProcessedId: lastId, regenerateAll });
+      const result = await DataStoreService.generateEmbeddings({ lastProcessedId: lastId, regenerateAll, provider });
       // Only update progress if we got a valid response
       if (typeof result.remaining === 'number') {
         setEmbeddingProgress({
@@ -137,6 +138,10 @@ const VectorPage = () => {
           {t('vector.embeddingDescription', 'Process interactions to generate embeddings.')}
         </GcdsText>
         <div className="button-group">
+          <select value={provider} onChange={e => setProvider(e.target.value)} style={{ marginRight: "1rem" }}>
+            <option value="openai">OpenAI</option>
+            <option value="azure">Azure OpenAI</option>
+          </select>
           <GcdsButton 
             onClick={() => handleGenerateEmbeddings(false)}
             disabled={embeddingProgress?.loading || isAutoProcessingEmbeddings}
