@@ -62,7 +62,7 @@ class EmbeddingService {
           azureOpenAIApiKey: process.env.AZURE_OPENAI_API_KEY,
           azureOpenAIApiInstanceName: instanceName,
           azureOpenAIApiEmbeddingsDeploymentName: modelConfig.name,
-          azureOpenAIApiVersion: "2023-05-15",
+          azureOpenAIApiVersion: "2024-02-01",
           dimensions: modelConfig.dimensions,
           timeout: modelConfig.timeoutMs,
           maxRetries: 3,
