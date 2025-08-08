@@ -21,9 +21,8 @@ class DocDBVectorService {
    * @param {Object} [options]
    * @param {Object} [options.filterQuery] - Override filter for selecting embeddings.
    */
-  constructor({ filterQuery = { expertFeedback: { $exists: true } } } = {}) {
+  constructor() {
     ServerLoggingService.debug('Constructor: creating DocDBVectorService instance', 'vector-service');
-    this.filterQuery = filterQuery;
     this.isInitialized = false;
     this.initializingPromise = null;
     this.collection = null;
@@ -125,10 +124,15 @@ class DocDBVectorService {
       this.collection = mongoose.connection.collection('embeddings');
       ServerLoggingService.debug('Obtained collection reference', 'vector-service');
 
+      // Find interactionIds with expert feedback
+      const Interaction = mongoose.model('Interaction');
+      const interactionsWithFeedback = await Interaction.find({ expertFeedback: { $ne: null } }, { _id: 1 }).lean();
+      const interactionIds = interactionsWithFeedback.map(i => i._id);
+
       const baseQuery = {
         questionsAnswerEmbedding: { $exists: true, $ne: null },
         sentenceEmbeddings: { $exists: true, $not: { $size: 0 } },
-        ...this.filterQuery
+        interactionId: { $in: interactionIds }
       };
 
       // Infer embedding dimensionality
