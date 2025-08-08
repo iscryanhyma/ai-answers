@@ -28,7 +28,7 @@ const AI_MODELS = {
       default: 'text-embedding-3-large',
       models: {
         'text-embedding-3-large': {
-          dimensions: 3072,
+          dimensions: 2000,
           timeoutMs: 30000,
         },
         'text-embedding-3-small': {
@@ -71,7 +71,7 @@ const AI_MODELS = {
       default: 'text-embedding-3-large',
       models: {
         'text-embedding-3-large': {
-          dimensions: 3072,
+          dimensions: 2000,
           timeoutMs: 30000,
         },
         'text-embedding-3-small': {
