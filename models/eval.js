@@ -36,6 +36,8 @@ const evalSchema = new Schema({
     // Fallback logic fields
     fallbackType: { type: String, required: false, default: '' }, // e.g., 'qa-high-score'
     fallbackSourceChatId: { type: String, required: false, default: '' }, // chatId of the fallback source interaction
+    matchedCitationInteractionId: { type: String, required: false, default: '' }, // Citation match trace (interactionId string)
+    matchedCitationChatId: { type: String, required: false, default: '' }, // Citation match trace
 }, { 
     timestamps: true, 
     versionKey: false,
