@@ -110,15 +110,7 @@ class DocDBVectorService {
       const interactionsWithEF = await mongoose.connection.collection('interactions').find({ expertFeedback: { $exists: true, $ne: null } }).project({ _id: 1 }).toArray();
       const validInteractionIds = interactionsWithEF.map(i => i._id);
 
-      this.stats.embeddings = await this.collection.countDocuments({
-        questionsAnswerEmbedding: { $exists: true, $ne: null },
-        interactionId: { $in: validInteractionIds },
-        ...this.filterQuery,
-      });
-      this.stats.sentences = await this.sentenceCollection.countDocuments({
-        embedding: { $exists: true, $ne: null },
-        parentEmbeddingId: { $in: (await this.collection.find({ interactionId: { $in: validInteractionIds } }).project({ _id: 1 }).toArray()).map(e => e._id) },
-      });
+  // Removed embeddings and sentences stats calculations; now handled in getStats()
       this.stats.lastInitTime = new Date();
 
       this.isInitialized = true;
@@ -136,13 +128,26 @@ class DocDBVectorService {
    * @param {{threshold?: number, efSearch?: number}} opts
    */
   async search(vector, k, indexType = 'qa', opts = {}) {
-    if (!this.isInitialized) await this.initialize();
-    const cleanVector = toCleanVector(vector);
+    ServerLoggingService.debug('search() called', 'DocDBVectorService', { vector, k, indexType, opts });
+    if (!this.isInitialized) {
+      ServerLoggingService.debug('Not initialized, calling initialize()', 'DocDBVectorService');
+      await this.initialize();
+    }
+    let cleanVector;
+    try {
+      cleanVector = toCleanVector(vector);
+      ServerLoggingService.debug('Cleaned vector', 'DocDBVectorService', { cleanVector });
+    } catch (err) {
+      ServerLoggingService.error('Error cleaning vector', 'DocDBVectorService', err);
+      throw err;
+    }
 
-    const { threshold = null, efSearch = 60 } = opts; // default efSearch a bit higher for recall
+    const { threshold = null, efSearch = 60 } = opts;
+    ServerLoggingService.debug('Search options', 'DocDBVectorService', { threshold, efSearch });
     const start = Date.now();
 
     if (indexType === 'sentence') {
+      ServerLoggingService.debug('Using sentence index', 'DocDBVectorService');
       const pipeline = [
         { $search: { vectorSearch: { vector: cleanVector, path: 'embedding', similarity: 'cosine', k, efSearch } } },
         { $limit: k },
@@ -150,7 +155,6 @@ class DocDBVectorService {
         { $unwind: '$parent' },
         { $lookup: { from: 'interactions', localField: 'parent.interactionId', foreignField: '_id', as: 'inter' } },
         { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
-        // Include vector so we can compute numeric score (DocDB doesn't return it)
         { $project: {
           _id: 1,
           parentEmbeddingId: 1,
@@ -160,14 +164,33 @@ class DocDBVectorService {
           embedding: 1,
         } },
       ];
+      ServerLoggingService.debug('Sentence pipeline', 'DocDBVectorService', { pipeline });
 
-      const docs = await this.sentenceCollection.aggregate(pipeline).toArray();
+      let docs;
+      try {
+        docs = await this.sentenceCollection.aggregate(pipeline).toArray();
+        ServerLoggingService.debug('Sentence pipeline result', 'DocDBVectorService', { docsCount: docs.length });
+      } catch (err) {
+        ServerLoggingService.error('Error running sentence pipeline', 'DocDBVectorService', err);
+        throw err;
+      }
 
       const out = [];
       for (const r of docs) {
+        ServerLoggingService.debug('Processing sentence doc', 'DocDBVectorService', { docId: r._id, embedding: r.embedding });
         // compute numeric cosine similarity client-side
-        const sim = cosineSimilarity(cleanVector, r.embedding) ?? 0;
-        if (threshold !== null && sim < threshold) break; // short-circuit on first below-threshold (ordered results)
+        let sim;
+        try {
+          sim = cosineSimilarity(cleanVector, r.embedding) ?? 0;
+        } catch (err) {
+          ServerLoggingService.error('Error computing cosine similarity (sentence)', 'DocDBVectorService', err);
+          sim = 0;
+        }
+        ServerLoggingService.debug('Cosine similarity (sentence)', 'DocDBVectorService', { sim, threshold });
+        if (threshold !== null && sim < threshold) {
+          ServerLoggingService.debug('Similarity below threshold, breaking', 'DocDBVectorService', { sim, threshold });
+          break; // short-circuit on first below-threshold (ordered results)
+        }
         out.push({
           id: r._id.toString(),
           interactionId: r.interactionId?.toString?.() || r.interactionId,
@@ -175,16 +198,22 @@ class DocDBVectorService {
           expertFeedbackId: r.expertFeedbackId || null,
           similarity: sim,
         });
-        if (out.length >= k) break;
+        ServerLoggingService.debug('Added sentence result', 'DocDBVectorService', { outLength: out.length });
+        if (out.length >= k) {
+          ServerLoggingService.debug('Reached k results, breaking', 'DocDBVectorService', { k });
+          break;
+        }
       }
 
       this.stats.sentenceSearches++;
       this.stats.searches++;
       this.stats.totalSearchTime += Date.now() - start;
+      ServerLoggingService.debug('Sentence search finished', 'DocDBVectorService', { outLength: out.length });
       return out;
     }
 
     // ----- QA search -----
+    ServerLoggingService.debug('Using QA index', 'DocDBVectorService');
     const pipeline = [
       { $search: { vectorSearch: { vector: cleanVector, path: 'questionsAnswerEmbedding', similarity: 'cosine', k, efSearch } } },
       { $limit: k },
@@ -197,30 +226,76 @@ class DocDBVectorService {
         questionsAnswerEmbedding: 1, // include vector to compute score
       } },
     ];
+    ServerLoggingService.debug('QA pipeline', 'DocDBVectorService', { pipeline });
 
-    const docs = await this.collection.aggregate(pipeline).toArray();
+    let docs;
+    try {
+      docs = await this.collection.aggregate(pipeline).toArray();
+      ServerLoggingService.debug('QA pipeline result', 'DocDBVectorService', { docsCount: docs.length });
+    } catch (err) {
+      ServerLoggingService.error('Error running QA pipeline', 'DocDBVectorService', err);
+      throw err;
+    }
 
     const out = [];
     for (const r of docs) {
-      const sim = cosineSimilarity(cleanVector, r.questionsAnswerEmbedding) ?? 0;
-      if (threshold !== null && sim < threshold) break; // short-circuit
+      ServerLoggingService.debug('Processing QA doc', 'DocDBVectorService', { docId: r._id, questionsAnswerEmbedding: r.questionsAnswerEmbedding });
+      let sim;
+      try {
+        sim = cosineSimilarity(cleanVector, r.questionsAnswerEmbedding) ?? 0;
+      } catch (err) {
+        ServerLoggingService.error('Error computing cosine similarity (QA)', 'DocDBVectorService', err);
+        sim = 0;
+      }
+      ServerLoggingService.debug('Cosine similarity (QA)', 'DocDBVectorService', { sim, threshold });
+      if (threshold !== null && sim < threshold) {
+        ServerLoggingService.debug('Similarity below threshold, breaking', 'DocDBVectorService', { sim, threshold });
+        break; // short-circuit
+      }
       out.push({
         id: r._id.toString(),
         interactionId: r.interactionId?.toString?.() || r.interactionId,
         expertFeedbackId: r.expertFeedbackId || null,
         similarity: sim,
       });
-      if (out.length >= k) break;
+      ServerLoggingService.debug('Added QA result', 'DocDBVectorService', { outLength: out.length });
+      if (out.length >= k) {
+        ServerLoggingService.debug('Reached k results, breaking', 'DocDBVectorService', { k });
+        break;
+      }
     }
 
     this.stats.qaSearches++;
     this.stats.searches++;
     this.stats.totalSearchTime += Date.now() - start;
+    ServerLoggingService.debug('QA search finished', 'DocDBVectorService', { outLength: out.length });
     return out;
   }
 
-  getStats() {
-    const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime, embeddings, sentences } = this.stats;
+  async getStats() {
+    if (!this.isInitialized) await this.initialize();
+
+    // Get all interactionIds with expertFeedback
+    const interactionsWithEF = await mongoose.connection.collection('interactions')
+      .find({ expertFeedback: { $exists: true, $ne: null } })
+      .project({ _id: 1 }).toArray();
+    const validInteractionIds = interactionsWithEF.map(i => i._id);
+
+    const embeddings = await this.collection.countDocuments({
+      questionsAnswerEmbedding: { $exists: true, $ne: null },
+      interactionId: { $in: validInteractionIds },
+      ...this.filterQuery,
+    });
+
+    const parentIds = (await this.collection.find({ interactionId: { $in: validInteractionIds } })
+      .project({ _id: 1 }).toArray()).map(e => e._id);
+
+    const sentences = await this.sentenceCollection.countDocuments({
+      embedding: { $exists: true, $ne: null },
+      parentEmbeddingId: { $in: parentIds },
+    });
+
+    const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime } = this.stats;
     return {
       isInitialized: this.isInitialized,
       embeddings,
