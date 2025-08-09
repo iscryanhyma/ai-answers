@@ -73,16 +73,19 @@ class EvaluationService {
      */
     async deleteEvaluations({ timeFilter, onlyEmpty = false }) {
         await dbConnect();
-        // Find interactions in the date range
-        let interactionQuery = {};
+        let evalQuery = {};
+
         if (timeFilter && Object.keys(timeFilter).length > 0) {
-            interactionQuery = { ...timeFilter };
+            // Find interactions in the date range
+            let interactionQuery = { ...timeFilter, autoEval: { $exists: true } };
+            const interactions = await Interaction.find(interactionQuery).select('autoEval');
+            const evalIdsToDelete = interactions.map(i => i.autoEval).filter(Boolean);
+            evalQuery = { _id: { $in: evalIdsToDelete } };
+        } else {
+            // No time filter: operate on all evals
+            evalQuery = {}; // All evals
         }
-        // Only consider interactions with autoEval
-        interactionQuery.autoEval = { $exists: true };
-        const interactions = await Interaction.find(interactionQuery).select('autoEval');
-        const evalIdsToDelete = interactions.map(i => i.autoEval).filter(Boolean);
-        let evalQuery = { _id: { $in: evalIdsToDelete } };
+
         if (onlyEmpty) {
             // Only delete empty evals: processed, hasMatches: false, noMatchReasonType present, and no expertFeedback
             evalQuery = {
@@ -93,12 +96,16 @@ class EvaluationService {
                 expertFeedback: { $exists: false }
             };
         }
+
         const evalsToDelete = await Eval.find(evalQuery).select('_id expertFeedback');
         const evalIds = evalsToDelete.map(e => e._id);
         let expertFeedbackDeleted = 0;
+
         if (evalIds.length > 0) {
-            // Remove autoEval from interactions
-            await Interaction.updateMany({ autoEval: { $in: evalIds } }, { $unset: { autoEval: "" } });
+            // Remove autoEval from interactions if timeFilter was used
+            if (timeFilter && Object.keys(timeFilter).length > 0) {
+                await Interaction.updateMany({ autoEval: { $in: evalIds } }, { $unset: { autoEval: "" } });
+            }
             // Delete evals
             await Eval.deleteMany({ _id: { $in: evalIds } });
             // Delete associated expert feedback
