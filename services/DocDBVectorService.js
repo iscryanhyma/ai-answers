@@ -215,6 +215,7 @@ class DocDBVectorService {
       }
 
       rescored.sort((a, b) => b.similarity - a.similarity);
+    ServerLoggingService.debug('Sorted similarity list (sentence)', 'DocDBVectorService', { rescored });
       const filtered = threshold == null ? rescored : rescored.filter(x => x.similarity >= threshold);
       const out = filtered.slice(0, k);
 
@@ -271,6 +272,7 @@ class DocDBVectorService {
     }
 
     rescored.sort((a, b) => b.similarity - a.similarity);
+    ServerLoggingService.debug('Sorted similarity list (QA)', 'DocDBVectorService', { rescored });
     const filtered = threshold == null ? rescored : rescored.filter(x => x.similarity >= threshold);
     const out = filtered.slice(0, k);
 
