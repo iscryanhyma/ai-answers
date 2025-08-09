@@ -32,7 +32,7 @@ async function handler(req, res) {
     chat.aiProvider = interaction.selectedAI;
     chat.searchProvider = interaction.searchProvider;
     chat.pageLanguage = interaction.pageLanguage;
-    
+
     // Assign user to chat if authenticated and not already set
     if (req.user && req.user.userId && !chat.user) {
       chat.user = req.user.userId;
@@ -43,7 +43,7 @@ async function handler(req, res) {
     dbInteraction.interactionId = interaction.userMessageId;
     dbInteraction.responseTime = interaction.responseTime;
     dbInteraction.referringUrl = interaction.referringUrl;
-    
+
     const context = new Context();
     Object.assign(context, interaction.context);
     dbInteraction.context = context._id;
@@ -58,7 +58,7 @@ async function handler(req, res) {
     answer.citation = citation._id;
     Object.assign(answer, interaction.answer);
     answer.sentences = interaction.answer.sentences;
-    
+
     const question = new Question();
     question.redactedQuestion = interaction.question;
     question.language = interaction.answer.questionLanguage;
@@ -76,7 +76,7 @@ async function handler(req, res) {
       status: toolData.status || 'completed',
       error: toolData.error
     }));
-    
+
     // Now save everything to MongoDB in a more optimized way
     // 1. Save the tools first
     if (toolObjects.length > 0) {
@@ -85,25 +85,25 @@ async function handler(req, res) {
     } else {
       answer.tools = [];
     }
-    
+
     // 2. Save other entities
     await context.save();
     await citation.save();
     await answer.save();
     await question.save();
-    
+
     // 3. Complete the interaction references and save
     dbInteraction.answer = answer._id;
     dbInteraction.question = question._id;
     await dbInteraction.save();
-    
+
     // 4. Update and save the chat
     chat.interactions.push(dbInteraction._id);
     await chat.save();
 
     // 5. Generate embeddings for the interaction
     ServerLoggingService.info('[db-persist-interaction] Embedding creation start', chatId, {});
-    await EmbeddingService.createEmbedding(dbInteraction,interaction.selectedAI);
+    await EmbeddingService.createEmbedding(dbInteraction, interaction.selectedAI);
     ServerLoggingService.info('[db-persist-interaction] Embedding creation end', chatId, {});
 
     // 6. Perform evaluation on the saved interaction (mode depends on deploymentMode setting)
@@ -114,6 +114,9 @@ async function handler(req, res) {
     } catch (e) {
       ServerLoggingService.error('Failed to read deploymentMode setting', chatId, e);
     }
+        // 6. Perform evaluation on the saved interaction
+    ServerLoggingService.info('Evaluation starting', chatId, {});
+
     ServerLoggingService.info('Deployment mode', chatId, { deploymentMode });
     if (deploymentMode === 'Vercel') {
       try {

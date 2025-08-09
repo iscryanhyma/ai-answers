@@ -256,14 +256,14 @@ class DataStoreService {
   }
 
 
-  static async generateEmbeddings({ lastProcessedId = null, regenerateAll = false } = {}) {
+  static async generateEmbeddings({ lastProcessedId = null, regenerateAll = false, provider = "openai" } = {}) {
     try {
       const response = await AuthService.fetchWithAuth(getApiUrl('db-generate-embeddings'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ lastProcessedId, regenerateAll })
+        body: JSON.stringify({ lastProcessedId, regenerateAll, provider })
       });
       if (!response.ok) throw new Error('Failed to generate embeddings');
       return await response.json();

@@ -7,8 +7,8 @@ async function vectorStatsHandler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
   try {
-    const stats = VectorService.getStats();
-    return res.status(200).json(stats);
+  const stats = await VectorService.getStats();
+  return res.status(200).json(stats);
   } catch (error) {
     console.error('Error fetching vector stats:', error);
     return res.status(500).json({ error: 'Failed to fetch vector stats', details: error.message });
