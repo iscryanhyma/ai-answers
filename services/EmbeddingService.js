@@ -3,6 +3,7 @@ import { getEmbeddingModelConfig } from "../config/ai-models.js";
 import ServerLoggingService from "./ServerLoggingService.js";
 import dotenv from "dotenv";
 import { Embedding } from "../models/embedding.js";
+import { SentenceEmbedding } from "../models/sentenceEmbedding.js";
 import { Chat } from "../models/chat.js";
 import { Interaction } from "../models/interaction.js";
 import dbConnect from "../api/db/db-connect.js";
@@ -185,6 +186,11 @@ class EmbeddingService {
         modelName
       );
 
+      const sentenceEmbeddings = embeddings.slice(
+        4,
+        4 + cleanedSentences.length
+      );
+
       const embeddingDoc = {
         chatId: chat._id,
         interactionId: interaction._id,
@@ -194,19 +200,30 @@ class EmbeddingService {
         questionsEmbedding: embeddings[1],
         answerEmbedding: embeddings[2],
         questionsAnswerEmbedding: embeddings[3],
-        sentenceEmbeddings: embeddings.slice(4, 4 + cleanedSentences.length),
       };
       await dbConnect();
       const newEmbedding = await Embedding.create(embeddingDoc);
+
+      if (sentenceEmbeddings.length > 0) {
+        const sentenceEmbeddingDocs = sentenceEmbeddings.map(
+          (embedding, index) => ({
+            parentEmbeddingId: newEmbedding._id,
+            sentenceIndex: index,
+            embedding: embedding,
+          })
+        );
+        await SentenceEmbedding.insertMany(sentenceEmbeddingDocs);
+      }
+
       // Log embedding dimensions
       const dims = {
         questionEmbedding: embeddingDoc.questionEmbedding?.length,
         questionsEmbedding: embeddingDoc.questionsEmbedding?.length,
         answerEmbedding: embeddingDoc.answerEmbedding?.length,
         questionsAnswerEmbedding: embeddingDoc.questionsAnswerEmbedding?.length,
-        sentenceEmbeddings: Array.isArray(embeddingDoc.sentenceEmbeddings)
-          ? embeddingDoc.sentenceEmbeddings.map(e => e?.length)
-          : []
+        sentenceEmbeddings: Array.isArray(sentenceEmbeddings)
+          ? sentenceEmbeddings.map((e) => e?.length)
+          : [],
       };
       ServerLoggingService.info(
         `Embedding successfully created and saved. Dimensions: ${JSON.stringify(dims)}`,
@@ -299,6 +316,13 @@ class EmbeddingService {
       if (!skipExisting && !lastProcessedId) {
         ServerLoggingService.info(
           "Regenerating all embeddings - deleting existing embeddings",
+          "system"
+        );
+
+        // Delete all sentence embeddings first
+        const deletedSentenceEmbeddings = await SentenceEmbedding.deleteMany({});
+        ServerLoggingService.info(
+          `Deleted ${deletedSentenceEmbeddings.deletedCount} sentence embeddings`,
           "system"
         );
 

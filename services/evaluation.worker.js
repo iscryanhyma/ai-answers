@@ -1,3 +1,14 @@
+import mongoose from 'mongoose';
+import { Interaction } from '../models/interaction.js';
+import { Eval } from '../models/eval.js';
+import { ExpertFeedback } from '../models/expertFeedback.js';
+import { Embedding } from '../models/embedding.js';
+import { SentenceEmbedding } from '../models/sentenceEmbedding.js';
+import ServerLoggingService from './ServerLoggingService.js';
+import dbConnect from '../api/db/db-connect.js';
+import config from '../config/eval.js';
+import { VectorService } from '../services/VectorServiceFactory.js';
+
 // Fallback: create evaluation using QA match only if any of the top N matches has expert feedback score > 90
 async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbeddings, failedSentenceTraces = []) {
     try {
@@ -118,15 +129,7 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbedding
         return false;
     }
 }
-import mongoose from 'mongoose';
-import { Interaction } from '../models/interaction.js';
-import { Eval } from '../models/eval.js';
-import { ExpertFeedback } from '../models/expertFeedback.js';
-import { Embedding } from '../models/embedding.js';
-import ServerLoggingService from './ServerLoggingService.js';
-import dbConnect from '../api/db/db-connect.js';
-import config from '../config/eval.js';
-import { VectorService } from '../services/VectorServiceFactory.js';
+
 
 async function validateInteractionAndCheckExisting(interaction, chatId) {
     ServerLoggingService.debug('Validating interaction (worker)', chatId, {
@@ -158,17 +161,32 @@ async function getEmbeddingForInteraction(interaction) {
         interactionId: interaction._id,
         questionsAnswerEmbedding: { $exists: true, $not: { $size: 0 } },
         answerEmbedding: { $exists: true, $not: { $size: 0 } },
-        sentenceEmbeddings: { $exists: true, $not: { $size: 0 } }
-    });
+    }).lean();
+
     if (!embedding) {
         ServerLoggingService.warn('No embeddings found for interaction (worker)', interaction._id.toString());
-    } else {
-        ServerLoggingService.debug('Found embeddings for interaction (worker)', interaction._id.toString(), {
-            hasQuestionAnswerEmbedding: !!embedding.questionsAnswerEmbedding,
-            hasAnswerEmbedding: !!embedding.answerEmbedding,
-            sentenceEmbeddingsCount: embedding.sentenceEmbeddings?.length || 0
-        });
+        return null;
     }
+
+    // If sentence embeddings are not stored on the document (new model), fetch them separately
+    if (!embedding.sentenceEmbeddings || embedding.sentenceEmbeddings.length === 0) {
+        const sentenceEmbeddingsDocs = await SentenceEmbedding.find({ parentEmbeddingId: embedding._id }).sort({ sentenceIndex: 1 }).lean();
+        if (sentenceEmbeddingsDocs.length > 0) {
+            embedding.sentenceEmbeddings = sentenceEmbeddingsDocs.map(doc => doc.embedding);
+        }
+    }
+    
+    if (!embedding.sentenceEmbeddings || embedding.sentenceEmbeddings.length === 0) {
+        ServerLoggingService.warn('No sentence embeddings found for interaction (worker)', interaction._id.toString());
+        return null;
+    }
+
+    ServerLoggingService.debug('Found embeddings for interaction (worker)', interaction._id.toString(), {
+        hasQuestionAnswerEmbedding: !!embedding.questionsAnswerEmbedding,
+        hasAnswerEmbedding: !!embedding.answerEmbedding,
+        sentenceEmbeddingsCount: embedding.sentenceEmbeddings?.length || 0
+    });
+    
     return embedding;
 }
 
@@ -200,17 +218,31 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
     for (const neighbor of similarNeighbors) {
         if (neighbor.similarity < similarityThreshold) continue;
         if (neighbor.interactionId.toString() === sourceEmbedding.interactionId.toString()) continue;
+
         const embedding = await Embedding.findOne({
             interactionId: neighbor.interactionId,
             questionsAnswerEmbedding: { $exists: true, $not: { $size: 0 } },
             answerEmbedding: { $exists: true, $not: { $size: 0 } },
-            sentenceEmbeddings: { $exists: true, $not: { $size: 0 } }
         }).lean();
+
         if (!embedding) continue;
+
+        // If sentence embeddings are not stored on the document (new model), fetch them separately
+        if (!embedding.sentenceEmbeddings || embedding.sentenceEmbeddings.length === 0) {
+            const sentenceEmbeddingsDocs = await SentenceEmbedding.find({ parentEmbeddingId: embedding._id }).sort({ sentenceIndex: 1 }).lean();
+            if (sentenceEmbeddingsDocs.length > 0) {
+                embedding.sentenceEmbeddings = sentenceEmbeddingsDocs.map(doc => doc.embedding);
+            }
+        }
+        
+        if (!embedding.sentenceEmbeddings || embedding.sentenceEmbeddings.length === 0) continue;
+
         const expertFeedback = await ExpertFeedback.findById(neighbor.expertFeedbackId).lean();
         if (!expertFeedback) continue;
+
         const neighborInteraction = await Interaction.findById(neighbor.interactionId, { createdAt: 1 }).lean();
         if (!neighborInteraction) continue;
+        
         // Only consider matches created before or at the current interaction
             // Only consider matches created before or at the current interaction
             // if (sourceInteractionCreatedAt && neighborInteraction.createdAt > sourceInteractionCreatedAt) continue; // REMOVED RESTRICTION: allow newer expert feedback for matching
@@ -227,7 +259,7 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
         });
         if (similarEmbeddings.length >= limit) break;
     }
-    
+
     // Sort by similarity (highest first)
     similarEmbeddings.sort((a, b) => b.similarity - a.similarity);
     
@@ -643,7 +675,11 @@ export default async function ({ interactionId, chatId }) {
             interaction,
             similarEmbeddings // pass the same as bestAnswerMatches
         );
-        // No longer treat missing citation score or url as a no-match; allow citationScore to be null
+        if (!bestCitationMatch.url || bestCitationMatch.similarity !== 1) {
+            await createNoMatchEvaluation(interaction, chatId, { type: 'no_citation_match', msg: 'no matching citation found' });
+        
+            return null;
+        }
         await createEvaluation(
             interaction,
             bestSentenceMatches,

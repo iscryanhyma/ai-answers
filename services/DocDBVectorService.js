@@ -1,294 +1,154 @@
+// ==============================
+// services/DocDBVectorService.js — patched with $lookup to return expertFeedbackId
+// ==============================
 import mongoose from 'mongoose';
 import dbConnect from '../api/db/db-connect.js';
 import ServerLoggingService from './ServerLoggingService.js';
-import { Interaction } from '../models/interaction.js';
 import { Embedding } from '../models/embedding.js';
 
-/**
- * Utility: validate that a vector is a finite-number array
- */
-function isValidVector(vec) {
-  return Array.isArray(vec) && vec.every(x => typeof x === 'number' && Number.isFinite(x));
+function toCleanVector(vec) {
+  if (!Array.isArray(vec)) throw new Error('Query vector must be an array');
+  return vec.map((v, i) => {
+    const n = typeof v === 'number' && Number.isFinite(v) ? v : Number(v);
+    if (!Number.isFinite(n)) throw new Error(`Invalid element at ${i}: ${v}`);
+    return n;
+  });
 }
 
-/**
- * DocDBVectorService
- * 
- * Allows indexing and searching of embeddings stored in DocumentDB.
- * By default, only expert-feedback embeddings are loaded.
- * Supports an optional preCheck switch to validate vectors before indexing.
- */
 class DocDBVectorService {
-  /**
-   * @param {Object} [options]
-   * @param {Object} [options.filterQuery] - Override filter for selecting embeddings.
-   * @param {boolean} [options.preCheck=false] - If true, scan and report invalid vectors before initialization.
-   */
-  constructor({ preCheck = true } = {}) {
-    ServerLoggingService.debug('Constructor: creating DocDBVectorService instance', 'vector-service');
-    this.preCheck = preCheck;
+  constructor({ filterQuery = {}, preCheck = false } = {}) {
+    this.filterQuery = filterQuery;           // applied to QA collection only
+    this.preCheck = preCheck;                 // optional data audit before indexing
     this.isInitialized = false;
     this.initializingPromise = null;
-    this.collection = null;
-    this.stats = {
-      searches: 0,
-      qaSearches: 0,
-      sentenceSearches: 0,
-      totalSearchTime: 0,
-      lastInitTime: null,
-      embeddings: 0,
-      sentences: 0,
-      vectorMemoryUsage: {}
-    };
-    this.embeddingMetadatas = new Map();
-    this.sentenceMetadatas = new Map();
+    this.collection = null;                   // embeddings
+    this.sentenceCollection = null;           // sentence_embeddings
+    this.stats = { searches: 0, qaSearches: 0, sentenceSearches: 0, totalSearchTime: 0, lastInitTime: null, embeddings: 0, sentences: 0 };
   }
 
-  /**
-   * Find similar chats by embedding using QA search logic
-   */
-  async findSimilarChats(embedding, { excludeChatId, limit = 20 } = {}) {
-    const neighbors = await this.search(embedding, limit * 2, 'qa');
-    const Chat = mongoose.model('Chat');
-    const config = await import('../config/eval.js');
-    const threshold = config.default.thresholds.questionAnswerSimilarity;
-    const results = [];
-    for (const neighbor of neighbors) {
-      if (neighbor.interactionId && neighbor.similarity > threshold) {
-        const chatDoc = await Chat.findOne({ interactions: neighbor.interactionId }, { chatId: 1 }).lean();
-        if (chatDoc && chatDoc.chatId !== excludeChatId) {
-          results.push({ chatId: chatDoc.chatId, score: neighbor.similarity });
-        }
-      }
-      if (results.length >= limit) break;
-    }
-    const deduped = Object.values(results.reduce((acc, cur) => {
-      if (!acc[cur.chatId] || acc[cur.chatId].score < cur.score) acc[cur.chatId] = cur;
-      return acc;
-    }, {}));
-    deduped.sort((a, b) => b.score - a.score);
-    return deduped.slice(0, limit);
-  }
-
-  /**
-   * Stub to match IMVectorService API; no-op for DocDB storage
-   */
-  async addExpertFeedbackEmbedding(params) {
-    ServerLoggingService.warn(
-      'addExpertFeedbackEmbedding is not supported in DocDBVectorService; re-batch your embeddings in the database',
-      'vector-service'
-    );
-  }
-
-  /**
-   * Ensure a vector index via the raw command API (skip if exists)
-   */
   async _ensureVectorIndex(collectionName, keySpec, options, indexName) {
-    ServerLoggingService.info(`Ensuring vector index '${indexName}'`, 'vector-service');
     const db = mongoose.connection.db;
-    const listRes = await db.command({ listIndexes: collectionName });
-    const exists = listRes.cursor.firstBatch.some(idx => idx.name === indexName);
-    if (exists) {
-      ServerLoggingService.info(`Index '${indexName}' already exists, skipping`, 'vector-service');
-      return;
-    }
-    await db.command({
-      createIndexes: collectionName,
-      indexes: [{ key: keySpec, name: indexName, vectorOptions: options }]
-    });
-    ServerLoggingService.info(`Vector index '${indexName}' created`, 'vector-service');
+    const list = await db.command({ listIndexes: collectionName });
+    const exists = list.cursor.firstBatch.some((i) => i.name === indexName);
+    if (exists) return;
+    await db.command({ createIndexes: collectionName, indexes: [{ key: keySpec, name: indexName, vectorOptions: options }] });
   }
 
-  /**
-   * Initialize DB connection, optionally precheck vectors, ensure indexes, and load metadata
-   */
   async initialize() {
-    ServerLoggingService.debug('initialize: entry', 'vector-service');
-    if (this.isInitialized) {
-      ServerLoggingService.info('initialize: already initialized, skipping', 'vector-service');
-      return;
-    }
+    if (this.isInitialized) return;
     if (this.initializingPromise) return this.initializingPromise;
 
     this.initializingPromise = (async () => {
-      ServerLoggingService.info('initialize: starting initialization process', 'vector-service');
-      ServerLoggingService.debug('initialize: about to connect to database', 'vector-service');
       await dbConnect();
-      ServerLoggingService.debug('initialize: database connected successfully', 'vector-service');
-
-      ServerLoggingService.debug('initialize: acquiring collection reference', 'vector-service');
       this.collection = mongoose.connection.collection('embeddings');
-      ServerLoggingService.debug('initialize: collection acquired', 'vector-service');
+      this.sentenceCollection = mongoose.connection.collection('sentence_embeddings');
 
-      const Interaction = mongoose.model('Interaction');
-      const interactionsWithFeedback = await Interaction.find({ expertFeedback: { $exists: true, $ne: null } }).select('_id').lean();
-      const interactionIds = interactionsWithFeedback.map(i => i._id);
-      ServerLoggingService.debug(`initialize: found interactionIds with expertFeedback: ${JSON.stringify(interactionIds)}`, 'vector-service');
-
-      const baseQuery = {
-        questionsAnswerEmbedding: { $exists: true, $ne: null },
-        sentenceEmbeddings: { $exists: true, $not: { $size: 0 } },
-        interactionId: { $in: interactionIds }
-      };
-      ServerLoggingService.debug(`initialize: using baseQuery: ${JSON.stringify(baseQuery)}`, 'vector-service');
-
-      // Pre-check invalid vectors if enabled
+      // ----- optional precheck using raw driver (no Mongoose casting) -----
       if (this.preCheck) {
-        ServerLoggingService.info('initialize: prechecking vectors for validity...', 'vector-service');
-        const coll = mongoose.connection.db.collection('embeddings');
-        // Find docs with empty or non-number QA embeddings
-        const badQA = await coll.find({
-          ...baseQuery,
+        const badQA = await this.collection.find({
+          ...this.filterQuery,
           $or: [
+            { questionsAnswerEmbedding: { $exists: false } },
             { questionsAnswerEmbedding: { $size: 0 } },
-            { questionsAnswerEmbedding: { $elemMatch: { $not: { $type: 1 } } } }
-          ]
-        }).project({ _id: 1, questionsAnswerEmbedding: 1 }).toArray();
-        ServerLoggingService.debug(`initialize: badQA count: ${badQA.length}`, 'vector-service');
-        // Find docs with empty or non-number sentence embeddings
-        const badSent = await coll.find({
-          ...baseQuery,
+            { questionsAnswerEmbedding: { $elemMatch: { $not: { $type: 1 } } } }, // 1 = double
+          ],
+        }).project({ _id: 1 }).toArray();
+        const badSent = await this.sentenceCollection.find({
           $or: [
-            { sentenceEmbeddings: { $size: 0 } },
-            { sentenceEmbeddings: { $elemMatch: { $elemMatch: { $not: { $type: 1 } } } } }
-          ]
-        }).project({ _id: 1, sentenceEmbeddings: 1 }).toArray();
-        ServerLoggingService.debug(`initialize: badSent count: ${badSent.length}`, 'vector-service');
+            { embedding: { $exists: false } },
+            { embedding: { $size: 0 } },
+            { embedding: { $elemMatch: { $not: { $type: 1 } } } },
+          ],
+        }).project({ _id: 1 }).toArray();
         if (badQA.length || badSent.length) {
-          ServerLoggingService.warn('initialize: found invalid vectors during precheck', 'vector-service');
+          ServerLoggingService.error('Precheck failed', 'vector-service', { badQA: badQA.length, badSent: badSent.length });
+          throw new Error('Vector precheck failed: see logs for invalid docs');
         }
       }
 
-      // Infer embedding dimensionality
-      ServerLoggingService.debug('initialize: fetching a sample document to infer dimension', 'vector-service');
-      const sample = await Embedding.findOne(baseQuery).lean();
-      if (!sample) {
-        ServerLoggingService.error('initialize: no sample embedding found', 'vector-service');
-        this.initializingPromise = null;
-        throw new Error('No embeddings found to infer dimension');
-      }
-      const dim = sample.questionsAnswerEmbedding.length;
-      ServerLoggingService.info(`initialize: inferred embedding dimensionality: ${dim}`, 'vector-service');
+      // infer dimensions from QA doc; fall back to sentence doc if needed
+      const qaSample = await Embedding.findOne({ questionsAnswerEmbedding: { $exists: true, $not: { $size: 0 } }, ...this.filterQuery }).lean();
+      if (!qaSample) throw new Error('No QA embeddings found to infer dimension');
+      const qaDim = qaSample.questionsAnswerEmbedding.length;
 
-      // Ensure vector indexes
-      const options = { type: 'hnsw', similarity: 'cosine', dimensions: dim, m: 16, efConstruction: 64 };
-      try {
-        ServerLoggingService.debug('initialize: ensuring QA vector index', 'vector-service');
-        await this._ensureVectorIndex('embeddings', { questionsAnswerEmbedding: 'vector' }, options, 'qa_vector_index');
-        ServerLoggingService.info('initialize: QA vector index ensured', 'vector-service');
-      } catch (err) {
-        ServerLoggingService.error(`initialize: error ensuring qa_vector_index; continuing: ${err.message}`, 'vector-service');
-      }
-      try {
-        ServerLoggingService.debug('initialize: ensuring sentence vector index', 'vector-service');
-        await this._ensureVectorIndex('embeddings', { sentenceEmbeddings: 'vector' }, options, 'sentence_vector_index');
-        ServerLoggingService.info('initialize: sentence vector index ensured', 'vector-service');
-      } catch (err) {
-        ServerLoggingService.error(`initialize: error ensuring sentence_vector_index; continuing: ${err.message}`, 'vector-service');
-      }
+      const sentSample = await this.sentenceCollection.findOne({ embedding: { $exists: true, $ne: null } }, { projection: { embedding: 1 } });
+      const sentenceDim = sentSample?.embedding?.length ?? qaDim;
 
-      // Collect statistics
-      ServerLoggingService.debug('initialize: collecting statistics for embeddings', 'vector-service');
-      this.stats.embeddings = await Embedding.countDocuments(baseQuery);
-      this.stats.sentences = await Embedding.aggregate([
-        { $match: baseQuery },
-        { $group: { _id: null, total: { $sum: { $size: '$sentenceEmbeddings' } } } }
-      ]).then(r => r[0]?.total || 0);
-      ServerLoggingService.info(`initialize: collected stats - embeddings: ${this.stats.embeddings}, sentences: ${this.stats.sentences}`, 'vector-service');
+      // ensure indexes
+      const qaOptions = { type: 'hnsw', similarity: 'cosine', dimensions: qaDim, m: 16, efConstruction: 64 };
+      const sentOptions = { type: 'hnsw', similarity: 'cosine', dimensions: sentenceDim, m: 16, efConstruction: 64 };
+      try { await this._ensureVectorIndex('embeddings', { questionsAnswerEmbedding: 'vector' }, qaOptions, 'qa_vector_index'); } catch {}
+      try { await this._ensureVectorIndex('sentence_embeddings', { embedding: 'vector' }, sentOptions, 'sentence_vector_index'); } catch {}
 
+      // stats
+      this.stats.embeddings = await this.collection.countDocuments({ questionsAnswerEmbedding: { $exists: true, $ne: null }, ...this.filterQuery });
+      this.stats.sentences = await this.sentenceCollection.countDocuments({ embedding: { $exists: true, $ne: null } });
       this.stats.lastInitTime = new Date();
-
-      // Load metadata
-      ServerLoggingService.debug('initialize: loading metadata from embeddings', 'vector-service');
-      const metaDocs = await Embedding.find(baseQuery)
-        .select('_id interactionId chatId questionId answerId createdAt sentenceEmbeddings')
-        .lean();
-      metaDocs.forEach(doc => {
-        const idStr = doc._id.toString();
-        this.embeddingMetadatas.set(idStr, {
-          interactionId: doc.interactionId.toString(),
-          chatId: doc.chatId.toString(),
-          questionId: doc.questionId.toString(),
-          answerId: doc.answerId.toString(),
-          createdAt: doc.createdAt
-        });
-        doc.sentenceEmbeddings.forEach((_, idx) => {
-          const sentId = `${idStr}:${idx}`;
-          this.sentenceMetadatas.set(sentId, {
-            interactionId: doc.interactionId.toString(),
-            chatId: doc.chatId.toString(),
-            questionId: doc.questionId.toString(),
-            answerId: doc.answerId.toString(),
-            createdAt: doc.createdAt,
-            sentenceIndex: idx
-          });
-        });
-      });
-      ServerLoggingService.info('initialize: metadata loading completed', 'vector-service');
 
       this.isInitialized = true;
       this.initializingPromise = null;
-      ServerLoggingService.info(`DocDBVectorService initialized: ${this.stats.embeddings} QA vectors, ${this.stats.sentences} sentence vectors.`, 'vector-service');
     })();
 
     return this.initializingPromise;
   }
 
-  /**
-   * Perform a vector search using AWS DocumentDB's vectorSearch operator
-   */
+  // indexType: 'qa' or 'sentence'
   async search(vector, k, indexType = 'qa') {
     if (!this.isInitialized) await this.initialize();
-    if (!Array.isArray(vector)) {
-      ServerLoggingService.error('search: vector is not an array', 'vector-service', { vector });
-      throw new Error('Query vector must be an array of numbers');
-    }
-    const cleanVector = vector.map((val, idx) => {
-      const num = (typeof val === 'number' && Number.isFinite(val)) ? val : Number(val);
-      if (typeof num !== 'number' || !Number.isFinite(num)) {
-        ServerLoggingService.error('search: invalid element type for vector', 'vector-service', { index: idx, val });
-        throw new Error(`Invalid element type for vector at index ${idx}: ${val}`);
-      }
-      return num;
-    });
+    const cleanVector = toCleanVector(vector);
 
     const start = Date.now();
-    const path = indexType === 'qa' ? 'questionsAnswerEmbedding' : 'sentenceEmbeddings';
+    if (indexType === 'sentence') {
+      const pipeline = [
+        { $search: { vectorSearch: { vector: cleanVector, path: 'embedding', similarity: 'cosine', k, efSearch: 40 } } },
+        { $limit: k },
+        { $lookup: { from: 'embeddings', localField: 'parentEmbeddingId', foreignField: '_id', as: 'parent' } },
+        { $unwind: '$parent' },
+        { $lookup: { from: 'interactions', localField: 'parent.interactionId', foreignField: '_id', as: 'inter' } },
+        { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
+        { $project: {
+            _id: 1,
+            parentEmbeddingId: 1,
+            sentenceIndex: 1,
+            interactionId: '$parent.interactionId',
+            expertFeedbackId: '$inter.expertFeedback',
+            similarity: { $meta: 'searchScore' },
+        } },
+      ];
+      const results = await this.sentenceCollection.aggregate(pipeline).toArray();
+      this.stats.sentenceSearches++; this.stats.searches++; this.stats.totalSearchTime += Date.now() - start;
+      return results.map((r) => ({
+        id: r._id.toString(),
+        interactionId: r.interactionId?.toString?.() || r.interactionId,
+        sentenceIndex: r.sentenceIndex,
+        expertFeedbackId: r.expertFeedbackId || null,
+        similarity: r.similarity,
+      }));
+    }
+
+    // QA search with join to interactions for expertFeedbackId
     const pipeline = [
-      { $search: { vectorSearch: { vector: cleanVector, path, similarity: 'cosine', k, efSearch: 40 } } },
+      { $search: { vectorSearch: { vector: cleanVector, path: 'questionsAnswerEmbedding', similarity: 'cosine', k, efSearch: 40 } } },
       { $limit: k },
-      { $project: { _id: 1, similarity: { $meta: 'searchScore' } } }
+      { $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } },
+      { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
+      { $project: {
+          _id: 1,
+          interactionId: 1,
+          expertFeedbackId: '$inter.expertFeedback',
+          similarity: { $meta: 'searchScore' },
+      } },
     ];
-
     const results = await this.collection.aggregate(pipeline).toArray();
-    this.stats[indexType === 'qa' ? 'qaSearches' : 'sentenceSearches']++;
-    this.stats.searches++;
-    this.stats.totalSearchTime += Date.now() - start;
-
-    return results.map(r => {
-      const idStr = r._id.toString();
-      const metaMap = indexType === 'qa' ? this.embeddingMetadatas : this.sentenceMetadatas;
-      return { similarity: r.similarity, ...(metaMap.get(idStr) || {}) };
-    });
-  }
-
-  /**
-   * Return current statistics
-   */
-  getStats() {
-    const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime, embeddings, sentences } = this.stats;
-    return {
-      isInitialized: this.isInitialized,
-      embeddings,
-      sentences,
-      searches,
-      qaSearches,
-      sentenceSearches,
-      averageSearchTimeMs: searches ? totalSearchTime / searches : 0,
-      uptimeSeconds: lastInitTime ? (Date.now() - lastInitTime) / 1000 : 0,
-      vectorMemoryUsage: this.stats.vectorMemoryUsage
-    };
+    this.stats.qaSearches++; this.stats.searches++; this.stats.totalSearchTime += Date.now() - start;
+    return results.map((r) => ({
+      id: r._id.toString(),
+      interactionId: r.interactionId?.toString?.() || r.interactionId,
+      expertFeedbackId: r.expertFeedbackId || null,
+      similarity: r.similarity,
+    }));
   }
 }
 
 export default DocDBVectorService;
+

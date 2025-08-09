@@ -15,6 +15,7 @@ import { Citation } from '../../models/citation.js';
 import { Chat } from '../../models/chat.js';
 import { Batch } from '../../models/batch.js';
 import { Answer } from '../../models/answer.js';
+import { SentenceEmbedding } from '../../models/sentenceEmbedding.js';
 
 const MODELS = {
   User,
@@ -32,6 +33,7 @@ const MODELS = {
   Chat,
   Batch,
   Answer,
+  SentenceEmbedding,
 };
 
 async function tableCountsHandler(req, res) {
