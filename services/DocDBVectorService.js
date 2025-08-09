@@ -163,6 +163,62 @@ class DocDBVectorService {
      
     };
   }
+
+   /**
+   * Find similar chats by embedding using QA search logic (matches IMVectorService API)
+   */
+  async findSimilarChats(embedding, { excludeChatId, limit = 20 } = {}) {
+    // Grab a few extra neighbors to survive thresholding/deduping
+    const neighbors = await this.search(embedding, limit * 2, 'qa');
+
+    const Chat = mongoose.model('Chat');
+    const config = await import('../config/eval.js');
+    const similarityThreshold =
+      config?.default?.thresholds?.questionAnswerSimilarity ?? 0;
+
+    const results = [];
+    for (const n of neighbors) {
+      if (n.interactionId && n.similarity > similarityThreshold) {
+        const chatDoc = await Chat.findOne(
+          { interactions: n.interactionId },
+          { chatId: 1 }
+        ).lean();
+
+        if (chatDoc && chatDoc.chatId !== excludeChatId) {
+          results.push({ chatId: chatDoc.chatId, score: n.similarity });
+        }
+      }
+      if (results.length >= limit) break;
+    }
+
+    // Dedupe by chatId, keep highest score
+    const deduped = Object.values(
+      results.reduce((acc, cur) => {
+        if (!acc[cur.chatId] || acc[cur.chatId].score < cur.score) {
+          acc[cur.chatId] = cur;
+        }
+        return acc;
+      }, {})
+    );
+
+    deduped.sort((a, b) => b.score - a.score);
+    return deduped.slice(0, limit);
+  }
+
+  /**
+   * No-op in DocDB service; kept for compatibility with IMVectorService
+   */
+  addExpertFeedbackEmbedding({
+    interactionId,
+    expertFeedbackId,
+    createdAt,
+    questionsAnswerEmbedding,
+    sentenceEmbeddings,
+  }) {
+    // Writes/updates should be handled via your Mongoose models/ETL.
+    // This is intentionally a no-op to avoid breaking existing call sites.
+    return;
+  }
 }
 
 export default DocDBVectorService;
