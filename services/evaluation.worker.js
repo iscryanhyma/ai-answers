@@ -208,7 +208,8 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
     const similarNeighbors = await VectorService.search(
         queryVector,
         limit * 2, // Get more candidates to filter
-        'qa'
+        'qa',
+        { threshold: similarityThreshold }
     );
     
     const similarEmbeddings = [];
@@ -216,7 +217,6 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
     // Get the current interaction's createdAt timestamp
     const sourceInteractionCreatedAt = sourceEmbedding.createdAt;
     for (const neighbor of similarNeighbors) {
-        if (neighbor.similarity < similarityThreshold) continue;
         if (neighbor.interactionId.toString() === sourceEmbedding.interactionId.toString()) continue;
 
         const embedding = await Embedding.findOne({
@@ -238,14 +238,16 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
         if (!embedding.sentenceEmbeddings || embedding.sentenceEmbeddings.length === 0) continue;
 
         const expertFeedback = await ExpertFeedback.findById(neighbor.expertFeedbackId).lean();
-        if (!expertFeedback) continue;
+        if (!expertFeedback) {
+            ServerLoggingService.warn('ExpertFeedback not found for embedding in vector store (worker)', neighbor.interactionId.toString(), {
+            expertFeedbackId: neighbor.expertFeedbackId
+            });
+            continue;
+        }
 
         const neighborInteraction = await Interaction.findById(neighbor.interactionId, { createdAt: 1 }).lean();
         if (!neighborInteraction) continue;
         
-        // Only consider matches created before or at the current interaction
-            // Only consider matches created before or at the current interaction
-            // if (sourceInteractionCreatedAt && neighborInteraction.createdAt > sourceInteractionCreatedAt) continue; // REMOVED RESTRICTION: allow newer expert feedback for matching
         similarEmbeddings.push({
             embedding: {
                 ...embedding,
@@ -289,12 +291,16 @@ async function findBestSentenceMatches(sourceEmbedding, topMatches) {
             console.error('Invalid query vector for sentence search:', sourceSentenceEmb, 'Type:', Object.prototype.toString.call(sourceSentenceEmb));
             throw new Error('Query vector for sentence search must be a plain array of finite numbers');
         }
-        const sentenceNeighbors = await VectorService.search(sourceSentenceEmb, 10, 'sentence');
+        // Apply sentence similarity threshold directly in vector service
+        const sentenceNeighbors = await VectorService.search(
+            sourceSentenceEmb,
+            10,
+            'sentence',
+            { threshold: config.thresholds.sentenceSimilarity }
+        );
         // Filter to only those whose parent interaction is in the topMatches
-        const filtered = sentenceNeighbors.filter(n => {
-            return allowedInteractionIds.has(n.interactionId.toString()) &&
-                n.similarity > config.thresholds.sentenceSimilarity;
-        });
+    // Only keep neighbors whose interaction is among top matches (threshold already applied)
+    const filtered = sentenceNeighbors.filter(n => allowedInteractionIds.has(n.interactionId.toString()));
         filtered.sort((a, b) => b.similarity - a.similarity);
         if (filtered.length > 0) {
             const best = filtered[0];
@@ -472,7 +478,9 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
             matchedSentenceText: matchedSentenceText,
             matchedExpertFeedbackSentenceScore: match.expertFeedback?.[`sentence${feedbackIdx}Score`] ?? 100,
             matchedExpertFeedbackSentenceExplanation: match.expertFeedback?.[`sentence${feedbackIdx}Explanation`],
-            similarity: match.similarity
+            similarity: match.similarity,
+            matchStatus: match.matchStatus,
+            matchExplanation: match.matchExplanation
         });
         sentenceSimilarities.push(match.similarity);
     }
@@ -488,7 +496,8 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
         feedbackId: savedFeedback._id,
         totalScore: recalculatedScore,
         citationScore: bestCitationMatch.score
-    });    const newEval = new Eval({
+    });    
+    const newEval = new Eval({
         expertFeedback: savedFeedback._id,
         processed: true,
         hasMatches: true,
