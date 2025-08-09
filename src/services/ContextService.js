@@ -3,6 +3,7 @@ import loadContextSystemPrompt from './contextSystemPrompt.js';
 import { getProviderApiUrl, getApiUrl } from '../utils/apiToUrl.js';
 import LoggingService from './ClientLoggingService.js';
 import AuthService from './AuthService.js';
+import ClientLoggingService from './ClientLoggingService.js';
 
 const ContextService = {
   prepareMessage: async (
@@ -120,9 +121,8 @@ const ContextService = {
     try {
       await LoggingService.info(
         chatId,
-        `Context Service: Analyzing question in ${lang.toUpperCase()}`
+        `Context Service: Analyzing question: page lang: ${lang}: ${JSON.stringify(question)}`
       );
-      // TODO add referring URL to the context of the search?
       const searchResults = await ContextService.contextSearch(
         question,
         searchProvider,
@@ -130,10 +130,10 @@ const ContextService = {
         chatId,
         aiProvider
       );
-      await LoggingService.info(chatId, 'Executed Search:', {
-        query: question,
-        provider: searchProvider,
-      });
+      await LoggingService.info(
+        chatId,
+        `Context Service: Search completed in ${JSON.stringify(searchResults)}`
+      );
       // Extract agent values from searchResults
       const { query: searchQuery, translatedQuestion, originalLang } = searchResults;
       const parsedContext = ContextService.parseContext(
