@@ -38,8 +38,8 @@ class IMVectorService {
     this.preCheck = preCheck;
 
     // Minimal metadata to mirror DocDBVectorService search() outputs
-    this.qaMeta = new Map();       // key: qaId  -> { interactionId, expertFeedbackId }
-    this.sentMeta = new Map();     // key: sentId-> { interactionId, sentenceIndex, expertFeedbackId }
+    this.qaMeta = new Map();       // id -> { interactionId, expertFeedbackId }
+    this.sentMeta = new Map();     // id -> { interactionId, sentenceIndex, expertFeedbackId }
 
     this.stats = {
       searches: 0,
@@ -92,9 +92,15 @@ class IMVectorService {
         .lean();
       const interactionToEF = new Map(interactions.map(i => [i._id.toString(), i.expertFeedback ? i.expertFeedback.toString() : null]));
 
+      // Filter out QA docs without expertFeedback
+      const qaDocsWithEF = qaDocs.filter(doc => {
+        const efId = interactionToEF.get(doc.interactionId?.toString() || '');
+        return !!efId;
+      });
+
       // Precheck QA if enabled (pure numbers)
       if (this.preCheck) {
-        const bad = qaDocs.filter(d => !isValidVector(d.questionsAnswerEmbedding));
+        const bad = qaDocsWithEF.filter(d => !isValidVector(d.questionsAnswerEmbedding));
         if (bad.length) {
           ServerLoggingService.error('Precheck failed for QA embeddings', 'vector-service', { count: bad.length, sample: bad[0]?._id });
           throw new Error('Vector precheck (QA) failed: non-number values present');
@@ -102,7 +108,7 @@ class IMVectorService {
       }
 
       // Insert QA vectors into local VectorDB
-      for (const doc of qaDocs) {
+      for (const doc of qaDocsWithEF) {
         const id = doc._id.toString(); // mirror DocDB returning _id
         const vec = toPlainNumberArray(doc.questionsAnswerEmbedding);
         this.qaDB.add({ id, embedding: vec });
@@ -114,7 +120,7 @@ class IMVectorService {
 
       // ----- Load Sentence docs (SentenceEmbedding) -----
       const sentenceDocs = await SentenceEmbedding.find({
-        parentEmbeddingId: { $in: qaDocs.map(d => d._id) },
+        parentEmbeddingId: { $in: qaDocsWithEF.map(d => d._id) },
       })
         .select('_id parentEmbeddingId sentenceIndex embedding')
         .lean();
@@ -186,12 +192,13 @@ class IMVectorService {
    * Find similar chats by embedding using QA search logic (unchanged API)
    */
   async findSimilarChats(embedding, { excludeChatId, limit = 20 } = {}) {
-    const neighbors = await this.search(embedding, limit * 2, 'qa');
+    const config = await import('../config/eval.js');
+    const similarityThreshold = config.default.thresholds.questionAnswerSimilarity ?? 0.0;
+
+    // Pass threshold into search so it can short-circuit early
+    const neighbors = await this.search(embedding, limit * 2, 'qa', { threshold: similarityThreshold });
 
     const Chat = mongoose.model('Chat');
-    const config = await import('../config/eval.js');
-    const similarityThreshold = config.default.thresholds.questionAnswerSimilarity;
-
     const results = [];
     for (const n of neighbors) {
       if (n.interactionId && n.similarity > similarityThreshold) {
@@ -217,7 +224,7 @@ class IMVectorService {
    * Optional: allow appending vectors at runtime (kept for compatibility)
    */
   addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, createdAt, questionsAnswerEmbedding, sentenceEmbeddings }) {
-    if (questionsAnswerEmbedding) {
+    if (questionsAnswerEmbedding && expertFeedbackId) {
       const qaId = `${interactionId || this.stats.embeddings}:${Date.now()}`; // unique-enough
       const vec = toPlainNumberArray(questionsAnswerEmbedding);
       this.qaDB.add({ id: qaId, embedding: vec });
@@ -228,7 +235,7 @@ class IMVectorService {
       this.stats.embeddings++;
     }
 
-    if (Array.isArray(sentenceEmbeddings)) {
+    if (Array.isArray(sentenceEmbeddings) && expertFeedbackId) {
       sentenceEmbeddings.forEach((sentVec, idx) => {
         const id = `${interactionId || 'tmp'}:${idx}:${Date.now()}`;
         const vec = toPlainNumberArray(sentVec);
@@ -248,13 +255,15 @@ class IMVectorService {
    * @param {number[]} vector
    * @param {number} k
    * @param {'qa'|'sentence'} indexType
+   * @param {{threshold?: number}} opts
    */
-  async search(vector, k, indexType = 'qa') {
+  async search(vector, k, indexType = 'qa', opts = {}) {
     if (!this.isInitialized && !this.initializingPromise) {
       this.initialize();
     }
     if (!this.isInitialized) await this.initializingPromise;
 
+    const { threshold = null } = opts;
     const plainVector = toPlainNumberArray(vector);
 
     let db, metaMap, statKey;
@@ -267,32 +276,44 @@ class IMVectorService {
     }
 
     const start = Date.now();
-    const results = await db.query(plainVector, k);
+    let results = await db.query(plainVector, k); // imvectordb returns { document: { id }, similarity }
+    // Ensure sorted by similarity desc (most libs already do, but cheap to enforce)
+    results = results.sort((a, b) => b.similarity - a.similarity);
+
     this.stats.searches++;
     this.stats[statKey]++;
     this.stats.totalSearchTime += Date.now() - start;
 
-    // Map to DocDB-compatible shapes
-    return results.map(r => {
+    // Map to DocDB-compatible shapes with short-circuit on threshold
+    const out = [];
+    for (const r of results) {
       const id = r.document.id;
       const meta = metaMap.get(id) || {};
+      const sim = r.similarity;
+
+      if (threshold !== null && sim < threshold) break;
+
       if (indexType === 'qa') {
-        return {
+        out.push({
           id,
           interactionId: meta.interactionId || null,
           expertFeedbackId: meta.expertFeedbackId || null,
-          similarity: r.similarity,
-        };
+          similarity: sim,
+        });
       } else {
-        return {
+        out.push({
           id,
           interactionId: meta.interactionId || null,
           sentenceIndex: meta.sentenceIndex,
           expertFeedbackId: meta.expertFeedbackId || null,
-          similarity: r.similarity,
-        };
+          similarity: sim,
+        });
       }
-    });
+
+      if (out.length >= k) break; // safety; results length can still be <= k after threshold cut
+    }
+
+    return out;
   }
 
   getStats() {
