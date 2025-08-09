@@ -134,6 +134,108 @@ class DocDBVectorService {
     return this.initializingPromise;
   }
 
+  async _searchSentence(cleanVector, k, opts, start) {
+    const { threshold = null, efSearch = 200, candidateMultiplier = 2 } = opts;
+    const engineK = k * candidateMultiplier;
+    ServerLoggingService.debug('Using sentence index', 'DocDBVectorService');
+    const pipeline = [
+      { $search: { vectorSearch: { vector: cleanVector, path: 'embedding', similarity: 'cosine', k: engineK, efSearch } } },
+      { $limit: engineK },
+      { $lookup: { from: 'embeddings', localField: 'parentEmbeddingId', foreignField: '_id', as: 'parent' } },
+      { $unwind: '$parent' },
+      { $lookup: { from: 'interactions', localField: 'parent.interactionId', foreignField: '_id', as: 'inter' } },
+      { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
+      { $project: { _id: 1, parentEmbeddingId: 1, sentenceIndex: 1, interactionId: '$parent.interactionId', expertFeedbackId: '$inter.expertFeedback', embedding: 1 } },
+    ];
+    ServerLoggingService.debug('Sentence pipeline', 'DocDBVectorService', { pipeline });
+    let docs;
+    try {
+      docs = await this.sentenceCollection.aggregate(pipeline).toArray();
+      ServerLoggingService.debug('Sentence pipeline result', 'DocDBVectorService', { docsCount: docs.length });
+    } catch (err) {
+      ServerLoggingService.error('Error running sentence pipeline', 'DocDBVectorService', err);
+      throw err;
+    }
+    const rescored = [];
+    for (const r of docs) {
+      let sim = 0;
+      try {
+        sim = cosineSimilarity(cleanVector, r.embedding) ?? 0;
+      } catch (err) {
+        ServerLoggingService.error('Error computing cosine similarity (sentence)', 'DocDBVectorService', err);
+      }
+      if (threshold === null || sim >= threshold) {
+        rescored.push({
+          id: r._id.toString(),
+          interactionId: r.interactionId?.toString?.() || r.interactionId,
+          sentenceIndex: r.sentenceIndex,
+          expertFeedbackId: r.expertFeedbackId || null,
+          similarity: sim,
+        });
+        if (rescored.length >= k) {
+          break;
+        }
+      }
+    }
+    rescored.sort((a, b) => b.similarity - a.similarity);
+    ServerLoggingService.debug('Sorted similarity list (sentence)', 'DocDBVectorService', { rescored });
+    this.stats.sentenceSearches++;
+    this.stats.searches++;
+    this.stats.totalSearchTime += Date.now() - start;
+    ServerLoggingService.debug('Sentence search finished', 'DocDBVectorService', { outLength: rescored.slice(0, k).length });
+    return rescored.slice(0, k);
+  }
+
+  async _searchQA(cleanVector, k, opts, start) {
+    const { threshold = null, efSearch = 200, candidateMultiplier = 2 } = opts;
+    const engineK = k * candidateMultiplier;
+    ServerLoggingService.debug('Using QA index', 'DocDBVectorService');
+    const pipeline = [
+      { $search: { vectorSearch: { vector: cleanVector, path: 'questionsAnswerEmbedding', similarity: 'cosine', k: engineK, efSearch } } },
+      { $limit: engineK },
+      ...(this.filterQuery && Object.keys(this.filterQuery).length ? [{ $match: this.filterQuery }] : []),
+      { $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } },
+      { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
+      { $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsAnswerEmbedding: 1 } },
+    ];
+    ServerLoggingService.debug('QA pipeline', 'DocDBVectorService', { pipeline });
+    let docs;
+    try {
+      docs = await this.collection.aggregate(pipeline).toArray();
+      ServerLoggingService.debug('QA pipeline result', 'DocDBVectorService', { docsCount: docs.length });
+    } catch (err) {
+      ServerLoggingService.error('Error running QA pipeline', 'DocDBVectorService', err);
+      throw err;
+    }
+    const rescored = [];
+    for (const r of docs) {
+      let sim = 0;
+      try {
+        sim = cosineSimilarity(cleanVector, r.questionsAnswerEmbedding) ?? 0;
+      } catch (err) {
+        ServerLoggingService.error('Error computing cosine similarity (QA)', 'DocDBVectorService', err);
+      }
+      if (threshold === null || sim >= threshold) {
+        rescored.push({
+          id: r._id.toString(),
+          interactionId: r.interactionId?.toString?.() || r.interactionId,
+          expertFeedbackId: r.expertFeedbackId || null,
+          similarity: sim,
+        });
+        if (rescored.length >= k) {
+          break;
+        }
+      }
+    }
+    rescored.sort((a, b) => b.similarity - a.similarity);
+    ServerLoggingService.debug('Sorted similarity list (QA)', 'DocDBVectorService', { rescored });
+    this.stats.qaSearches++;
+    this.stats.searches++;
+    this.stats.totalSearchTime += Date.now() - start;
+    ServerLoggingService.debug('QA search finished', 'DocDBVectorService', { outLength: rescored.slice(0, k).length });
+    return rescored.slice(0, k);
+  }
+
   /**
    * Vector search
    * @param {number[]} vector - query vector
@@ -158,129 +260,13 @@ class DocDBVectorService {
       throw err;
     }
 
-    // Query-time tuning (efSearch ↑ => recall ↑, at latency cost)
-    const { threshold = null, efSearch = 200, candidateMultiplier = 4 } = opts;
-    const engineK = Math.max(k * candidateMultiplier, 100); // pull a generous pool, then re-rank
-    ServerLoggingService.debug('Search options', 'DocDBVectorService', { threshold, efSearch, engineK });
-
     const start = Date.now();
 
     if (indexType === 'sentence') {
-      ServerLoggingService.debug('Using sentence index', 'DocDBVectorService');
-
-      const pipeline = [
-        { $search: { vectorSearch: { vector: cleanVector, path: 'embedding', similarity: 'cosine', k: engineK, efSearch } } },
-        { $limit: engineK },
-        // Look up parents & interaction metadata
-        { $lookup: { from: 'embeddings', localField: 'parentEmbeddingId', foreignField: '_id', as: 'parent' } },
-        { $unwind: '$parent' },
-        { $lookup: { from: 'interactions', localField: 'parent.interactionId', foreignField: '_id', as: 'inter' } },
-        { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
-        { $project: {
-          _id: 1,
-          parentEmbeddingId: 1,
-          sentenceIndex: 1,
-          interactionId: '$parent.interactionId',
-          expertFeedbackId: '$inter.expertFeedback',
-          embedding: 1,
-        } },
-      ];
-      ServerLoggingService.debug('Sentence pipeline', 'DocDBVectorService', { pipeline });
-
-      let docs;
-      try {
-        docs = await this.sentenceCollection.aggregate(pipeline).toArray();
-        ServerLoggingService.debug('Sentence pipeline result', 'DocDBVectorService', { docsCount: docs.length });
-      } catch (err) {
-        ServerLoggingService.error('Error running sentence pipeline', 'DocDBVectorService', err);
-        throw err;
-      }
-
-      // Re-score and re-rank client-side
-      const rescored = [];
-      for (const r of docs) {
-        let sim = 0;
-        try {
-          sim = cosineSimilarity(cleanVector, r.embedding) ?? 0;
-        } catch (err) {
-          ServerLoggingService.error('Error computing cosine similarity (sentence)', 'DocDBVectorService', err);
-        }
-        rescored.push({
-          id: r._id.toString(),
-          interactionId: r.interactionId?.toString?.() || r.interactionId,
-          sentenceIndex: r.sentenceIndex,
-          expertFeedbackId: r.expertFeedbackId || null,
-          similarity: sim,
-        });
-      }
-
-      rescored.sort((a, b) => b.similarity - a.similarity);
-    ServerLoggingService.debug('Sorted similarity list (sentence)', 'DocDBVectorService', { rescored });
-      const filtered = threshold == null ? rescored : rescored.filter(x => x.similarity >= threshold);
-      const out = filtered.slice(0, k);
-
-      this.stats.sentenceSearches++;
-      this.stats.searches++;
-      this.stats.totalSearchTime += Date.now() - start;
-      ServerLoggingService.debug('Sentence search finished', 'DocDBVectorService', { outLength: out.length });
-      return out;
+      return await this._searchSentence(cleanVector, k, opts, start);
+    } else {
+      return await this._searchQA(cleanVector, k, opts, start);
     }
-
-    // ----- QA search -----
-    ServerLoggingService.debug('Using QA index', 'DocDBVectorService');
-
-    const pipeline = [
-      { $search: { vectorSearch: { vector: cleanVector, path: 'questionsAnswerEmbedding', similarity: 'cosine', k: engineK, efSearch } } },
-      { $limit: engineK },
-      // Apply optional filterQuery post-search (DocDB doesn't support filter inside vectorSearch)
-      ...(this.filterQuery && Object.keys(this.filterQuery).length ? [{ $match: this.filterQuery }] : []),
-      { $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } },
-      { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
-      { $project: {
-        _id: 1,
-        interactionId: 1,
-        expertFeedbackId: '$inter.expertFeedback',
-        questionsAnswerEmbedding: 1, // include vector to compute score
-      } },
-    ];
-    ServerLoggingService.debug('QA pipeline', 'DocDBVectorService', { pipeline });
-
-    let docs;
-    try {
-      docs = await this.collection.aggregate(pipeline).toArray();
-      ServerLoggingService.debug('QA pipeline result', 'DocDBVectorService', { docsCount: docs.length });
-    } catch (err) {
-      ServerLoggingService.error('Error running QA pipeline', 'DocDBVectorService', err);
-      throw err;
-    }
-
-    // Re-score & sort; apply threshold, then slice to k
-    const rescored = [];
-    for (const r of docs) {
-      let sim = 0;
-      try {
-        sim = cosineSimilarity(cleanVector, r.questionsAnswerEmbedding) ?? 0;
-      } catch (err) {
-        ServerLoggingService.error('Error computing cosine similarity (QA)', 'DocDBVectorService', err);
-      }
-      rescored.push({
-        id: r._id.toString(),
-        interactionId: r.interactionId?.toString?.() || r.interactionId,
-        expertFeedbackId: r.expertFeedbackId || null,
-        similarity: sim,
-      });
-    }
-
-    rescored.sort((a, b) => b.similarity - a.similarity);
-    ServerLoggingService.debug('Sorted similarity list (QA)', 'DocDBVectorService', { rescored });
-    const filtered = threshold == null ? rescored : rescored.filter(x => x.similarity >= threshold);
-    const out = filtered.slice(0, k);
-
-    this.stats.qaSearches++;
-    this.stats.searches++;
-    this.stats.totalSearchTime += Date.now() - start;
-    ServerLoggingService.debug('QA search finished', 'DocDBVectorService', { outLength: out.length });
-    return out;
   }
 
   async getStats() {
