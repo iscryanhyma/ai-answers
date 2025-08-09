@@ -200,6 +200,7 @@ class EmbeddingService {
         questionsEmbedding: embeddings[1],
         answerEmbedding: embeddings[2],
         questionsAnswerEmbedding: embeddings[3],
+       
       };
       await dbConnect();
       const newEmbedding = await Embedding.create(embeddingDoc);

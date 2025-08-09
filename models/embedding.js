@@ -37,9 +37,6 @@ const embeddingSchema = new mongoose.Schema(
     questionsEmbedding: { type: [Number], required: false, default: undefined },
     answerEmbedding: { type: [Number], required: false, default: undefined },
 
-    // Legacy: sentenceEmbeddings now live in sentence_embeddings collection (Option B)
-    // Keep optional during migration; you can remove later.
-    sentenceEmbeddings: { type: [[Number]], required: false, default: undefined },
   },
   {
     collection: 'embeddings',
