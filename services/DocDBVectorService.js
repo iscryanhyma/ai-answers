@@ -148,6 +148,21 @@ class DocDBVectorService {
       similarity: r.similarity,
     }));
   }
+
+  getStats() {
+    const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime, embeddings, sentences } = this.stats;
+    return {
+      isInitialized: this.isInitialized,
+      embeddings,
+      sentences,
+      searches,
+      qaSearches,
+      sentenceSearches,
+      averageSearchTimeMs: searches ? totalSearchTime / searches : 0,
+      uptimeSeconds: lastInitTime ? (Date.now() - lastInitTime) / 1000 : 0,
+     
+    };
+  }
 }
 
 export default DocDBVectorService;
