@@ -21,7 +21,7 @@ class DocDBVectorService {
    * @param {{filterQuery?: object, preCheck?: boolean}} opts
    */
   constructor({ filterQuery = {}, preCheck = false } = {}) {
-    this.filterQuery = filterQuery;           // applied to QA selection only
+    this.filterQuery = filterQuery;           // applied to QA selection only (post-search $match)
     this.preCheck = preCheck;                 // optional data audit before indexing
     this.isInitialized = false;
     this.initializingPromise = null;
@@ -62,7 +62,8 @@ class DocDBVectorService {
 
       // Optional precheck (raw driver to avoid Mongoose casting issues)
       if (this.preCheck) {
-        const badQA = await this.collection.find({
+        // Type checks: vectors must be arrays of doubles
+        const badQAType = await this.collection.find({
           ...this.filterQuery,
           $or: [
             { questionsAnswerEmbedding: { $exists: false } },
@@ -71,7 +72,7 @@ class DocDBVectorService {
           ],
         }).project({ _id: 1 }).toArray();
 
-        const badSent = await this.sentenceCollection.find({
+        const badSentType = await this.sentenceCollection.find({
           $or: [
             { embedding: { $exists: false } },
             { embedding: { $size: 0 } },
@@ -79,13 +80,13 @@ class DocDBVectorService {
           ],
         }).project({ _id: 1 }).toArray();
 
-        if (badQA.length || badSent.length) {
-          ServerLoggingService.error('Precheck failed', 'vector-service', { badQA: badQA.length, badSent: badSent.length });
-          throw new Error('Vector precheck failed: see logs for invalid docs');
+        if (badQAType.length || badSentType.length) {
+          ServerLoggingService.error('Precheck (type) failed', 'vector-service', { badQAType: badQAType.length, badSentType: badSentType.length });
+          throw new Error('Vector precheck failed: invalid numeric types detected');
         }
       }
 
-      // Infer dims
+      // Infer dims from samples
       const qaSample = await Embedding.findOne({
         questionsAnswerEmbedding: { $exists: true, $not: { $size: 0 } },
         ...this.filterQuery,
@@ -99,20 +100,33 @@ class DocDBVectorService {
       );
       const sentenceDim = sentSample?.embedding?.length ?? qaDim;
 
-      // Ensure vector indexes
+      // Optional precheck: strict dimension consistency across all indexed docs
+      if (this.preCheck) {
+        const badQADim = await this.collection.find({
+          ...this.filterQuery,
+          questionsAnswerEmbedding: { $exists: true, $not: { $size: 0 } },
+          $expr: { $ne: [{ $size: '$questionsAnswerEmbedding' }, qaDim] },
+        }).project({ _id: 1 }).toArray();
+
+        const badSentDim = await this.sentenceCollection.find({
+          embedding: { $exists: true, $not: { $size: 0 } },
+          $expr: { $ne: [{ $size: '$embedding' }, sentenceDim] },
+        }).project({ _id: 1 }).toArray();
+
+        if (badQADim.length || badSentDim.length) {
+          ServerLoggingService.error('Precheck (dimension) failed', 'vector-service', { badQADim: badQADim.length, badSentDim: badSentDim.length, qaDim, sentenceDim });
+          throw new Error(`Vector precheck failed: dimension mismatch QA=${badQADim.length}, Sentences=${badSentDim.length}`);
+        }
+      }
+
+      // Ensure vector indexes (HNSW + cosine to match client-side cosine)
       const qaOptions = { type: 'hnsw', similarity: 'cosine', dimensions: qaDim, m: 16, efConstruction: 64 };
       const sentOptions = { type: 'hnsw', similarity: 'cosine', dimensions: sentenceDim, m: 16, efConstruction: 64 };
       try { await this._ensureVectorIndex('embeddings', { questionsAnswerEmbedding: 'vector' }, qaOptions, 'qa_vector_index'); } catch {}
       try { await this._ensureVectorIndex('sentence_embeddings', { embedding: 'vector' }, sentOptions, 'sentence_vector_index'); } catch {}
 
-      // Only count QA and sentence embeddings whose interactions have expertFeedback
-      // Get all interactionIds with expertFeedback
-      const interactionsWithEF = await mongoose.connection.collection('interactions').find({ expertFeedback: { $exists: true, $ne: null } }).project({ _id: 1 }).toArray();
-      const validInteractionIds = interactionsWithEF.map(i => i._id);
-
-  // Removed embeddings and sentences stats calculations; now handled in getStats()
+     
       this.stats.lastInitTime = new Date();
-
       this.isInitialized = true;
       this.initializingPromise = null;
     })();
@@ -123,9 +137,9 @@ class DocDBVectorService {
   /**
    * Vector search
    * @param {number[]} vector - query vector
-   * @param {number} k - max neighbors to consider/return
+   * @param {number} k - max neighbors to return
    * @param {'qa'|'sentence'} indexType
-   * @param {{threshold?: number, efSearch?: number}} opts
+   * @param {{threshold?: number, efSearch?: number, candidateMultiplier?: number}} opts
    */
   async search(vector, k, indexType = 'qa', opts = {}) {
     ServerLoggingService.debug('search() called', 'DocDBVectorService', { vector, k, indexType, opts });
@@ -133,24 +147,31 @@ class DocDBVectorService {
       ServerLoggingService.debug('Not initialized, calling initialize()', 'DocDBVectorService');
       await this.initialize();
     }
+
+    // Clean & validate query vector
     let cleanVector;
     try {
       cleanVector = toCleanVector(vector);
-      ServerLoggingService.debug('Cleaned vector', 'DocDBVectorService', { cleanVector });
+      ServerLoggingService.debug('Cleaned vector', 'DocDBVectorService', { cleanVectorLength: cleanVector.length });
     } catch (err) {
       ServerLoggingService.error('Error cleaning vector', 'DocDBVectorService', err);
       throw err;
     }
 
-    const { threshold = null, efSearch = 60 } = opts;
-    ServerLoggingService.debug('Search options', 'DocDBVectorService', { threshold, efSearch });
+    // Query-time tuning (efSearch ↑ => recall ↑, at latency cost)
+    const { threshold = null, efSearch = 200, candidateMultiplier = 4 } = opts;
+    const engineK = Math.max(k * candidateMultiplier, 100); // pull a generous pool, then re-rank
+    ServerLoggingService.debug('Search options', 'DocDBVectorService', { threshold, efSearch, engineK });
+
     const start = Date.now();
 
     if (indexType === 'sentence') {
       ServerLoggingService.debug('Using sentence index', 'DocDBVectorService');
+
       const pipeline = [
-        { $search: { vectorSearch: { vector: cleanVector, path: 'embedding', similarity: 'cosine', k, efSearch } } },
-        { $limit: k },
+        { $search: { vectorSearch: { vector: cleanVector, path: 'embedding', similarity: 'cosine', k: engineK, efSearch } } },
+        { $limit: engineK },
+        // Look up parents & interaction metadata
         { $lookup: { from: 'embeddings', localField: 'parentEmbeddingId', foreignField: '_id', as: 'parent' } },
         { $unwind: '$parent' },
         { $lookup: { from: 'interactions', localField: 'parent.interactionId', foreignField: '_id', as: 'inter' } },
@@ -175,35 +196,27 @@ class DocDBVectorService {
         throw err;
       }
 
-      const out = [];
+      // Re-score and re-rank client-side
+      const rescored = [];
       for (const r of docs) {
-        ServerLoggingService.debug('Processing sentence doc', 'DocDBVectorService', { docId: r._id, embedding: r.embedding });
-        // compute numeric cosine similarity client-side
-        let sim;
+        let sim = 0;
         try {
           sim = cosineSimilarity(cleanVector, r.embedding) ?? 0;
         } catch (err) {
           ServerLoggingService.error('Error computing cosine similarity (sentence)', 'DocDBVectorService', err);
-          sim = 0;
         }
-        ServerLoggingService.debug('Cosine similarity (sentence)', 'DocDBVectorService', { sim, threshold });
-        if (threshold !== null && sim < threshold) {
-          ServerLoggingService.debug('Similarity below threshold, breaking', 'DocDBVectorService', { sim, threshold });
-          break; // short-circuit on first below-threshold (ordered results)
-        }
-        out.push({
+        rescored.push({
           id: r._id.toString(),
           interactionId: r.interactionId?.toString?.() || r.interactionId,
           sentenceIndex: r.sentenceIndex,
           expertFeedbackId: r.expertFeedbackId || null,
           similarity: sim,
         });
-        ServerLoggingService.debug('Added sentence result', 'DocDBVectorService', { outLength: out.length });
-        if (out.length >= k) {
-          ServerLoggingService.debug('Reached k results, breaking', 'DocDBVectorService', { k });
-          break;
-        }
       }
+
+      rescored.sort((a, b) => b.similarity - a.similarity);
+      const filtered = threshold == null ? rescored : rescored.filter(x => x.similarity >= threshold);
+      const out = filtered.slice(0, k);
 
       this.stats.sentenceSearches++;
       this.stats.searches++;
@@ -214,9 +227,12 @@ class DocDBVectorService {
 
     // ----- QA search -----
     ServerLoggingService.debug('Using QA index', 'DocDBVectorService');
+
     const pipeline = [
-      { $search: { vectorSearch: { vector: cleanVector, path: 'questionsAnswerEmbedding', similarity: 'cosine', k, efSearch } } },
-      { $limit: k },
+      { $search: { vectorSearch: { vector: cleanVector, path: 'questionsAnswerEmbedding', similarity: 'cosine', k: engineK, efSearch } } },
+      { $limit: engineK },
+      // Apply optional filterQuery post-search (DocDB doesn't support filter inside vectorSearch)
+      ...(this.filterQuery && Object.keys(this.filterQuery).length ? [{ $match: this.filterQuery }] : []),
       { $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } },
       { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
       { $project: {
@@ -237,33 +253,26 @@ class DocDBVectorService {
       throw err;
     }
 
-    const out = [];
+    // Re-score & sort; apply threshold, then slice to k
+    const rescored = [];
     for (const r of docs) {
-      ServerLoggingService.debug('Processing QA doc', 'DocDBVectorService', { docId: r._id, questionsAnswerEmbedding: r.questionsAnswerEmbedding });
-      let sim;
+      let sim = 0;
       try {
         sim = cosineSimilarity(cleanVector, r.questionsAnswerEmbedding) ?? 0;
       } catch (err) {
         ServerLoggingService.error('Error computing cosine similarity (QA)', 'DocDBVectorService', err);
-        sim = 0;
       }
-      ServerLoggingService.debug('Cosine similarity (QA)', 'DocDBVectorService', { sim, threshold });
-      if (threshold !== null && sim < threshold) {
-        ServerLoggingService.debug('Similarity below threshold, breaking', 'DocDBVectorService', { sim, threshold });
-        break; // short-circuit
-      }
-      out.push({
+      rescored.push({
         id: r._id.toString(),
         interactionId: r.interactionId?.toString?.() || r.interactionId,
         expertFeedbackId: r.expertFeedbackId || null,
         similarity: sim,
       });
-      ServerLoggingService.debug('Added QA result', 'DocDBVectorService', { outLength: out.length });
-      if (out.length >= k) {
-        ServerLoggingService.debug('Reached k results, breaking', 'DocDBVectorService', { k });
-        break;
-      }
     }
+
+    rescored.sort((a, b) => b.similarity - a.similarity);
+    const filtered = threshold == null ? rescored : rescored.filter(x => x.similarity >= threshold);
+    const out = filtered.slice(0, k);
 
     this.stats.qaSearches++;
     this.stats.searches++;
@@ -312,8 +321,8 @@ class DocDBVectorService {
    * Find similar chats by embedding using QA search logic (matches IMVectorService API)
    */
   async findSimilarChats(embedding, { excludeChatId, limit = 20 } = {}) {
-    // one call, compute scores client-side, use your configured threshold
-    const neighbors = await this.search(embedding, limit * 2, 'qa', { efSearch: 60 });
+    // pull extra, then re-rank client-side
+    const neighbors = await this.search(embedding, limit * 2, 'qa', { efSearch: 200, candidateMultiplier: 4 });
 
     const Chat = mongoose.model('Chat');
     const config = await import('../config/eval.js');
