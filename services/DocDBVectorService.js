@@ -164,6 +164,7 @@ class DocDBVectorService {
       } catch (err) {
         ServerLoggingService.error('Error computing cosine similarity (sentence)', 'DocDBVectorService', err);
       }
+      ServerLoggingService.debug(`Similarity for sentence _id=${r._id}: ${sim}`, 'DocDBVectorService');
       if (threshold === null || sim >= threshold) {
         rescored.push({
           id: r._id.toString(),
@@ -215,6 +216,7 @@ class DocDBVectorService {
       } catch (err) {
         ServerLoggingService.error('Error computing cosine similarity (QA)', 'DocDBVectorService', err);
       }
+      ServerLoggingService.debug(`Similarity for QA _id=${r._id}: ${sim}`, 'DocDBVectorService');
       if (threshold === null || sim >= threshold) {
         rescored.push({
           id: r._id.toString(),
@@ -244,7 +246,7 @@ class DocDBVectorService {
    * @param {{threshold?: number, efSearch?: number, candidateMultiplier?: number}} opts
    */
   async search(vector, k, indexType = 'qa', opts = {}) {
-    ServerLoggingService.debug('search() called', 'DocDBVectorService', { vector, k, indexType, opts });
+  ServerLoggingService.debug('search() called', 'DocDBVectorService', { k, indexType, opts });
     if (!this.isInitialized) {
       ServerLoggingService.debug('Not initialized, calling initialize()', 'DocDBVectorService');
       await this.initialize();
