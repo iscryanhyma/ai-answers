@@ -307,6 +307,16 @@ class DocDBVectorService {
     });
 
     const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime } = this.stats;
+      ServerLoggingService.debug('getStats result', 'DocDBVectorService', {
+        isInitialized: this.isInitialized,
+        embeddings,
+        sentences,
+        searches,
+        qaSearches,
+        sentenceSearches,
+        averageSearchTimeMs: searches ? totalSearchTime / searches : 0,
+        uptimeSeconds: lastInitTime ? (Date.now() - lastInitTime) / 1000 : 0,
+      });
     return {
       isInitialized: this.isInitialized,
       embeddings,
