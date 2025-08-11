@@ -38,7 +38,8 @@
       "useful": "Good",
       "notUseful": "Needs improvement",
       "or": "or",
-      "thankYou": "Thank you for your feedback!"
+  "thankYou": "Thank you for your feedback!",
+  "error": "Error submitting feedback, contact admin."
     },
     "publicFeedback": {
       "surveyLink": "Take a 3 minute feedback survey (opens in new tab)",

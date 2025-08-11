@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 // Shows ratings for a maximum of 4 sentences, and for the citation score
 // if there are somehow 5 sentences, the 5th sentence is ignored _YES THIS IS A HACK
 
-const ExpertRatingComponent = ({
+const ExpertFeedbackComponent = ({
   onSubmit,
   onClose,
   lang = 'en',
@@ -291,4 +291,4 @@ const ExpertRatingComponent = ({
   );
 };
 
-export default ExpertRatingComponent;
+export default ExpertFeedbackComponent;
