@@ -132,7 +132,7 @@ const ContextService = {
       );
       await LoggingService.info(
         chatId,
-        `Context Service: Search completed in ${JSON.stringify(searchResults)}`
+        "Context Service: Agent Search completed:",searchResults
       );
       // Extract agent values from searchResults
       const { query: searchQuery, translatedQuestion, originalLang } = searchResults;
