@@ -142,5 +142,11 @@ export const withOptionalUser = (handler) => async (req, res) => {
   return handler(req, res);
 };
 
+export const withUser = (handler) => async (req, res) => {
+  req.user = await getUserFromRequest(req); // Use new utility
+  return handler(req, res);
+};
+
+
 export const authMiddleware = verifyAuth;
 export const adminMiddleware = verifyAdmin;

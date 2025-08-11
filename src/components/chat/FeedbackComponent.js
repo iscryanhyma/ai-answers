@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import ExpertRatingComponent from './ExpertRatingComponent.js';
+import ExpertFeedbackComponent from './ExpertFeedbackComponent.js';
 import PublicFeedbackComponent from './PublicFeedbackComponent.js';
 import { useHasAnyRole } from '../RoleBasedUI.js';
 import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import DataStoreService from '../../services/DataStoreService.js';
+import FeedbackService from '../../services/FeedbackService.js';
 
 const FeedbackComponent = ({
   lang = 'en',
@@ -19,31 +19,33 @@ const FeedbackComponent = ({
 }) => {
   const { t } = useTranslations(lang);
   const [feedbackGiven, setFeedbackGiven] = useState(false);
+  const [feedbackError, setFeedbackError] = useState(false);
   const [showExpertRating, setShowExpertRating] = useState(false);
   const [showPublicRating, setShowPublicRating] = useState(false);
   const [publicPositive, setPublicPositive] = useState(true);
   const hasExpertRole = useHasAnyRole(['admin', 'partner']);
 
-  const handleFeedback = (isPositive) => {
-    let feedbackPayload = null; // Renamed to avoid confusion
+  const handleFeedback = async (isPositive) => {
+    let feedbackPayload = null;
     if (isPositive) {
       if (hasExpertRole) {
         feedbackPayload = {
-          // totalScore: 100, // Retained for now, can be re-evaluated if it causes issues
           type: 'expert',
-          feedback: 'positive', // Explicitly 'positive' for expert "Useful" click
-          totalScore: 100, // Assuming a default score of 100 for positive feedback
+          feedback: 'positive',
+          totalScore: 100,
         };
-        DataStoreService.persistFeedback(feedbackPayload, chatId, userMessageId);
-        setFeedbackGiven(true);
+        try {
+          await FeedbackService.persistExpertFeedback({ chatId, interactionId: userMessageId, expertFeedback: feedbackPayload });
+          setFeedbackGiven(true);
+        } catch (e) {
+          setFeedbackError(true);
+        }
       } else {
         setPublicPositive(true);
         setShowPublicRating(true);
       }
-    } else { // Not useful / No
+    } else {
       if (hasExpertRole) {
-        // When "Not Useful" is clicked by an expert, show the detailed rating component.
-        // The ExpertRatingComponent will then determine its own 'positive'/'negative' feedback string.
         setShowExpertRating(true);
       } else {
         setPublicPositive(false);
@@ -51,19 +53,28 @@ const FeedbackComponent = ({
       }
     }
   };
-  const handleExpertFeedback = (expertFeedback) => {
+  const handleExpertFeedback = async (expertFeedback) => {
     console.log('Expert feedback received:', expertFeedback);
     const feedbackWithType = {
       ...expertFeedback,
       type: 'expert'
     };
-    setFeedbackGiven(true);
     setShowExpertRating(false);
-    DataStoreService.persistFeedback(feedbackWithType, chatId, userMessageId);
+    try {
+      await FeedbackService.persistExpertFeedback({ chatId, interactionId: userMessageId, expertFeedback: feedbackWithType });
+      setFeedbackGiven(true);
+    } catch (e) {
+      setFeedbackError(true);
+    }
   };
 
-  const handlePublicFeedback = (publicFeedback) => {
-    setFeedbackGiven(true);
+  const handlePublicFeedback = async (publicFeedback) => {
+    try {
+      await FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback });
+      setFeedbackGiven(true);
+    } catch (e) {
+      setFeedbackError(true);
+    }
     setShowPublicRating(false);
   };
 
@@ -75,9 +86,17 @@ const FeedbackComponent = ({
       </p>
     );
   }
+  if (feedbackError) {
+    return (
+      <p className="feedback-error">
+        <span className="gcds-icon fa fa-solid fa-exclamation-circle" style={{ color: 'red' }}></span>
+        Error submitting feedback, contact admin.
+      </p>
+    );
+  }
   if (showExpertRating) {
     return (
-      <ExpertRatingComponent
+      <ExpertFeedbackComponent
         onSubmit={handleExpertFeedback}
         onClose={() => setShowExpertRating(false)}
         lang={lang}

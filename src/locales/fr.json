@@ -38,7 +38,8 @@
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
       "or": "ou",
-      "thankYou": "Merci d'avoir donné votre avis!"
+  "thankYou": "Merci d'avoir donné votre avis!",
+  "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
     },
     "publicFeedback": {
       "surveyLink": "Répondez à une enquête de rétroaction de 3 minutes (s'ouvre dans un nouvel onglet)",

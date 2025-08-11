@@ -3,6 +3,19 @@ import { getApiUrl } from '../utils/apiToUrl.js';
 class AuthService {
   static unauthorizedCallback = null; // <-- Add this
 
+    // Send user details (token) with every request, no logout or 401 handling
+    static async fetchWithUser(url, options = {}) {
+      const token = this.getToken();
+      const headers = { ...options.headers };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      const method = (options.method || 'GET').toUpperCase();
+      if (['POST', 'PUT', 'PATCH'].includes(method) && options.body && !headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+      }
+      return fetch(url, { ...options, headers });
+    }
   static setUnauthorizedCallback(cb) {
     this.unauthorizedCallback = cb;
   }
