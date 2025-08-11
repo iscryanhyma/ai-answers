@@ -76,12 +76,6 @@
       "terms": "This AI system relies on information provided on Government of Canada websites and your use of this system and any information generated is also subject to the",
       "termsLink": "Canada.ca Terms and conditions."
     },
-    "immigration": {
-      "title": "Looking to live, work or study in Canada?",
-      "advice": "AI Answers provides short answers, can't access your case status, or provide legal advice.",
-      "explore": "Explore immigration programs to ",
-      "exploreLink": "live, work or study in Canada"
-    },
     "errors": {
       "timeout": {
         "title": "AI Answers has timed out.",
