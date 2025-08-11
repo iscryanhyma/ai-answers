@@ -12,7 +12,7 @@ const ChatOptions = ({
   handleReferringUrlChange
 }) => {
   return (
-    <RoleBasedContent roles={['admin', 'partner']}>
+    <RoleBasedContent roles={['admin']}>
       <GcdsDetails className="hr" detailsTitle={safeT('homepage.chat.options.title')} tabIndex="0">
         <div className="ai-toggle">
           <fieldset className="ai-toggle_fieldset">
