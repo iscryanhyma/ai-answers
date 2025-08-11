@@ -86,14 +86,10 @@ export const AuthProvider = ({ children }) => {
 
   const getDefaultRouteForRole = (role, lang = 'en') => {
     const prefix = lang === 'fr' ? '/fr' : '/en';
-    switch (role) {
-      case 'admin':
-        return `${prefix}/admin`;
-      case 'partner':
-        return `${prefix}/`;
-      default:
-        return prefix;
+    if (role === 'admin' || role === 'partner') {
+      return `${prefix}/admin`;
     }
+    return prefix;
   };
 
   const value = {
