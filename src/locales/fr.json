@@ -76,12 +76,6 @@
       "terms": "Ce système d'IA s'appuie sur les informations fournies sur les sites Web du gouvernement du Canada et votre utilisation de ce système et de toute information générée est également soumise aux",
       "termsLink": "Conditions d'utilisation de Canada.ca."
     },
-    "immigration": {
-      "title": "Vous souhaitez vivre, travailler ou étudier au Canada ?",
-      "advice": "Réponses IA fournit des réponses courtes, ne peut pas accéder à l'état de votre dossier ou fournir des conseils juridiques.",
-      "explore": "Explorez les programmes d'immigration pour ",
-      "exploreLink": "vivre, travailler ou étudier au Canada"
-    },
     "errors": {
       "timeout": {
         "title": "Réponses IA a expiré.",
