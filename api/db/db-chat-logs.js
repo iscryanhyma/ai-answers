@@ -274,7 +274,6 @@ async function chatLogsHandler(req, res) {
 export default function handler(req, res) {
   return withProtection(
     chatLogsHandler,
-    authMiddleware,
-    adminMiddleware
+    authMiddleware
   )(req, res);
 }
