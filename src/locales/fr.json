@@ -281,9 +281,11 @@
   },
   "admin": {
     "title": "Tableau de bord d'administration de Réponses IA",
+      "partnerTitle": "Tableau de bord partenaire Réponses IA",
     "navigation": {
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",
+  "partnerMenu": "Menu partenaire",
       "aiAnswers": "Utiliser Réponses IA avec les options de rétroaction d'expert",
       "batches": "Voir et gérer les lots",
       "users": "Gérer les comptes utilisateurs",

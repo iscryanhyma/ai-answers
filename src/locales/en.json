@@ -279,9 +279,11 @@
   },
   "admin": {
     "title": "AI Answers Admin dashboard",
+      "partnerTitle": "AI Answers Partner Dashboard",
     "navigation": {
       "ariaLabel": "Admin Navigation",
       "title": "Admin Menu",
+    "partnerMenu": "Partner Menu",
       "aiAnswers": "Use AI Answers with expert feedback options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
