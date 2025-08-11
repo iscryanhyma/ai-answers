@@ -428,7 +428,8 @@
     "deploymentModeLabel": "Mode de déploiement",
     "deploymentMode": {
       "cds": "CDS (travailleur en arrière-plan)",
-      "vercel": "Vercel (attendre la fin de l'évaluation)"
+      "vercel": "Vercel (attendre la fin de l'évaluation)",
+      "serverless": "Serverless (attendre la fin de l'évaluation)"
     }
     ,
     "vectorServiceTypeLabel": "Type de service de vecteurs",

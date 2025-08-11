@@ -2,9 +2,20 @@ import { getApiUrl, getProviderApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
 
 class DataStoreService {
+  static async getPublicSetting(key, defaultValue = null) {
+    try {
+      const response = await fetch(getApiUrl(`setting-public-handler?key=${encodeURIComponent(key)}`));
+      if (!response.ok) throw new Error(`Failed to get public setting: ${key}`);
+      const data = await response.json();
+      return data.value !== undefined ? data.value : defaultValue;
+    } catch (error) {
+      console.error(`Error getting public setting '${key}':`, error);
+      return defaultValue;
+    }
+  }
   static async getSetting(key, defaultValue = null) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-settings?key=${encodeURIComponent(key)}`));
+      const response = await AuthService.fetchWithAuth(getApiUrl(`setting-handler?key=${encodeURIComponent(key)}`));
       if (!response.ok) throw new Error(`Failed to get setting: ${key}`);
       const data = await response.json();
       return data.value !== undefined ? data.value : defaultValue;
@@ -16,7 +27,7 @@ class DataStoreService {
 
   static async setSetting(key, value) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-settings'), {
+      const response = await AuthService.fetchWithAuth(getApiUrl('setting-handler'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -368,15 +379,7 @@ class DataStoreService {
   }
 
   static async getSiteStatus() {
-    try {
-      const response = await fetch(getApiUrl('db-public-site-status'));
-      if (!response.ok) throw new Error('Failed to fetch site status');
-      const data = await response.json();
-      return data.value;
-    } catch (error) {
-      console.error('Error fetching site status:', error);
-      return 'available';
-    }
+    return await this.getPublicSetting('siteStatus', 'available');
   }
 }
 

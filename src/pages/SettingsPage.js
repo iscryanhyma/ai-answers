@@ -67,7 +67,7 @@ const SettingsPage = ({ lang = 'en' }) => {
       </label>
       <select id="deployment-mode" value={deploymentMode} onChange={handleDeploymentModeChange} disabled={savingDeployment}>
         <option value="CDS">{t('settings.deploymentMode.cds', 'CDS (Background worker)')}</option>
-        <option value="Vercel">{t('settings.deploymentMode.vercel', 'Vercel (Wait for completion)')}</option>
+  <option value="Vercel">{t('settings.deploymentMode.serverless', 'Serverless (Wait for completion)')}</option>
       </select>
 
       <label htmlFor="vector-service-type" className="mb-200 display-block mt-400">
