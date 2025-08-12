@@ -73,7 +73,7 @@ const HomePage = ({ lang = "en" }) => {
             isAvailable: false,
             message: t("homepage.errors.serviceUnavailable"),
           });
-        } 
+        }
         setIsLoadingSiteStatus(false);
       })
       .catch(() => {
@@ -168,13 +168,7 @@ const HomePage = ({ lang = "en" }) => {
         }
       `}</style>
 
-      <GcdsContainer
-        size="xl"
-        mainContainer
-        centered
-        tag="main"
-        className="mb-600"
-      >
+      <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
         <h2
           className="mt-400 mb-400"
@@ -211,15 +205,8 @@ const HomePage = ({ lang = "en" }) => {
           readOnly={reviewMode}
           initialMessages={initialMessages}
         />
-      </GcdsContainer>
-      <GcdsContainer
-        size="xl"
-        mainContainer
-        centered
-        tag="below"
-        className="mb-600"
-        tabIndex={0}
-      >
+      </div>
+      <div className="mb-600 container-custom">
         {/* Feedback survey link - shown/hidden via CSS based on AI responses */}
         <GcdsText>
           <a
@@ -251,7 +238,7 @@ const HomePage = ({ lang = "en" }) => {
             </GcdsLink>
           </GcdsText>
         </GcdsDetails>
-      </GcdsContainer>
+      </div>
     </WrappedErrorBoundary>
   );
 };
