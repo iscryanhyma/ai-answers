@@ -1,3 +1,13 @@
+#############################################
+# Application Load Balancer (ALB) + Listener
+#############################################
+
+# Gate the secondary hostname strictly to prod
+locals {
+  use_secondary_host = var.env == "production"
+  secondary_host     = "reponses-ia.alpha.canada.ca"
+}
+
 resource "aws_lb" "ai_answers" {
   name               = "${var.product_name}-lb"
   internal           = false #tfsec:ignore:AWS005
@@ -32,6 +42,22 @@ resource "aws_lb_listener" "ai_answers_listener" {
   certificate_arn   = aws_acm_certificate.ai_answers.arn
 
   default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.ai_answers.arn
+  }
+}
+
+# Forward French hostname → same target group (prod only)
+resource "aws_lb_listener_rule" "https_reponses" {
+  count        = local.use_secondary_host ? 1 : 0
+  listener_arn = aws_lb_listener.ai_answers_listener.arn
+  priority     = 110
+
+  condition {
+    host_header { values = [local.secondary_host] }
+  }
+
+  action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ai_answers.arn
   }
