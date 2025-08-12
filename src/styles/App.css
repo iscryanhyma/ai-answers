@@ -72,33 +72,21 @@
   clear: both;
 }
 
-@media (width > 30em) {
+@media (min-width: 768px) {
   .container-custom {
-    width: 480px;
+    width: 750px;
   }
 }
 
-@media (width > 40em) {
+@media (min-width: 992px) {
   .container-custom {
-    width: 640px;
+    width: 970px;
   }
 }
 
-@media (width > 48em) {
+@media (min-width: 1200px) {
   .container-custom {
-    width: 768px;
-  }
-}
-
-@media (width > 64em) {
-  .container-custom {
-    width: 1024px;
-  }
-}
-
-@media (width > 80em) {
-  .container-custom {
-    width: 1280px;
+    width: 1170px;
   }
 }
 
