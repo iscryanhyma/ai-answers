@@ -168,12 +168,7 @@ const HomePage = ({ lang = "en" }) => {
         }
       `}</style>
 
-      <div
-        className="mb-600 container-custom"
-        main-container="true"
-        centered="true"
-        tag="main"
-      >
+      <div className="mb-600 container-custom">
         <h1 className="mb-400">{t("homepage.title")}</h1>
         <h2
           className="mt-400 mb-400"
