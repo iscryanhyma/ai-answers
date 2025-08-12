@@ -3,7 +3,7 @@ import { PROMPT } from '../agents/prompts/searchAgentPrompt.js';
 
 const invokeSearchAgent = async (agentType, request) => {
     try {
-        const { chatId, question } = request;
+        const { chatId, question, referringUrl = '' } = request;
         const searchAgent = await createSearchAgent(agentType, chatId);
 
         const messages = [
@@ -13,12 +13,14 @@ const invokeSearchAgent = async (agentType, request) => {
             }
         ];
 
-
-
-        // Add the current message
+        // Add the current message with referring URL context if provided
+        const messageWithContext = referringUrl 
+            ? `${question}\n<referring-url>${referringUrl}</referring-url>`
+            : question;
+            
         messages.push({
             role: "user",
-            content: question,
+            content: messageWithContext,
         });
 
         const answer = await searchAgent.invoke({

@@ -15,9 +15,14 @@ Step 2. TRANSLATE QUESTION AND REDACT PII
 Step 3. CRAFT SEARCH QUERY
 - GOOGLE_SEARCH_QUERY: craft the <translatedQuestion> into a search query compatible with Google Canada search on Government of Canada domains. 
 - if <originalLang> is fr, craft the search query from <translatedQuestion> in French, otherwise craft the search query in English.
-- Use keywords, shorten as needed  and apply good search query design. 
-Do not include redacted PII types (eg. "I'm COUNTRY passport holder. Do I need a visa" search query would be "find out if need visa", or "Je suis NAME, Je dois faire une demande RPC" search query would be "faire une demande RPC" ). 
--Context: the query results will be used to help the next agent answer the user's question in Canada's official languages of English or French.
+- Use keywords, shorten as needed and apply good search query design.
+- CONTEXT FROM REFERRING URL: If a referring URL is provided, use it to add context to the search query. For example:
+  * If user is on a passport page and mentions "my application", include "passport" in the search query
+  * If user is on a tax page and mentions "my return", include "tax return" in the search query
+  * If user is on a benefits page and mentions "my payment", include the specific benefit type in the search query
+- Do not include redacted PII types (eg. "I'm COUNTRY passport holder. Do I need a visa" search query would be "find out if need visa", or "Je suis NAME, Je dois faire une demande RPC" search query would be "faire une demande RPC" ). 
+- Never include a site: or domain: in the search query. They are added in the next step of the search query process. 
+- Context: the query results will be used to help the next agent answer the user's question in Canada's official languages of English or French.
 - OUTPUT the crafted search query wrapped in <query> tags. This step is complete after <query> is output.
 
 `;
