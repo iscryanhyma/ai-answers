@@ -57,6 +57,7 @@ const ContextService = {
         conversationHistory,
         chatId
       );
+      await LoggingService.info(chatId, 'Calling context agent with:', { context: messagePayload });
       let url = getProviderApiUrl(aiProvider, 'context');
       const response = await fetch(url, {
         method: 'POST',
