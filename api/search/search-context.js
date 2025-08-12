@@ -14,12 +14,12 @@ async function performSearch(query, lang, searchService = 'canadaca', chatId = '
 
 export default async function handler(req, res) {
     if (req.method === 'POST') {
-        const { message, chatId = 'system', searchService = 'canadaca', agentType = 'openai' } = req.body;
-        ServerLoggingService.info('Received request to search.', chatId, { message, searchService });
+        const { message, chatId = 'system', searchService = 'canadaca', agentType = 'openai', referringUrl = '' } = req.body;
+        ServerLoggingService.info('Received request to search.', chatId, { message, searchService, referringUrl });
 
         try {
-            // Call SearchAgentService to get the search query and originalLang
-            const agentResult = await invokeSearchAgent(agentType, { chatId, question: message });
+            // Call SearchAgentService to get the search query and originalLang, passing referring URL for context
+            const agentResult = await invokeSearchAgent(agentType, { chatId, question: message, referringUrl });
             const searchQuery = agentResult.query;
             const originalLang = agentResult.originalLang || '';
             // Determine lang

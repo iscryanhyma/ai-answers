@@ -79,7 +79,7 @@ const ContextService = {
     }
   },
 
-  contextSearch: async (message, searchProvider, lang = 'en', chatId = 'system', agentType = 'openai') => {
+  contextSearch: async (message, searchProvider, lang = 'en', chatId = 'system', agentType = 'openai', referringUrl = '') => {
     try {
       const searchResponse = await fetch(getApiUrl('search-context'), {
         method: 'POST',
@@ -92,6 +92,7 @@ const ContextService = {
           searchService: searchProvider,
           chatId,
           agentType,
+          referringUrl,
         }),
       });
 
@@ -128,7 +129,8 @@ const ContextService = {
         searchProvider,
         lang,
         chatId,
-        aiProvider
+        aiProvider,
+        referringUrl
       );
       await LoggingService.info(
         chatId,
