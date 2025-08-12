@@ -1,5 +1,6 @@
 import { Logs } from '../models/logs.js';
 import dbConnect from '../api/db//db-connect.js';
+import { SettingsService } from './SettingsService.js';
 
 class LogQueue {
     constructor() {
@@ -113,7 +114,13 @@ process.on('SIGTERM', async () => {
 });
 
 const ServerLoggingService = {
-    log: (level, message, chatId = 'system', data = {}) => {
+    log: async (level, message, chatId = 'system', data = {}) => {
+        const logChatsSetting = await SettingsService.get('logChatsToDatabase');
+        if (!logChatsSetting || logChatsSetting === 'no') {
+            // Log directly to console and bypass queue
+            console[level](`[${level.toUpperCase()}][${chatId}] ${message}`, data);
+            return;
+        }
         logQueue.add({ level, message, chatId, data });
     },
 
@@ -145,24 +152,24 @@ const ServerLoggingService = {
         };
     },
 
-    info: (message, chatId = 'system', data = {}) => {
-        ServerLoggingService.log('info', message, chatId, data);
+    info: async (message, chatId = 'system', data = {}) => {
+        await ServerLoggingService.log('info', message, chatId, data);
     },
 
-    debug: (message, chatId = 'system', data = {}) => {
-        ServerLoggingService.log('debug', message, chatId, data);
+    debug: async (message, chatId = 'system', data = {}) => {
+        await ServerLoggingService.log('debug', message, chatId, data);
     },
 
-    warn: (message, chatId = 'system', data = {}) => {
-        ServerLoggingService.log('warn', message, chatId, data);
+    warn: async (message, chatId = 'system', data = {}) => {
+        await ServerLoggingService.log('warn', message, chatId, data);
     },
 
-    error: (message, chatId = 'system', error = null) => {
+    error: async (message, chatId = 'system', error = null) => {
         const errorData = {
             error: error?.message || error,
             stack: error?.stack
         };
-        ServerLoggingService.log('error', message, chatId, errorData);
+        await ServerLoggingService.log('error', message, chatId, errorData);
     }
 };
 

@@ -432,6 +432,8 @@
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     }
+  ,
+  "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données"
   },
   "outage": {
     "title": "Service indisponible",
