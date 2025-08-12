@@ -14,6 +14,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
   const [savingVectorType, setSavingVectorType] = useState(false);
 
+  // New state for logging chats to database
+  const [logChats, setLogChats] = useState('no');
+  const [savingLogChats, setSavingLogChats] = useState(false);
+
   useEffect(() => {
     async function loadSettings() {
       const current = await DataStoreService.getSetting('siteStatus', 'available');
@@ -22,6 +26,9 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDeploymentMode(mode);
       const type = await DataStoreService.getSetting('vectorServiceType', 'imvectordb');
       setVectorServiceType(type);
+  // Load logChats setting
+  const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
+  setLogChats(logChatsSetting);
     }
     loadSettings();
   }, []);
@@ -45,6 +52,18 @@ const SettingsPage = ({ lang = 'en' }) => {
       await DataStoreService.setSetting('deploymentMode', newMode);
     } finally {
       setSavingDeployment(false);
+    }
+  };
+
+  // Handler for logChats setting
+  const handleLogChatsChange = async (e) => {
+    const newValue = e.target.value;
+    setLogChats(newValue);
+    setSavingLogChats(true);
+    try {
+      await DataStoreService.setSetting('logChatsToDatabase', newValue);
+    } finally {
+      setSavingLogChats(false);
     }
   };
 
@@ -87,6 +106,18 @@ const SettingsPage = ({ lang = 'en' }) => {
       >
         <option value="imvectordb">{t('settings.vectorServiceType.imvectordb', 'IMVectorDB (local)')}</option>
         <option value="documentdb">{t('settings.vectorServiceType.documentdb', 'DocumentDB (AWS)')}</option>
+      </select>
+      <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">
+        {t('settings.logChatsToDatabaseLabel', 'Log chats to database')}
+      </label>
+      <select
+        id="log-chats-db"
+        value={logChats}
+        onChange={handleLogChatsChange}
+        disabled={savingLogChats}
+      >
+        <option value="yes">{t('common.yes', 'Yes')}</option>
+        <option value="no">{t('common.no', 'No')}</option>
       </select>
     </GcdsContainer>
   );

@@ -432,6 +432,8 @@
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     }
+  ,
+  "logChatsToDatabaseLabel": "Log chats to database"
   },
   "outage": {
     "title": "Service Unavailable",
