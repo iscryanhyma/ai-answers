@@ -1,5 +1,77 @@
 # Changelog
 
+## [1.28.0](https://github.com/cds-snc/ai-answers/compare/v1.27.1...v1.28.0) (2025-08-12)
+
+
+### Features
+
+* add citation match traceability fields to evaluation schema and worker ([4f79c55](https://github.com/cds-snc/ai-answers/commit/4f79c559fc2bb131812209bc4ca85229affcf08d))
+* add debug logging for similarity calculations in sentence and QA search methods ([c95a653](https://github.com/cds-snc/ai-answers/commit/c95a6534e6b40506762339a878dfcaf110e71dcc))
+* add debug logging for sorted similarity lists in search methods of DocDBVectorService ([832d120](https://github.com/cds-snc/ai-answers/commit/832d120fe8306e91af0c5d664004c2dc165fc9e0))
+* add debug logging to getStats method in DocDBVectorService ([05298dd](https://github.com/cds-snc/ai-answers/commit/05298ddd3c9d51a64979db20e478555133c61709))
+* add detailed statistics retrieval in DocDBVectorService ([743dda0](https://github.com/cds-snc/ai-answers/commit/743dda0f972ec02f1634a626fa20d75754155295))
+* add expert and public feedback persistence handlers and components - persist expert email on feedback, and add security measures between the two ([237cfd5](https://github.com/cds-snc/ai-answers/commit/237cfd5bc9bd1084e0858ceebfd9b1ea08ca5e77))
+* add logging chats to database setting and update logging behavior ([bb10292](https://github.com/cds-snc/ai-answers/commit/bb10292fe989fe4b9b4f9303543a2155a7ac0f92))
+* add logging chats to database setting and update logging behavior ([42ece72](https://github.com/cds-snc/ai-answers/commit/42ece722393d61fed0acbdc5d948560d42018e75))
+* add partner dashboard titles and menu to French localization ([f54f9d2](https://github.com/cds-snc/ai-answers/commit/f54f9d22f6e63b524a372260645a2d6108800394))
+* add support for secondary hostname in ALB listener rules for pr… ([2962701](https://github.com/cds-snc/ai-answers/commit/2962701bc3ffe42fdc9b145c7f24a79d9f4857ec))
+* add support for secondary hostname in ALB listener rules for production ([80ab584](https://github.com/cds-snc/ai-answers/commit/80ab584d52b01697878976f9b5ff47c8d01b5bca))
+* enhance AdminPage and MetricsPage with role-based content and routing ([9dd4e54](https://github.com/cds-snc/ai-answers/commit/9dd4e54f6691d32585b27e749e597cc5df871fb8))
+* enhance DocDBVectorService to include expert feedback in search results and improve similarity scoring ([a1dc33b](https://github.com/cds-snc/ai-answers/commit/a1dc33b117da1f325f41115b58f41d1163f9d37c))
+* Enhance Embedding and Vector Services with Sentence Embeddings ([e4f4cbb](https://github.com/cds-snc/ai-answers/commit/e4f4cbb29f74df79ae2039dccb52a92c77c5514c))
+* enhance findSimilarEmbeddingsWithFeedback and createEvaluation with expert feedback logging and similarity thresholding ([0c6b394](https://github.com/cds-snc/ai-answers/commit/0c6b394b5427c1fc13eb51bd7255475a863c1774))
+* enhance IMVectorService with expert feedback filtering and search thresholding ([48847ab](https://github.com/cds-snc/ai-answers/commit/48847ab4a5df7a6debe161531637144b27fcbd4e))
+* implement findSimilarChats method for enhanced chat similarity search ([ff6e436](https://github.com/cds-snc/ai-answers/commit/ff6e43694e6256b91a66a9d5476da89001aa284c))
+* implement settings handler and public settings retrieval ([d78be0f](https://github.com/cds-snc/ai-answers/commit/d78be0fb6354df078abcea691b0b07f638b5bc5f))
+* implement settings handler and public settings retrieval ([152020f](https://github.com/cds-snc/ai-answers/commit/152020ffdc4afd47b12209db2f92216a89e1b7f5))
+* log context agent call with message payload ([e0ed6e8](https://github.com/cds-snc/ai-answers/commit/e0ed6e821d6b2b71be75512c01a0e8ee20226494))
+* log context agent call with message payload ([51bdedd](https://github.com/cds-snc/ai-answers/commit/51bdeddf3a85d586ab0c3ce3692989498a7c2a8e))
+* log embedding dimensions upon successful creation ([8a61bf1](https://github.com/cds-snc/ai-answers/commit/8a61bf17364dc5ad469cd4ca21a7143967560551))
+* save evaluation record after creation in createEvaluation function ([2141616](https://github.com/cds-snc/ai-answers/commit/2141616425049769ef9499e554b704888005aed9))
+* save evaluation record after creation in createEvaluation function ([fa65b76](https://github.com/cds-snc/ai-answers/commit/fa65b76b400486cf4f8a4719747215f3acc716d2))
+* update protected routes to allow partner access for admin-related pages ([d2c4528](https://github.com/cds-snc/ai-answers/commit/d2c45280031c70e37d4dd10cfa8f07fe4c7bb5b2))
+
+
+### Bug Fixes
+
+* change preCheck default to false and update vector validation queries ([c2cff84](https://github.com/cds-snc/ai-answers/commit/c2cff84bc7536dc7f5fa1864a046490744a57b81))
+* change preCheck default to true in DocDBVectorService constructor ([6aabca1](https://github.com/cds-snc/ai-answers/commit/6aabca134867874fe5d1601ac5e629b9f459fe9b))
+* improve logging format for agent search completion in ContextSer… ([b667650](https://github.com/cds-snc/ai-answers/commit/b667650593df458477d20f49875a35b6b9b61ed7))
+* improve logging format for agent search completion in ContextService ([d0dd8dd](https://github.com/cds-snc/ai-answers/commit/d0dd8dd76c7ed1648ec8618a4fe739b749424fab))
+* pass referring url for context of search query ([21a02d9](https://github.com/cds-snc/ai-answers/commit/21a02d97329dfe9a48ad8562a56fb75907a40041))
+* remove admin middleware from chat handler and public evaluation list ([4b10e8f](https://github.com/cds-snc/ai-answers/commit/4b10e8f831ad8f233d068f64dc3b705fe57896a0))
+* remove admin middleware from chat logs handler ([c62949c](https://github.com/cds-snc/ai-answers/commit/c62949cb996ed8f686e1a4d84dd3db20b738ecc8))
+* remove immigration expando ([d0ff03f](https://github.com/cds-snc/ai-answers/commit/d0ff03f5a08543ade16b9689a359da567b30a786))
+* remove immigration expando ([4d93f32](https://github.com/cds-snc/ai-answers/commit/4d93f320b3553ee89a69be4ba67ab11e1278822b))
+* restrict roles in RoleBasedContent to 'admin' only ([0f73fdd](https://github.com/cds-snc/ai-answers/commit/0f73fdd7b81a73d2b917a72bb9c6cc4affc94e4b))
+* simplify getDefaultRouteForRole logic for admin and partner roles ([c2e1c77](https://github.com/cds-snc/ai-answers/commit/c2e1c77da488db0e5c90a533ad61a109a1382b3c))
+* update Azure OpenAI API version to 2024-02-01 ([2842c63](https://github.com/cds-snc/ai-answers/commit/2842c638aea975f6c4469230fada3cee86f2905b))
+* update dimensions for text-embedding models to 2000 ([80ca2fb](https://github.com/cds-snc/ai-answers/commit/80ca2fbcc9b08ae6d4202c153b63edb6465a9cb8))
+* update gitignore ([c0eb5a2](https://github.com/cds-snc/ai-answers/commit/c0eb5a27b546105d02a5bfddb63ae675629bdbb2))
+* update gitignore ([069dd4c](https://github.com/cds-snc/ai-answers/commit/069dd4c6189d7864c616061ba3caf1c4c51047b6))
+* update model configurations for createSearchAgent and improve logging in ContextService ([42bf9f5](https://github.com/cds-snc/ai-answers/commit/42bf9f5e1be04037ee83f99378f9dec91469029a))
+* used CDS context when CRA was mentioned ([e14b636](https://github.com/cds-snc/ai-answers/commit/e14b6368a18a6c7d3578341dd233f51f18bde298))
+* used CDS context when CRA was mentioned ([b56fc98](https://github.com/cds-snc/ai-answers/commit/b56fc988e05d7350944dcbf7f3d4ce4a5b34e322))
+
+
+### Code Refactoring
+
+* enhance embedding handling and improve service structure ([b2217d2](https://github.com/cds-snc/ai-answers/commit/b2217d25ee53bfa48b7a77c637022a19904a63cc))
+* enhance logging and improve filterQuery default in DocDBVectorService constructor ([313266c](https://github.com/cds-snc/ai-answers/commit/313266c785e6a4672c417746c9419fe0f77399c5))
+* enhance precheck logic for vector types and dimensions in DocDBVectorService ([338c992](https://github.com/cds-snc/ai-answers/commit/338c9921b16b3c608f739448d80c769c8452acba))
+* improve error handling and response structure in vectorStatsHandler ([f8608ce](https://github.com/cds-snc/ai-answers/commit/f8608cecad13a65b68770079b0fd5b3c3e8e5c56))
+* optimize deleteEvaluations method to handle time filters and autoEval interactions ([3aa6a4e](https://github.com/cds-snc/ai-answers/commit/3aa6a4e24996da77ab147509c6576fc98a70af52))
+* optimize interaction logging and evaluation process based on deployment mode ([57258a5](https://github.com/cds-snc/ai-answers/commit/57258a522137391cbefaf3e94a3ed3a38eadf7f4))
+* remove filterQuery parameter from constructor and update base query to use interaction IDs with expert feedback ([67c85d0](https://github.com/cds-snc/ai-answers/commit/67c85d0d715f63e7431866f3091454a8a37a8e2f))
+* remove filterQuery parameter from constructor and update initialization logic to use interaction IDs ([d3ef832](https://github.com/cds-snc/ai-answers/commit/d3ef8328d73995253fb34fa5e5e051340a28f701))
+* remove legacy sentenceEmbeddings field from embedding schema ([8e46aae](https://github.com/cds-snc/ai-answers/commit/8e46aaed823bf6e9d874e25baef08fe1c19c8284))
+* remove unused filterQuery parameter from constructor ([d00e793](https://github.com/cds-snc/ai-answers/commit/d00e79330c3c8782d53e704ad10a3abfe0f2a359))
+* rename DocDBVectorService to IMVectorService and enhance embedding handling ([29716df](https://github.com/cds-snc/ai-answers/commit/29716dfbfaad43495a8c00b9e499ed98571067de))
+* rename IMVectorService to DocDBVectorService and enhance embedding handling ([136b5e5](https://github.com/cds-snc/ai-answers/commit/136b5e5b341852f86f3082b5669679c9d2ae86d9))
+* simplify search method by extracting sentence and QA search logic into separate functions ([7e596fd](https://github.com/cds-snc/ai-answers/commit/7e596fdc75a1c0b287b8be0df308e2fc35580a1c))
+* streamline search methods with enhanced logging and move stats calculations to getStats() ([62bb252](https://github.com/cds-snc/ai-answers/commit/62bb252285590c6b70e2810d666d6bb4ac140648))
+* streamline vector index creation and enhance search method ([f227bb4](https://github.com/cds-snc/ai-answers/commit/f227bb4cfe94fac50e8a6888472e2cb2b04673f6))
+
 ## [1.27.1](https://github.com/cds-snc/ai-answers/compare/v1.27.0...v1.27.1) (2025-08-07)
 
 
