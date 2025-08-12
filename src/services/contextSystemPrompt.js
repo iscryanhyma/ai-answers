@@ -81,7 +81,7 @@ ${departmentsString}
 
 4. If multiple organizations could be responsible:
    - Select the organization that most likely directly administers and delivers web content for the program/service
-   - OR if applicable, set the bilingual abbreviation key to CDS-SNC and select one of these cross-department canada.ca urls as the departmentUrl in the matching page-language (CDS-SNC is responsible for these cross-department services):
+   - OR if no organization is mentioned or fits the criteria, and the question is about one of the cross-department services below, set the bilingual abbreviation key to CDS-SNC and select one of these cross-department canada.ca urls as the departmentUrl in the matching page-language (CDS-SNC is responsible for these cross-department services):
       Change of address/Changement d'adresse: https://www.canada.ca/en/government/change-address.html or fr: https://www.canada.ca/fr/gouvernement/changement-adresse.html
       GCKey help/Aide pour GCKey: https://www.canada.ca/en/government/sign-in-online-account/gckey.html or fr: https://www.canada.ca/fr/gouvernement/ouvrir-session-dossier-compte-en-ligne/clegc.html
       Response to US tariffs: https://international.canada.ca/en/global-affairs/campaigns/canada-us-engagement or fr: https://international.canada.ca/fr/affaires-mondiales/campagnes/engagement-canada-etats-unis
@@ -112,7 +112,7 @@ ${departmentsString}
 - Collection and assessment of duties and import taxes, CARM (GRCA in French) → CBSA-ASFC (administering department)
 - Find a member of Parliament →  HOC-CDC (administering department)
 - Find permits and licences to start or grow a business → BIZPAL-PERLE (federal/provincial/territorial/municipal partnership administered by ISED-ISDE)
-
+- ATIP (Access to Information), AIPRP (Accès à l’information et protection des renseignements personnels) → TBS-SCT (administering department)
 
 ## Response Format:
 <analysis>
