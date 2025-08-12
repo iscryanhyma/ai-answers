@@ -103,26 +103,23 @@ export default function App() {
     ];
 
     const protectedRoutes = [
-      { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/admin', element: <AdminPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/batch', element: <AdminRoute lang="en"><BatchPage lang="en" /></AdminRoute> },
-      { path: '/fr/batch', element: <AdminRoute lang="fr"><BatchPage lang="fr" /></AdminRoute> },
-      { path: '/en/chat-viewer', element: <AdminRoute lang="en"><ChatViewer lang="en" /></AdminRoute> },
-      { path: '/fr/chat-viewer', element: <AdminRoute lang="fr"><ChatViewer lang="fr" /></AdminRoute> },
-      { path: '/en/users', element: <AdminRoute lang="en"><UsersPage lang="en" /></AdminRoute> },
-      { path: '/fr/users', element: <AdminRoute lang="fr"><UsersPage lang="fr" /></AdminRoute> },
-      { path: '/en/eval', element: <AdminRoute lang="en"><EvalPage lang="en" /></AdminRoute> },
-      { path: '/fr/eval', element: <AdminRoute lang="fr"><EvalPage lang="fr" /></AdminRoute> },
-      { path: '/en/public-eval', element: <AdminRoute lang="en"><PublicEvalPage lang="en" /></AdminRoute> },
-      { path: '/fr/public-eval', element: <AdminRoute lang="fr"><PublicEvalPage lang="fr" /></AdminRoute> },
-      { path: '/en/database', element: <AdminRoute lang="en"><DatabasePage lang="en" /></AdminRoute> },
-      { path: '/fr/database', element: <AdminRoute lang="fr"><DatabasePage lang="fr" /></AdminRoute> },
-      { path: '/en/metrics', element: <AdminRoute lang="en"><MetricsPage lang="en" /></AdminRoute> },
-      { path: '/fr/metrics', element: <AdminRoute lang="fr"><MetricsPage lang="fr" /></AdminRoute> },
-      { path: '/en/settings', element: <AdminRoute lang="en"><SettingsPage lang="en" /></AdminRoute> },
-      { path: '/fr/settings', element: <AdminRoute lang="fr"><SettingsPage lang="fr" /></AdminRoute> },
-      { path: '/en/vector', element: <AdminRoute lang="en"><VectorPage lang="en" /></AdminRoute> },
-      { path: '/fr/vector', element: <AdminRoute lang="fr"><VectorPage lang="fr" /></AdminRoute> }
+      { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/admin', element: <AdminPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/en/batch', element: <BatchPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/batch', element: <BatchPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/chat-viewer', element: <ChatViewer lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/chat-viewer', element: <ChatViewer lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/en/users', element: <UsersPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/users', element: <UsersPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/eval', element: <EvalPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/eval', element: <EvalPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/public-eval', element: <PublicEvalPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/public-eval', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/metrics', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/fr/settings', element: <SettingsPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] }
     ];
 
     return createBrowserRouter([

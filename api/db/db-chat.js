@@ -41,5 +41,5 @@ async function handler(req, res) {
 }
 
 export default function handlerWrapper(req, res) {
-  return withProtection(handler, authMiddleware, adminMiddleware)(req, res);
+  return withProtection(handler, authMiddleware)(req, res);
 }
