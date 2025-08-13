@@ -4,9 +4,9 @@ resource "aws_acm_certificate" "ai_answers" {
   subject_alternative_names = var.san
   validation_method         = "DNS"
 
-  tags = {
-    "CostCentre" = var.billing_code
-  }
+  tags = merge(var.default_tags, {
+    CostCentre = var.billing_code
+  })
 
   lifecycle {
     create_before_destroy = true
@@ -16,12 +16,11 @@ resource "aws_acm_certificate" "ai_answers" {
 resource "aws_route53_record" "ai_answers_certificate_validation" {
   for_each = {
     for dvo in aws_acm_certificate.ai_answers.domain_validation_options : dvo.domain_name => {
-      name    = dvo.resource_record_name
-      type    = dvo.resource_record_type
-      record  = dvo.resource_record_value
-  # Use optional french zone id when validating the french apex in production. Avoid referencing
-  # a resource that isn't declared in this module by passing the zone id as an input.
-  zone_id = dvo.domain_name == "reponses-ia.alpha.canada.ca" && var.env == "production" && length(var.french_zone_id) > 0 ? var.french_zone_id : var.hosted_zone_id
+      name   = dvo.resource_record_name
+      type   = dvo.resource_record_type
+      record = dvo.resource_record_value
+      # Use optional French zone id when validating the French apex in production.
+      zone_id = dvo.domain_name == "reponses-ia.alpha.canada.ca" && var.env == "production" && length(var.french_zone_id) > 0 ? var.french_zone_id : var.hosted_zone_id
     }
   }
 
@@ -30,8 +29,7 @@ resource "aws_route53_record" "ai_answers_certificate_validation" {
   records         = [each.value.record]
   type            = each.value.type
   zone_id         = each.value.zone_id
-
-  ttl = 60
+  ttl             = 60
 }
 
 resource "aws_acm_certificate_validation" "ai_answers" {
