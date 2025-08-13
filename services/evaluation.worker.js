@@ -392,7 +392,7 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
             matchUrl &&
             sourceUrl.toLowerCase() === matchUrl.toLowerCase()
         ) {
-            bestCitationMatch.score = expertFeedback?.citationScore;
+            bestCitationMatch.score = (expertFeedback?.citationScore !== null && expertFeedback?.citationScore !== undefined) ? expertFeedback.citationScore : 25;
             bestCitationMatch.explanation = expertFeedback?.citationExplanation;
             bestCitationMatch.url = matchUrl;
             bestCitationMatch.similarity = 1;
