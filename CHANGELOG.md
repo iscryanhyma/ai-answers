@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.29.1](https://github.com/cds-snc/ai-answers/compare/v1.29.0...v1.29.1) (2025-08-13)
+
+
+### Bug Fixes
+
+* remove incorrect dependency 'moongoose' from package.json and package-lock.json ([0b0938e](https://github.com/cds-snc/ai-answers/commit/0b0938eb22239bce94a06444a8115f7b399d7872))
+
+
+### Miscellaneous Chores
+
+* update dependencies and add new packages ([1704b19](https://github.com/cds-snc/ai-answers/commit/1704b193b7c372b5d7073818aef030a3f0eaabe9))
+* update dependencies and add new packages ([b494432](https://github.com/cds-snc/ai-answers/commit/b494432eaff51f36532df5432d228fd69550dff2))
+
 ## [1.29.0](https://github.com/cds-snc/ai-answers/compare/v1.28.0...v1.29.0) (2025-08-13)
 
 
