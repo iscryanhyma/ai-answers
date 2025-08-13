@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.29.2](https://github.com/cds-snc/ai-answers/compare/v1.29.1...v1.29.2) (2025-08-13)
+
+
+### Bug Fixes
+
+* add force_apply tag to ACM certificate resource ([c05db4c](https://github.com/cds-snc/ai-answers/commit/c05db4c3dccf98ee17b85914c88c128c74a34028))
+* add force_apply tag to ACM certificate resource ([379fabd](https://github.com/cds-snc/ai-answers/commit/379fabd74cfcc4d486234f139347bdf08da1c65e))
+* add san input to the root configuration ([495b9a4](https://github.com/cds-snc/ai-answers/commit/495b9a4507a83e8315c9c5ce348f25b618ab86a0))
+* adjust formatting of CostCentre tag in ACM certificate resource ([3b2a322](https://github.com/cds-snc/ai-answers/commit/3b2a3223eb5e1766e41ce6fce7bc20e38d44b840))
+
 ## [1.29.1](https://github.com/cds-snc/ai-answers/compare/v1.29.0...v1.29.1) (2025-08-13)
 
 
