@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.29.0](https://github.com/cds-snc/ai-answers/compare/v1.28.0...v1.29.0) (2025-08-13)
+
+
+### Features
+
+* container fix ([bbefdd2](https://github.com/cds-snc/ai-answers/commit/bbefdd2295be9bcea384bb84c8d4afe9249c01a8))
+
+
+### Bug Fixes
+
+* ensure citation score defaults to 25 when not provided ([468a7c9](https://github.com/cds-snc/ai-answers/commit/468a7c9c3dfd0c54bc1a7adabe09b25e0b9c4a16))
+* ensure citation score defaults to 25 when not provided ([9cd6b16](https://github.com/cds-snc/ai-answers/commit/9cd6b168c56d32cdc1f3713972a26b9152368985))
+
+
+### Code Refactoring
+
+* remove unused auth expiration checker setup ([abe08aa](https://github.com/cds-snc/ai-answers/commit/abe08aacdf7836fe7ce817432abe0b17d3b820ec))
+
 ## [1.28.0](https://github.com/cds-snc/ai-answers/compare/v1.27.1...v1.28.0) (2025-08-12)
 
 
