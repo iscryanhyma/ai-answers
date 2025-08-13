@@ -14,9 +14,15 @@ resource "aws_acm_certificate" "ai_answers" {
   }
 }
 
-resource "aws_route53_record" "ai_answers_certificate_validation" {
-  zone_id = var.hosted_zone_id
+data "aws_route53_zone" "selected" {
+  for_each = {
+    for dvo in aws_acm_certificate.ai_answers.domain_validation_options : dvo.domain_name => dvo.domain_name
+  }
+  name         = each.key
+  private_zone = false
+}
 
+resource "aws_route53_record" "ai_answers_certificate_validation" {
   for_each = {
     for dvo in aws_acm_certificate.ai_answers.domain_validation_options : dvo.domain_name => {
       name   = dvo.resource_record_name
@@ -29,6 +35,7 @@ resource "aws_route53_record" "ai_answers_certificate_validation" {
   name            = each.value.name
   records         = [each.value.record]
   type            = each.value.type
+  zone_id         = data.aws_route53_zone.selected[each.key].zone_id
 
   ttl = 60
 }
