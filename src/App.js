@@ -117,9 +117,12 @@ export default function App() {
       { path: '/fr/public-eval', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/metrics', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
-      { path: '/fr/settings', element: <SettingsPage lang="fr" />, roles: ['admin'] },
-      { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
-      { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] }
+    { path: '/en/settings', element: <SettingsPage lang="en" />, roles: ['admin'] },
+    { path: '/fr/settings', element: <SettingsPage lang="fr" />, roles: ['admin'] },
+    { path: '/en/database', element: <DatabasePage lang="en" />, roles: ['admin'] },
+    { path: '/fr/database', element: <DatabasePage lang="fr" />, roles: ['admin'] },
+    { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
+    { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] }
     ];
 
     return createBrowserRouter([
