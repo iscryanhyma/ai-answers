@@ -19,7 +19,9 @@ resource "aws_route53_record" "ai_answers_certificate_validation" {
       name    = dvo.resource_record_name
       type    = dvo.resource_record_type
       record  = dvo.resource_record_value
-      zone_id = dvo.domain_name == "reponses-ia.alpha.canada.ca" && var.env == "production" ? aws_route53_zone.reponses_ia[0].zone_id : var.hosted_zone_id
+  # Use optional french zone id when validating the french apex in production. Avoid referencing
+  # a resource that isn't declared in this module by passing the zone id as an input.
+  zone_id = dvo.domain_name == "reponses-ia.alpha.canada.ca" && var.env == "production" && length(var.french_zone_id) > 0 ? var.french_zone_id : var.hosted_zone_id
     }
   }
 

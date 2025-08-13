@@ -11,7 +11,8 @@ resource "aws_route53_record" "ai_answers" {
 }
 
 resource "aws_route53_record" "reponses_ia_alias" {
-  zone_id = aws_route53_zone.reponses_ia[0].zone_id
+  count   = var.env == "production" && length(var.french_zone_id) > 0 ? 1 : 0
+  zone_id = var.french_zone_id
   name    = "@" # or "" for apex
   type    = "A"
 
