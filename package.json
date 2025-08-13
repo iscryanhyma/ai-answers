@@ -47,7 +47,6 @@
     "lucide-react": "^0.454.0",
     "mongodb": "^6.9.0",
     "mongoose": "^8.17.1",
-    "moongoose": "^0.0.5",
     "npm": "^10.9.0",
     "openai": "^4.73.1",
     "piscina": "^5.0.0",
