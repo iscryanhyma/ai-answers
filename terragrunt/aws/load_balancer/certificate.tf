@@ -6,6 +6,7 @@ resource "aws_acm_certificate" "ai_answers" {
 
   tags = {
     "CostCentre" = var.billing_code
+    "force_apply" = "2025-08-13"
   }
 
   lifecycle {
