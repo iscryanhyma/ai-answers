@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.29.3](https://github.com/cds-snc/ai-answers/compare/v1.29.2...v1.29.3) (2025-08-13)
+
+
+### Bug Fixes
+
+* add CNAME record for reponses-ia in Route53 configuration ([8dd9256](https://github.com/cds-snc/ai-answers/commit/8dd92564a75ec8d6743d8634272dc9bb9b9eb08d))
+* delete-unused-files ([4fb1477](https://github.com/cds-snc/ai-answers/commit/4fb14772f7ec064377281a3e1d0bae2aa2fb3982))
+* delete-unused-files ([fe9ceae](https://github.com/cds-snc/ai-answers/commit/fe9ceae3a7669c916765704c76cb65890ad4654d))
+* remove unused Route53 zone data and clean up ACM certificate resource ([81951f3](https://github.com/cds-snc/ai-answers/commit/81951f3ba8d24d2dba91b72da62dde46c6a43cf1))
+* update Route53 record to use selected zone data for certificate … ([9128e56](https://github.com/cds-snc/ai-answers/commit/9128e5628c25f32238f1596e2053b3072d1941ec))
+* update Route53 record to use selected zone data for certificate validation ([c44c6d4](https://github.com/cds-snc/ai-answers/commit/c44c6d41c21e16e08947a6723b31c032f21a4b3d))
+
 ## [1.29.2](https://github.com/cds-snc/ai-answers/compare/v1.29.1...v1.29.2) (2025-08-13)
 
 
