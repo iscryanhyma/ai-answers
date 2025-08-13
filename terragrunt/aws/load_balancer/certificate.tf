@@ -5,7 +5,7 @@ resource "aws_acm_certificate" "ai_answers" {
   validation_method         = "DNS"
 
   tags = {
-    "CostCentre" = var.billing_code
+    "CostCentre"  = var.billing_code
     "force_apply" = "2025-08-13"
   }
 
