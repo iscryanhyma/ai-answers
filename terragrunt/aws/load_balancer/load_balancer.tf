@@ -24,6 +24,7 @@ resource "aws_lb" "ai_answers" {
 
   tags = merge(var.default_tags, {
     CostCentre = var.billing_code
+    ForceRefresh = "2025-08-14"
   })
 }
 
@@ -47,6 +48,7 @@ resource "aws_lb_listener" "ai_answers_listener" {
 
   tags = merge(var.default_tags, {
     CostCentre = var.billing_code
+    ForceRefresh = "2025-08-14"
   })
 }
 
@@ -65,6 +67,7 @@ resource "aws_lb_listener_rule" "https_reponses" {
   }
   tags = merge(var.default_tags, {
     CostCentre = var.billing_code
+    ForceRefresh = "2025-08-14"
   })
 }
 
@@ -88,5 +91,6 @@ resource "aws_lb_target_group" "ai_answers" {
 
   tags = merge(var.default_tags, {
     CostCentre = var.billing_code
+    ForceRefresh = "2025-08-14"
   })
 }
