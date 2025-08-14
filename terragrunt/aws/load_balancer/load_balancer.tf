@@ -52,7 +52,6 @@ resource "aws_lb_listener" "ai_answers_listener" {
 
 # Forward alternate hostname → same target group (prod only when provided)
 resource "aws_lb_listener_rule" "https_reponses" {
-  count        = var.env == "production" && var.altdomain != "" ? 1 : 0
   listener_arn = aws_lb_listener.ai_answers_listener.arn
   priority     = 110
 
