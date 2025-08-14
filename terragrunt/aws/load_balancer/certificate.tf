@@ -1,7 +1,12 @@
 
+locals {
+  # Always include alternate domain + wildcard in SANs (present in all envs)
+  expanded_sans = concat(var.san, [var.altdomain, "*.${var.altdomain}"])
+}
+
 resource "aws_acm_certificate" "ai_answers" {
   domain_name               = var.domain
-  subject_alternative_names = var.san
+  subject_alternative_names = local.expanded_sans
   validation_method         = "DNS"
 
   tags = merge(var.default_tags, {

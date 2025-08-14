@@ -23,5 +23,12 @@ variable "vpc_public_subnet_ids" {
   type        = list(string)
 }
 
-## Stage 1: french_zone_id removed; will reintroduce in Stage 2 rollout
+
+
+variable "alternate_zone_id" {
+  description = "Hosted zone ID for the alternate domain (if any)"
+  type        = string
+  default     = ""
+}
+
 
