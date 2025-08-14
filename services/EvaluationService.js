@@ -6,11 +6,11 @@ import ServerLoggingService from './ServerLoggingService.js';
 import dbConnect from '../api/db/db-connect.js';
 import config from '../config/eval.js';
 import { Chat } from '../models/chat.js';
-
 import Piscina from 'piscina';
 import path from 'path';
 import os from 'os';
 import { fileURLToPath } from 'url';
+
 
 let pool;
 let directWorkerFn;
@@ -18,13 +18,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const numCPUs = os.cpus().length;
 
-// Always initialize both, but only use one depending on deploymentMode
-pool = new Piscina({
-    filename: path.resolve(__dirname, 'evaluation.worker.js'),
-    minThreads: 1,
-    maxThreads: Math.max(1, numCPUs > 1 ? numCPUs - 1 : 1),
-});
-// directWorkerFn will be loaded as needed
 
 class EvaluationService {
     /**
@@ -118,7 +111,7 @@ class EvaluationService {
         }
         return { deleted: 0, expertFeedbackDeleted: 0 };
     }
-    async evaluateInteraction(interaction, chatId, deploymentMode) {
+    async evaluateInteraction(interaction, chatId) {
         if (!interaction || !interaction._id) {
             ServerLoggingService.error('Invalid interaction object passed to evaluateInteraction', chatId,
                 { hasInteraction: !!interaction, hasId: !!interaction?._id });
@@ -126,14 +119,27 @@ class EvaluationService {
         }
         const interactionIdStr = interaction._id.toString();
         try {
-           
+            // Fetch deploymentMode and vectorServiceType from SettingsService
+            const deploymentMode = await SettingsService.get('deploymentMode') || 'CDS';
+            const vectorServiceType = await SettingsService.get('vectorServiceType') || 'imvectordb';
+            if (deploymentMode === 'CDS' && vectorServiceType === 'documentdb') {
+                if (!pool) {
+                    const maxThreads = config.evalConcurrency || Math.max(1, numCPUs > 1 ? numCPUs - 1 : 1);
+                    await ServerLoggingService.info(`Creating Piscina pool: concurrency=${maxThreads}, numCPUs=${typeof numCPUs !== 'undefined' ? numCPUs : 'unknown'}`);
+                    pool = new Piscina({
+                        filename: path.resolve(__dirname, 'evaluation.worker.js'),
+                        minThreads: 1,
+                        maxThreads: maxThreads,
+                    });
+                }
+                return pool.run({ interactionId: interactionIdStr, chatId });
+            } else {
                 if (!directWorkerFn) {
-                    // Use dynamic import instead of require
                     const imported = await import('./evaluation.worker.js');
                     directWorkerFn = imported.default || imported;
                 }
                 return directWorkerFn({ interactionId: interactionIdStr, chatId });
-            
+            }
         } catch (error) {
             ServerLoggingService.error('Error during interaction evaluation dispatch', chatId, {
                 interactionId: interactionIdStr,
@@ -184,10 +190,14 @@ class EvaluationService {
      * Process interactions for evaluation for a specified duration.
      * This method will now call the worker-offloaded `evaluateInteraction`.
      */
-    async processEvaluationsForDuration(duration, lastProcessedId = null, deploymentMode = 'CDS', extraFilter = {}) {
+    async processEvaluationsForDuration(duration, lastProcessedId = null, extraFilter = {}) {
         const startTime = Date.now();
         let lastId = lastProcessedId;
-        const concurrency = config.evalConcurrency || 8;
+        // Fetch deploymentMode and vectorServiceType from SettingsService
+    const deploymentMode = await SettingsService.get('deploymentMode') || 'CDS';
+    const vectorServiceType = await SettingsService.get('vectorServiceType') || 'imvectordb';
+    const concurrency = (deploymentMode === 'CDS' && vectorServiceType === 'documentdb') ? (config.evalConcurrency || 8) : 1;
+    await ServerLoggingService.info(`Evaluation concurrency: ${concurrency}, numCPUs: ${typeof numCPUs !== 'undefined' ? numCPUs : 'unknown'}`);
 
         try {
             await dbConnect();
@@ -226,7 +236,7 @@ class EvaluationService {
                             ServerLoggingService.warn(`No chat found for interaction ${interaction._id}`, 'eval-service');
                             return;
                         }
-                        await this.evaluateInteraction(interaction, chatId, deploymentMode);
+                        await this.evaluateInteraction(interaction, chatId);
                         processedCount++;
                         ServerLoggingService.debug(`Successfully evaluated interaction ${interaction._id}`, 'eval-service');
                         lastId = interaction._id.toString();
