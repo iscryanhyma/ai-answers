@@ -63,6 +63,9 @@ resource "aws_lb_listener_rule" "https_reponses" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.ai_answers.arn
   }
+    tags = merge(var.default_tags, {
+      CostCentre = var.billing_code
+    })
 }
 
 resource "aws_lb_target_group" "ai_answers" {
