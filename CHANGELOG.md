@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.29.6](https://github.com/cds-snc/ai-answers/compare/v1.29.5...v1.29.6) (2025-08-14)
+
+
+### Bug Fixes
+
+* add comment to selectedAI state initialization for clarity ([a2d6dca](https://github.com/cds-snc/ai-answers/commit/a2d6dcaeabd128530c321bb190a614fa982b0cec))
+* add ForceRefresh tag to load balancer resources for consistency ([e8a8ea2](https://github.com/cds-snc/ai-answers/commit/e8a8ea25309564fb73d054bfb44f374b7f7f898c))
+* add loading state management to prevent multiple announcements ([43b2c20](https://github.com/cds-snc/ai-answers/commit/43b2c207e2042fa869fe50ac7c6bf9c8da1a41e6))
+* add loading state management to prevent multiple announcements ([d2d5939](https://github.com/cds-snc/ai-answers/commit/d2d5939797e84abb0fb134225a59ab4440b65333))
+* align formatting of CostCentre tag in load balancer resources ([48a70d3](https://github.com/cds-snc/ai-answers/commit/48a70d353b505fe0202c277380079f1e82e2a918))
+
 ## [1.29.5](https://github.com/cds-snc/ai-answers/compare/v1.29.4...v1.29.5) (2025-08-14)
 
 
