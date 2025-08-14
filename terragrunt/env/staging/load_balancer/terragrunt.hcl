@@ -30,17 +30,12 @@ dependency "network" {
   }
 }
 
-locals {
-  # Defensive: ensure outputs is a map even if dependency state not updated yet.
-  hosted_zone_outputs = dependency.hosted_zone.outputs != null ? dependency.hosted_zone.outputs : {}
-  # Safe lookup (won't error if key missing or outputs null).
-  french_zone_id = try(lookup(local.hosted_zone_outputs, "french_zone_id", ""), "")
-}
+## Staging: French zone not used; locals removed
+locals {}
 
 inputs = {
   hosted_zone_id         = dependency.hosted_zone.outputs.hosted_zone_id
   hosted_zone_name       = dependency.hosted_zone.outputs.hosted_zone_name
-  french_zone_id         = local.french_zone_id
   vpc_id                 = dependency.network.outputs.vpc_id
   vpc_private_subnet_ids = dependency.network.outputs.vpc_private_subnet_ids
   vpc_public_subnet_ids  = dependency.network.outputs.vpc_public_subnet_ids
