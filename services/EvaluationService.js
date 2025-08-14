@@ -124,10 +124,12 @@ class EvaluationService {
             const vectorServiceType = await SettingsService.get('vectorServiceType') || 'imvectordb';
             if (deploymentMode === 'CDS' && vectorServiceType === 'documentdb') {
                 if (!pool) {
+                    const maxThreads = config.evalConcurrency || Math.max(1, numCPUs > 1 ? numCPUs - 1 : 1);
+                    await ServerLoggingService.info(`Creating Piscina pool: concurrency=${maxThreads}, numCPUs=${typeof numCPUs !== 'undefined' ? numCPUs : 'unknown'}`);
                     pool = new Piscina({
                         filename: path.resolve(__dirname, 'evaluation.worker.js'),
                         minThreads: 1,
-                        maxThreads: config.evalConcurrency || Math.max(1, numCPUs > 1 ? numCPUs - 1 : 1),
+                        maxThreads: maxThreads,
                     });
                 }
                 return pool.run({ interactionId: interactionIdStr, chatId });
@@ -192,9 +194,10 @@ class EvaluationService {
         const startTime = Date.now();
         let lastId = lastProcessedId;
         // Fetch deploymentMode and vectorServiceType from SettingsService
-        const deploymentMode = await SettingsService.get('deploymentMode') || 'CDS';
-        const vectorServiceType = await SettingsService.get('vectorServiceType') || 'imvectordb';
-        const concurrency = (deploymentMode === 'CDS' && vectorServiceType === 'documentdb') ? (config.evalConcurrency || 8) : 1;
+    const deploymentMode = await SettingsService.get('deploymentMode') || 'CDS';
+    const vectorServiceType = await SettingsService.get('vectorServiceType') || 'imvectordb';
+    const concurrency = (deploymentMode === 'CDS' && vectorServiceType === 'documentdb') ? (config.evalConcurrency || 8) : 1;
+    await ServerLoggingService.info(`Evaluation concurrency: ${concurrency}, numCPUs: ${typeof numCPUs !== 'undefined' ? numCPUs : 'unknown'}`);
 
         try {
             await dbConnect();
