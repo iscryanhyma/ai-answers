@@ -20,11 +20,17 @@ resource "aws_acm_certificate" "ai_answers" {
 
 resource "aws_route53_record" "ai_answers_certificate_validation" {
   for_each = {
+    # Choose the correct hosted zone per domain validation option. The alternate
+    # domain (and its wildcard) must validate in its own hosted zone when provided.
     for dvo in aws_acm_certificate.ai_answers.domain_validation_options : dvo.domain_name => {
-      name    = dvo.resource_record_name
-      type    = dvo.resource_record_type
-      record  = dvo.resource_record_value
-      zone_id = var.hosted_zone_id
+      name   = dvo.resource_record_name
+      type   = dvo.resource_record_type
+      record = dvo.resource_record_value
+      zone_id = (
+        length(trimspace(var.altdomain)) > 0 && (
+          dvo.domain_name == var.altdomain || dvo.domain_name == "*.${var.altdomain}"
+        ) && length(trimspace(var.alternate_zone_id)) > 0
+      ) ? var.alternate_zone_id : var.hosted_zone_id
     }
   }
 
