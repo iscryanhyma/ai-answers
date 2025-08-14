@@ -12,12 +12,11 @@ resource "aws_route53_zone" "ai_answers" {
   }
 }
 
-resource "aws_route53_zone" "reponses_ia" {
-  count = var.env == "production" ? 1 : 0
-  name  = "reponses-ia.alpha.canada.ca"
+resource "aws_route53_zone" "alternate" {
+  name = var.altdomain
 
   tags = {
-    Name       = "${var.product_name}-zone"
+    Name       = "${var.product_name}-alt-zone"
     CostCentre = var.billing_code
     Terraform  = true
   }

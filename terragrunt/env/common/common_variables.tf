@@ -19,6 +19,12 @@ variable "san" {
   default     = []
 }
 
+variable "altdomain" {
+  description = "Alternate (secondary) domain name (e.g., French domain)."
+  type        = string
+  default     = ""
+}
+
 variable "env" {
   description = "The current running environment"
   type        = string
