@@ -23,9 +23,5 @@ variable "vpc_public_subnet_ids" {
   type        = list(string)
 }
 
-variable "french_zone_id" {
-  description = "Optional Route53 hosted zone ID for reponses-ia.alpha.canada.ca (only in production)"
-  type        = string
-  default     = ""
-}
+## Stage 1: french_zone_id removed; will reintroduce in Stage 2 rollout
 
