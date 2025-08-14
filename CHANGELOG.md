@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.29.4](https://github.com/cds-snc/ai-answers/compare/v1.29.3...v1.29.4) (2025-08-14)
+
+
+### Bug Fixes
+
+* refactor tags to use merge function for consistency across resources ([fc57da6](https://github.com/cds-snc/ai-answers/commit/fc57da6ec67eb2041ae89feb3557a84c94418a98))
+* remove unused environment and tagging variables from inputs.tf ([1521237](https://github.com/cds-snc/ai-answers/commit/1521237b913cfdfcc029c1f632623f1116207867))
+* update AI selection to OpenAI and add optional French zone ID for Route53 configurations ([ada50d1](https://github.com/cds-snc/ai-answers/commit/ada50d1ddf241de5cb0083e1f78f31cbedc16f43))
+* update french_zone_id assignment to use local variable for consi… ([1ddf34b](https://github.com/cds-snc/ai-answers/commit/1ddf34b75a1dd971a08d5a595e7547d0ddea55f2))
+* update french_zone_id assignment to use local variable for consistency ([d7a3d4a](https://github.com/cds-snc/ai-answers/commit/d7a3d4a033c5cc1dabdd4c983245f7c3f490e875))
+* update Route53 configurations for reponses-ia zone and adjust AC… ([cfd9f22](https://github.com/cds-snc/ai-answers/commit/cfd9f2259a5604693c5cac7d546113d694fa9ef7))
+* update Route53 configurations for reponses-ia zone and adjust ACM certificate validation ([21144f0](https://github.com/cds-snc/ai-answers/commit/21144f002c22c65f4fe7d65b9ecb7b34f30e9e9a))
+* update Route53 zone ID logic for certificate validation ([7cd7f4d](https://github.com/cds-snc/ai-answers/commit/7cd7f4d7e63b0a3f5017ddf9baa0006dd6fddd89))
+
 ## [1.29.3](https://github.com/cds-snc/ai-answers/compare/v1.29.2...v1.29.3) (2025-08-13)
 
 
