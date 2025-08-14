@@ -31,8 +31,10 @@ dependency "network" {
 }
 
 locals {
-  # Use lookup so plan/validate doesn't fail if hosted_zone state hasn't been refreshed with new output yet.
-  french_zone_id = lookup(dependency.hosted_zone.outputs, "french_zone_id", "")
+  # Defensive: ensure outputs is a map even if dependency state not updated yet.
+  hosted_zone_outputs = dependency.hosted_zone.outputs != null ? dependency.hosted_zone.outputs : {}
+  # Safe lookup (won't error if key missing or outputs null).
+  french_zone_id = try(lookup(local.hosted_zone_outputs, "french_zone_id", ""), "")
 }
 
 inputs = {
