@@ -23,7 +23,8 @@ resource "aws_lb" "ai_answers" {
   subnets = var.vpc_public_subnet_ids
 
   tags = merge(var.default_tags, {
-    CostCentre = var.billing_code
+    CostCentre   = var.billing_code
+    ForceRefresh = "2025-08-14"
   })
 }
 
@@ -46,7 +47,8 @@ resource "aws_lb_listener" "ai_answers_listener" {
   }
 
   tags = merge(var.default_tags, {
-    CostCentre = var.billing_code
+    CostCentre   = var.billing_code
+    ForceRefresh = "2025-08-14"
   })
 }
 
@@ -64,7 +66,8 @@ resource "aws_lb_listener_rule" "https_reponses" {
     target_group_arn = aws_lb_target_group.ai_answers.arn
   }
   tags = merge(var.default_tags, {
-    CostCentre = var.billing_code
+    CostCentre   = var.billing_code
+    ForceRefresh = "2025-08-14"
   })
 }
 
@@ -87,6 +90,7 @@ resource "aws_lb_target_group" "ai_answers" {
   }
 
   tags = merge(var.default_tags, {
-    CostCentre = var.billing_code
+    CostCentre   = var.billing_code
+    ForceRefresh = "2025-08-14"
   })
 }
