@@ -9,6 +9,7 @@ inputs = {
   account_id                = "${local.vars.inputs.account_id}"
   domain                    = "${local.vars.inputs.domain}"
   san                       = "${local.vars.inputs.san}"
+  altdomain                 = "${local.vars.inputs.altdomain}"
   env                       = "${local.vars.inputs.env}"
   region                    = "ca-central-1"
   billing_code              = "${local.vars.inputs.cost_center_code}"
