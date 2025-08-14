@@ -23,7 +23,7 @@ variable "vpc_public_subnet_ids" {
   type        = list(string)
 }
 
-## Stage 1: french_zone_id removed; will reintroduce in Stage 2 rollout
+
 
 variable "alternate_zone_id" {
   description = "Hosted zone ID for the alternate domain (if any)"
@@ -31,35 +31,4 @@ variable "alternate_zone_id" {
   default     = ""
 }
 
-# Variables supplied from Terragrunt root (not declared elsewhere inside this module)
-variable "domain" {
-  type = string
-}
-
-variable "san" {
-  type    = list(string)
-  default = []
-}
-
-variable "altdomain" {
-  type    = string
-  default = ""
-}
-
-variable "env" {
-  type = string
-}
-
-variable "product_name" {
-  type = string
-}
-
-variable "billing_code" {
-  type = string
-}
-
-variable "default_tags" {
-  type    = map(any)
-  default = {}
-}
 
