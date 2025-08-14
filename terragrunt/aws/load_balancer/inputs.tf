@@ -22,3 +22,10 @@ variable "vpc_public_subnet_ids" {
   description = "Public subnet ids of the VPC"
   type        = list(string)
 }
+
+variable "french_zone_id" {
+  description = "Optional Route53 hosted zone ID for reponses-ia.alpha.canada.ca (only in production)"
+  type        = string
+  default     = ""
+}
+
