@@ -10,5 +10,5 @@ output "hosted_zone_name" {
 
 output "alternate_zone_id" {
   description = "Optional hosted zone id for alternate domain (if provided)"
-  value       = length(aws_route53_zone.alternate) > 0 ? aws_route53_zone.alternate[0].zone_id : ""
+  value       = aws_route53_zone.alternate.zone_id
 }
