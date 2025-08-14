@@ -29,23 +29,3 @@ variable "french_zone_id" {
   default     = ""
 }
 
-variable "env" {
-  description = "Deployment environment (e.g., production, staging)"
-  type        = string
-}
-
-variable "default_tags" {
-  description = "Default tagging map passed from Terragrunt root"
-  type        = map(string)
-}
-
-variable "billing_code" {
-  description = "Billing code used for tagging"
-  type        = string
-}
-
-variable "product_name" {
-  description = "Product name used in resource naming"
-  type        = string
-}
-
