@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.29.5](https://github.com/cds-snc/ai-answers/compare/v1.29.4...v1.29.5) (2025-08-14)
+
+
+### Bug Fixes
+
+* add missing tags to the HTTPS listener rule for consistency ([0a1116c](https://github.com/cds-snc/ai-answers/commit/0a1116c0858f8769583ef0f88b76220f623aba87))
+* always include alternate domain in SANs and adjust listener rule for all environments ([12f9804](https://github.com/cds-snc/ai-answers/commit/12f980428c8a0e6b73f550abee5561bde4108c2f))
+* conditionally include alternate domain in SANs and listener rule for production ([e639ea1](https://github.com/cds-snc/ai-answers/commit/e639ea18247ef67e923050c57a3ec4b77b59aa59))
+* enhance load balancer configuration for alternate domain support ([6813bf6](https://github.com/cds-snc/ai-answers/commit/6813bf67bb62dcf3b40b81bbee6922a710a351c7))
+* enhance load balancer configuration for alternate domain support ([f349108](https://github.com/cds-snc/ai-answers/commit/f3491085eb775a535e5a23a2d72a4ecdf7b70cba))
+* increase evalBatchProcessingDuration to 30 seconds and set evalConcurrency to 3 ([fd7bf1b](https://github.com/cds-snc/ai-answers/commit/fd7bf1b7ed02f597e4d1a9c3559cf66bdd8df79e))
+* refactor evaluation interaction handling to conditionally initialize worker pool based on deployment mode ([ba7e41f](https://github.com/cds-snc/ai-answers/commit/ba7e41fd8121c129638c23765a870e98b79ac859))
+* remove deprecated variables and clean up inputs.tf for clarity ([9e28f4e](https://github.com/cds-snc/ai-answers/commit/9e28f4eb6eb6330c26b04e937c0d2f9e626b9f82))
+* resolve new zone vs primary ([996897b](https://github.com/cds-snc/ai-answers/commit/996897bd6e8cf71cabf3ced0f8fadf031aabbf50))
+* resolve new zone vs primary ([b738d3c](https://github.com/cds-snc/ai-answers/commit/b738d3c81e953bc6f4c23c4de77140a5a1a2fa88))
+* standardize formatting in alternate domain A record for clarity ([fb60035](https://github.com/cds-snc/ai-answers/commit/fb600352c44cf708774ac8925b0e8caa34d1d48e))
+* standardize formatting of tags in HTTPS listener rule for consistency ([8e228fa](https://github.com/cds-snc/ai-answers/commit/8e228fa6d2844d566854aedcdc9ac497d49379be))
+* standardize variable descriptions in inputs.tf for clarity ([b111e28](https://github.com/cds-snc/ai-answers/commit/b111e28eff3f0e77c635b7a1daf3f856ff31afe1))
+* update Fargate resource limits for production environment and paralellizer eval system ([1496a63](https://github.com/cds-snc/ai-answers/commit/1496a63406f9700c6ed3c13db15a389b6e7eb1c8))
+
 ## [1.29.4](https://github.com/cds-snc/ai-answers/compare/v1.29.3...v1.29.4) (2025-08-14)
 
 
