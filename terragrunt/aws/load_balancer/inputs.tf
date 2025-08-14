@@ -31,41 +31,35 @@ variable "alternate_zone_id" {
   default     = ""
 }
 
+# Variables supplied from Terragrunt root (not declared elsewhere inside this module)
 variable "domain" {
-  description = "Primary domain"
-  type        = string
+  type = string
 }
 
 variable "san" {
-  description = "Subject alternative names for ACM cert"
-  type        = list(string)
-  default     = []
+  type    = list(string)
+  default = []
 }
 
 variable "altdomain" {
-  description = "Alternate (secondary) root domain"
-  type        = string
-  default     = ""
+  type    = string
+  default = ""
 }
 
 variable "env" {
-  description = "Deployment environment"
-  type        = string
+  type = string
 }
 
 variable "product_name" {
-  description = "Product name used for naming resources"
-  type        = string
+  type = string
 }
 
 variable "billing_code" {
-  description = "Billing / cost center code"
-  type        = string
+  type = string
 }
 
 variable "default_tags" {
-  description = "Default tags map"
-  type        = map(any)
-  default     = {}
+  type    = map(any)
+  default = {}
 }
 
