@@ -2,10 +2,9 @@
 # Application Load Balancer (ALB) + Listener
 #############################################
 
-# Gate the secondary hostname strictly to prod
+# Secondary hostname (alternate domain) always enabled (present in all envs)
 locals {
-  use_secondary_host = var.env == "production"
-  secondary_host     = "reponses-ia.alpha.canada.ca"
+  secondary_host = var.altdomain
 }
 
 resource "aws_lb" "ai_answers" {
@@ -51,9 +50,8 @@ resource "aws_lb_listener" "ai_answers_listener" {
   })
 }
 
-# Forward French hostname → same target group (prod only)
+# Forward alternate hostname → same target group (prod only when provided)
 resource "aws_lb_listener_rule" "https_reponses" {
-  count        = local.use_secondary_host ? 1 : 0
   listener_arn = aws_lb_listener.ai_answers_listener.arn
   priority     = 110
 
