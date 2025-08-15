@@ -101,7 +101,7 @@ inputs = {
   jwt_secret_key_arn               = dependency.ssm.outputs.jwt_secret_key_arn
   google_api_key_arn               = dependency.ssm.outputs.google_api_key_arn
   google_search_engine_id_arn      = dependency.ssm.outputs.google_search_engine_id_arn
-  fargate_cpu                      = 4048  # Override default for production
+  fargate_cpu                      = 4096  # Override default for production
   fargate_memory                   = 8192  # Override default for production
 }
 
