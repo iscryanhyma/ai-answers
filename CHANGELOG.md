@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.29.7](https://github.com/cds-snc/ai-answers/compare/v1.29.6...v1.29.7) (2025-08-15)
+
+
+### Bug Fixes
+
+* update Fargate CPU allocation for production environment ([a948624](https://github.com/cds-snc/ai-answers/commit/a948624b984d8f017aadb65d74e21a5a10ec73e3))
+* update Fargate CPU allocation for production environment ([8a27b1a](https://github.com/cds-snc/ai-answers/commit/8a27b1ab43508988d3a2cb7a62a0f97dc68fd666))
+
 ## [1.29.6](https://github.com/cds-snc/ai-answers/compare/v1.29.5...v1.29.6) (2025-08-14)
 
 
