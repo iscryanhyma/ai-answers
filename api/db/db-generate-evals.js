@@ -14,14 +14,7 @@ export default async function handler(req, res) {
     const duration = config.evalBatchProcessingDuration;
 
     try {
-        await dbConnect();
-        let deploymentMode = 'CDS';
-        try {
-            const setting = await Setting.findOne({ key: 'deploymentMode' });
-            if (setting && setting.value) deploymentMode = setting.value;
-        } catch (e) {
-            console.error('Failed to read deploymentMode setting', e);
-        }
+    await dbConnect();
 
         // Build a time filter for interaction createdAt if provided
         let timeFilter = {};
@@ -55,7 +48,6 @@ export default async function handler(req, res) {
             const result = await EvaluationService.processEvaluationsForDuration(
                 duration,
                 lastProcessedId,
-                deploymentMode,
                 timeFilter
             );
             return res.status(200).json(result);
