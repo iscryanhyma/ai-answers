@@ -1,6 +1,75 @@
+
 import axios from 'axios';
 import { Agent } from 'https';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
+import { response } from 'express';
+
+
+
+
+
+
+function getHttpsAgent() {
+  return new Agent({ rejectUnauthorized: false });
+}
+
+async function checkUrlWithMethod(url, method = 'head') {
+  const httpsAgent = getHttpsAgent();
+  let result = {
+    isValid: false,
+    status: null,
+    finalUrl: url,
+    error: null
+  };
+  try {
+    const response = await axios({
+      method,
+      url,
+      httpsAgent,
+      maxRedirects: 10,
+      timeout: 10000,
+      headers: {
+        'User-Agent': process.env.USER_AGENT || 'ai-answers',
+      },
+      validateStatus: () => true,
+    });
+    result.status = response.status;
+    result.finalUrl = getFinalUrl(response, url);
+    result.isValid = response.status === 200 && !isKnown404(result.finalUrl);
+    logCheck(url, response, method);
+    return result;
+  } catch (error) {
+    result.status = error.response?.status || 500;
+    result.finalUrl = url;
+    result.isValid = false;
+    result.error = error.message || 'Unknown error';
+    logCheck(url, error.response || { status: result.status }, method);
+    return result;
+  }
+}
+
+function isKnown404(finalUrl) {
+  return finalUrl.includes('404.html');
+}
+
+function getFinalUrl(response, url) {
+  const final = response?.request?.res?.responseUrl || url;
+  // Remove trailing slash for consistency
+  return final.endsWith('/') && final.length > 1 ? final.slice(0, -1) : final;
+}
+
+function logCheck(url, response, method, chatId) {
+  ServerLoggingService.info(
+    `Checked URL: ${url} => ${response.status} (${getFinalUrl(response, url)}) [${method.toUpperCase()}]`,
+    chatId || 'system',
+    {
+      url,
+      status: response.status,
+      finalUrl: getFinalUrl(response, url),
+      method: method.toUpperCase(),
+    }
+  );
+}
 
 export default async function handler(req, res) {
   const { url, chatId } = req.query;
@@ -8,113 +77,21 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing url parameter' });
   }
 
-  // Function to check if a URL is a Canada.ca domain
-  const isCanadaCaDomain = (url) => {
-    return url.startsWith('https://www.canada.ca') || url.startsWith('http://www.canada.ca');
-  };
-
-  // If not a Canada.ca domain, return early with basic validation
-  if (!isCanadaCaDomain(url)) {
-    return res.status(200).json({
-      isValid: true,
-      url: url,
-      confidenceRating: 0.25,
-    });
+  let headResult = await checkUrlWithMethod(url, 'head');
+  let result = headResult;
+  
+  if (!headResult.isValid) {
+    let getResult = await checkUrlWithMethod(url, 'get');
+    result = getResult;
   }
 
-  // Define known 404 pages
-  const notFoundPages = [
-    'https://www.canada.ca/errors/404.html',
-    'https://www.canada.ca/fr/erreurs/404.html',
-  ];
-
-  try {
-    const httpsAgent = new Agent({ rejectUnauthorized: false });
-    let response;
-    let usedHead = false;
-    try {
-      // Try HEAD first with a fast timeout
-      response = await axios.head(url, {
-        httpsAgent,
-        maxRedirects: 10,
-        timeout: 10000,
-        headers: {
-          'User-Agent': process.env.USER_AGENT || 'ai-answers',
-        }
-      });
-      usedHead = true;
-    } catch (headError) {
-      // If HEAD is not allowed or fails, fall back to GET
-      if (headError.response && headError.response.status === 405) {
-        // 405 Method Not Allowed
-          response = await axios.get(url, {
-            httpsAgent,
-            maxRedirects: 10,
-            timeout: 10000,
-            headers: {
-              'User-Agent': process.env.USER_AGENT || 'ai-answers',
-            }
-          });
-      } else if (headError.code === 'ECONNABORTED' || headError.code === 'ETIMEDOUT') {
-        // HEAD timed out, try GET as fallback
-        response = await axios.get(url, {
-          httpsAgent,
-          maxRedirects: 10,
-          timeout: 10000,
-          headers: {
-            'User-Agent': process.env.USER_AGENT || 'ai-answers',
-          }
-        });
-      } else {
-        // Other errors, rethrow to outer catch
-        throw headError;
-      }
-    }
-
-    // Log the check with ServerLoggingService
-    ServerLoggingService.info(
-      `Checked URL: ${url} => ${response.status} (${response.request?.res?.responseUrl || url}) [${usedHead ? 'HEAD' : 'GET'}]`,
-      chatId || 'system',
-      {
-        url,
-        status: response.status,
-        finalUrl: response.request?.res?.responseUrl || url,
-        method: usedHead ? 'HEAD' : 'GET',
-      }
-    );
-
-    // Check if the final URL (after potential redirects) is a known 404 page
-    const finalUrl = response.request?.res?.responseUrl || url;
-    if (notFoundPages.some((notFoundUrl) => finalUrl.includes(notFoundUrl))) {
-      return res.status(200).json({ isValid: false });
-    }
-
-    // Check for 404 status
-    if (response.status === 404) {
-      return res.status(200).json({ isValid: false });
-    }
-
-    return res.status(200).json({
-      isValid: true,
-      url: finalUrl,
-      confidenceRating: 1,
-    });
-  } catch (error) {
-    ServerLoggingService.error(
-      `Error checking URL: ${url}`,
-      chatId || 'system',
-      error
-    );
-    if (error.code === 'ECONNREFUSED') {
-      return res.status(500).json({ error: `Connection refused: ${url}` });
-    } else if (error.response?.status === 403) {
-      return res.status(403).json({ error: `Access forbidden (403): ${url}` });
-    } else if (error.response?.status === 404) {
-      return res.status(404).json({ error: `Page not found (404): ${url}` });
-    } else if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
-      return res.status(500).json({ error: `Request timed out: ${url}` });
-    } else {
-      return res.status(500).json({ error: `URL check failed: ${url} - ${error.message}` });
-    }
-  }
+  return res.status(200).json({
+    isValid: result.isValid,
+    url: result.finalUrl,
+    status: result.status,
+    confidenceRating: result.isValid ? 1 : 0,
+    error: result.error || undefined
+  });
 }
+
+export const __private__ = { checkUrlWithMethod, isKnown404, getFinalUrl };
