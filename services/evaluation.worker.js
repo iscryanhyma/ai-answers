@@ -7,7 +7,7 @@ import { SentenceEmbedding } from '../models/sentenceEmbedding.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import dbConnect from '../api/db/db-connect.js';
 import config from '../config/eval.js';
-import { VectorService } from '../services/VectorServiceFactory.js';
+import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
 
 // Fallback: create evaluation using QA match only if any of the top N matches has expert feedback score > 90
 async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbeddings, failedSentenceTraces = []) {
@@ -206,6 +206,10 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
     if (!Array.isArray(queryVector) || !queryVector.every(x => typeof x === 'number' && Number.isFinite(x))) {
         console.error('Invalid query vector for QA search:', queryVector, 'Type:', Object.prototype.toString.call(queryVector));
         throw new Error('Query vector for QA search must be a plain array of finite numbers');
+    }
+    if (!VectorService || typeof VectorService.search !== 'function') {
+        ServerLoggingService.error('VectorService is not initialized or missing search() in worker', 'worker', { hasVectorService: !!VectorService });
+        throw new Error('VectorService not initialized in worker. Ensure initVectorService() was called before performing searches.');
     }
     const similarNeighbors = await VectorService.search(
         queryVector,
@@ -650,6 +654,19 @@ async function createNoMatchEvaluation(interaction, chatId, reason) {
 
 export default async function ({ interactionId, chatId }) {
     await dbConnect();
+    // Ensure each worker process/thread has a ready VectorService instance.
+    // `initVectorService` is idempotent and will create + initialize the correct
+    // implementation (DocDB or IM) for this worker if it hasn't been set yet.
+    try {
+        if (!VectorService) {
+            ServerLoggingService.info('VectorService not found in worker, initializing...', chatId);
+            await initVectorService();
+            ServerLoggingService.info('VectorService initialized in worker', chatId);
+        }
+    } catch (err) {
+        ServerLoggingService.error('Failed to initialize VectorService in worker', chatId, err);
+        throw err;
+    }
     try {
         const interaction = await Interaction.findById(interactionId)
             .populate('question')
