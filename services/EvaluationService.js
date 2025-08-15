@@ -6,6 +6,7 @@ import ServerLoggingService from './ServerLoggingService.js';
 import dbConnect from '../api/db/db-connect.js';
 import config from '../config/eval.js';
 import { Chat } from '../models/chat.js';
+import { SettingsService } from './SettingsService.js';
 import Piscina from 'piscina';
 import path from 'path';
 import os from 'os';
@@ -227,19 +228,22 @@ class EvaluationService {
             while (idx < interactions.length && ((Date.now() - startTime) / 1000 < duration)) {
                 const batch = interactions.slice(idx, idx + concurrency);
                 const promises = batch.map(async (interaction) => {
+                    // Advance lastId immediately so pagination always progresses even on early returns or errors
+                    lastId = interaction._id.toString();
                     try {
                         const chats = await Chat.find({
                             interactions: interaction._id
                         });
                         const chatId = chats.length > 0 ? chats[0].chatId : null;
                         if (!chatId) {
+                            // Count as failed so stats reflect skipped interactions and loop cannot stall
+                            failedCount++;
                             ServerLoggingService.warn(`No chat found for interaction ${interaction._id}`, 'eval-service');
                             return;
                         }
                         await this.evaluateInteraction(interaction, chatId);
                         processedCount++;
                         ServerLoggingService.debug(`Successfully evaluated interaction ${interaction._id}`, 'eval-service');
-                        lastId = interaction._id.toString();
                     } catch (error) {
                         failedCount++;
                         ServerLoggingService.error(
@@ -247,7 +251,6 @@ class EvaluationService {
                             'eval-service',
                             error
                         );
-                        lastId = interaction._id.toString();
                     }
                 });
                 await Promise.allSettled(promises);
