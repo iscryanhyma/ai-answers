@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.29.9](https://github.com/cds-snc/ai-answers/compare/v1.29.8...v1.29.9) (2025-08-15)
+
+
+### Bug Fixes
+
+* initialize VectorService in worker to ensure proper functionality ([e6ca535](https://github.com/cds-snc/ai-answers/commit/e6ca53534f3c3d419e115a8b2da23a840da772bf))
+* initialize VectorService in worker to ensure proper functionality ([ef96f96](https://github.com/cds-snc/ai-answers/commit/ef96f9622ae4c5b2e1bbd5297b96a51f7f711eb3))
+
 ## [1.29.8](https://github.com/cds-snc/ai-answers/compare/v1.29.7...v1.29.8) (2025-08-15)
 
 
