@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.29.8](https://github.com/cds-snc/ai-answers/compare/v1.29.7...v1.29.8) (2025-08-15)
+
+
+### Bug Fixes
+
+* add Vitest debugging configuration and implement tests for URL v… ([e679bc6](https://github.com/cds-snc/ai-answers/commit/e679bc6d46e791b5df44f4bcf19550412a54b164))
+* remove unused deploymentMode variable from evaluation processing ([18ed519](https://github.com/cds-snc/ai-answers/commit/18ed51991f8a453ccffed9e732329b99dbc6b9d3))
+
 ## [1.29.7](https://github.com/cds-snc/ai-answers/compare/v1.29.6...v1.29.7) (2025-08-15)
 
 
