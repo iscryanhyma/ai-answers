@@ -210,8 +210,7 @@
         "title": "Le CSV doit contenir :",
         "items": {
           "problemDetails": "Détails du problème/Question - requis",
-          "url": "URL - optionnel",
-          "context": "Propriétés de contexte - optionnel - Si laissé vide, le lot dérivera d'abord le contexte, si fourni, il utilisera le contexte fourni pour récupérer les réponses"
+          "url": "URL - optionnel"
         }
       },
       "adminCode": "Entrez le code administrateur pour activer le téléchargement :",
@@ -265,6 +264,7 @@
         "csv": "CSV",
         "excel": "Excel",
         "process": "Traiter",
+        "delete": "Supprimer",
         "cancel": "Annuler"
       }
     }

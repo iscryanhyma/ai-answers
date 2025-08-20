@@ -210,8 +210,7 @@
         "title": "CSV must contain:",
         "items": {
           "problemDetails": "Problem Details/Question - required",
-          "url": "URL - optional",
-          "context": "Context Properties - optional - If left blank, the batch will first derive context, if provided it will use the provided context to retrieve answers"
+          "url": "URL - optional"
         }
       },
       "adminCode": "Enter Admin Code to enable file upload:",
@@ -263,6 +262,7 @@
         "csv": "CSV",
         "excel": "Excel",
         "process": "Process",
+        "delete": "Delete",
         "cancel": "Cancel"
       }
     }
