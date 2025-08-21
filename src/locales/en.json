@@ -217,7 +217,7 @@
       "aiService": {
         "label": "AI Service:",
         "openai": "OpenAI",
-        "anthropic": "Anthropic"
+        "azure": "Azure OpenAI"
       },
       "language": {
         "label": "Evaluation Language:",
