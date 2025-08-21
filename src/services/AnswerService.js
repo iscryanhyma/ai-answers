@@ -213,65 +213,7 @@ const AnswerService = {
     };
   },
 
-  sendBatchMessages: async (provider, entries, lang, batchName, chatId) => {
-    try {
-      ClientLoggingService.info(
-        chatId,
-        `Processing batch of ${entries.length} entries in ${lang.toUpperCase()}`
-      );
-      const batchEntries = await Promise.all(
-        entries.map(async (entry) => {
-          const context = {
-            topic: entry['CONTEXT.TOPIC'],
-            topicUrl: entry['CONTEXT.TOPICURL'],
-            department: entry['CONTEXT.DEPARTMENT'],
-            departmentUrl: entry['CONTEXT.DEPARTMENTURL'],
-            searchResults: entry['CONTEXT.SEARCHRESULTS'],
-            searchProvider: entry['CONTEXT.SEARCHPROVIDER'],
-            model: entry['CONTEXT.MODEL'],
-            inputTokens: entry['CONTEXT.INPUTTOKENS'],
-            outputTokens: entry['CONTEXT.OUTPUTTOKENS'],
-          };
-          const referringUrl = entry['REFERRINGURL'] || '';
-          const messagePayload = await AnswerService.prepareMessage(
-            provider,
-            entry.REDACTEDQUESTION,
-            [],
-            lang,
-            context,
-            true,
-            referringUrl,
-            chatId
-          );
-          messagePayload.context = context;
-          return messagePayload;
-        })
-      );
-
-      const response = await fetch(getProviderApiUrl(provider, 'batch'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...AuthService.getAuthHeader()
-        },
-        body: JSON.stringify({
-          requests: batchEntries,
-          lang: lang,
-          batchName: batchName,
-          provider: provider,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create batch request');
-      }
-
-      return response.json();
-    } catch (error) {
-      ClientLoggingService.error(chatId, 'Error in sendBatchMessages:', error);
-      throw error;
-    }
-  },
+  
 };
 
 export default AnswerService;
