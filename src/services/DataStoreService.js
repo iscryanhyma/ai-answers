@@ -61,48 +61,7 @@ class DataStoreService {
     }
   }
 
-  static async persistBatch(batchData) {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-batch'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(batchData)
-      });
-      
-      if (!response.ok) throw new Error('Failed to persist batch');
-      return await response.json();
-    } catch (error) {
-      console.error('Error persisting batch:', error);
-      throw error;
-    }
-  }
-
-  static async getBatchList() {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl('db-batch-list'));
-      
-      if (!response.ok) throw new Error('Failed to get batch list');
-      return await response.json();
-    } catch (error) {
-      console.error('Error getting batch list:', error);
-      throw error;
-    }
-  }
-
-
-  static async getBatch(batchId) {
-    try {
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-batch-retrieve?batchId=${batchId}`));
-      
-      if (!response.ok) throw new Error('Failed to retrieve batch');
-      return await response.json();
-    } catch (error) {
-      console.error('Error retrieving batch:', error);
-      throw error;
-    }
-  }
+  // ...existing code...
 
   static async persistInteraction(interactionData) {
     try {
@@ -199,55 +158,7 @@ class DataStoreService {
     }
   }
 
-  static async getBatchStatus(batchId, aiProvider) {
-    try {
-      const response = await AuthService.fetchWithAuth(
-        getProviderApiUrl(aiProvider, `batch-status?batchId=${batchId}`)
-      );
-      const data = await response.json();
-      return { batchId, status: data.status };
-    } catch (error) {
-      console.error(`Error fetching status for batch ${batchId}:`, error);
-      return { batchId, status: 'Error' };
-    }
-  }
-
-  static async cancelBatch(batchId, aiProvider) {
-    try {
-      const response = await AuthService.fetchWithAuth(
-        getProviderApiUrl(aiProvider, `batch-cancel?batchId=${batchId}`)
-      );
-      if (!response.ok) throw new Error('Failed to cancel batch');
-      return await response.json();
-    } catch (error) {
-      console.error('Error canceling batch:', error);
-      throw error;
-    }
-  }
-
-  static async getBatchStatuses(batches) {
-    try {
-      const statusPromises = batches.map(async (batch) => {
-        if (!batch.status || batch.status !== 'processed') {
-          const statusResult = await this.getBatchStatus(batch.batchId, batch.aiProvider);
-          if (statusResult.status === 'not_found') {
-            await this.cancelBatch(batch.batchId, batch.aiProvider);
-          }
-          return statusResult;
-        } else {
-          return Promise.resolve({ batchId: batch.batchId, status: batch.status });
-        }
-      });
-      const statusResults = await Promise.all(statusPromises);
-      return batches.map((batch) => {
-        const statusResult = statusResults.find((status) => status.batchId === batch.batchId);
-        return { ...batch, status: statusResult ? statusResult.status : 'Unknown' };
-      });
-    } catch (error) {
-      console.error('Error fetching statuses:', error);
-      throw error;
-    }
-  }
+  // ...existing code...
 
   static async deleteChat(chatId) {
     try {
