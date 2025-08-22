@@ -14,6 +14,10 @@ const BatchPage = ({ lang = 'en' }) => {
     await BatchService.deleteBatch(batchId);
   };
 
+  // Simple refresh trigger to force BatchList to remount and refresh data
+  const [refreshKey, setRefreshKey] = useState(0);
+  const triggerRefresh = () => setRefreshKey((k) => k + 1);
+
   // Local UI state: track which batches the user has requested processing for
   // This is intentionally non-persistent so a page reload will show the Process
   // button again (the desired behavior).
@@ -116,7 +120,7 @@ const BatchPage = ({ lang = 'en' }) => {
 
       <section id="evaluator" className="mb-600">
         <h2 className="mt-400 mb-400">{t('batch.sections.evaluator.title')}</h2>
-        <BatchUpload lang={lang} />
+  <BatchUpload lang={lang} onBatchSaved={triggerRefresh} />
       </section>
 
       <section id="running-evaluation" className="mb-600">
@@ -128,6 +132,7 @@ const BatchPage = ({ lang = 'en' }) => {
           onExport={onExport}
           // Include 'uploaded' so freshly created batches appear in the running list
           batchStatus="uploaded,validating,failed,in_progress,finalizing,completed,expired"
+          key={`running-${refreshKey}`}
           processingBatches={processingBatches}
           unmarkProcessing={unmarkProcessing}
           lang={lang}
@@ -142,6 +147,7 @@ const BatchPage = ({ lang = 'en' }) => {
           onDelete={onDelete}
           onExport={onExport}
           batchStatus="processed"
+          key={`processed-${refreshKey}`}
           processingBatches={processingBatches}
           unmarkProcessing={unmarkProcessing}
           lang={lang}

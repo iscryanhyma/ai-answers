@@ -6,7 +6,7 @@ import BatchService from '../../services/BatchService.js';
 import '../../styles/App.css';
 import * as XLSX from 'xlsx';
 
-const BatchUpload = ({ lang }) => {
+const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
   const [file, setFile] = useState(null);
   const [processing, setProcessing] = useState(false);
@@ -110,6 +110,12 @@ const BatchUpload = ({ lang }) => {
           setBatchStatus('uploaded');
           setResults({ fileName: file.name, entriesProcessed: entries.length });
           setError(null);
+          // Notify parent to refresh lists immediately
+          try {
+            if (typeof onBatchSaved === 'function') onBatchSaved();
+          } catch (cbErr) {
+            // ignore callback errors
+          }
           // Reset the upload form so the user can upload another file
           setFile(null);
           setBatchName('');
