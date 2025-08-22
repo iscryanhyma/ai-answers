@@ -14,6 +14,7 @@ import { Context } from '../../models/context.js';
 import { Citation } from '../../models/citation.js';
 import { Chat } from '../../models/chat.js';
 import { Batch } from '../../models/batch.js';
+import { BatchItem } from '../../models/batchItem.js';
 import { Answer } from '../../models/answer.js';
 import { SentenceEmbedding } from '../../models/sentenceEmbedding.js';
 
@@ -32,6 +33,7 @@ const MODELS = {
   Citation,
   Chat,
   Batch,
+  BatchItem,
   Answer,
   SentenceEmbedding,
 };
