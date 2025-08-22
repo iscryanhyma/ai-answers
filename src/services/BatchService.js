@@ -321,7 +321,7 @@ class BatchService {
                 [], // conversationHistory
                 lang,
                 null, // department
-                original?.url || '',
+                original?.url || original?.URL || original?.referringUrl || original?.REFERRINGURL || '',
                 selectedAI,
                 null, // translationF
                 perItemStatus,

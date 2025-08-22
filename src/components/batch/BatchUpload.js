@@ -77,7 +77,17 @@ const BatchUpload = ({ lang }) => {
         // Parse CSV to entries and prepare items for server-side BatchItem creation
         const entries = processCSV(text);
 
-        const items = entries.map((e, idx) => ({ rowIndex: idx, originalData: e }));
+        // Only keep fields needed: question variants and URLs
+        const questionKeys = ['REDACTEDQUESTION', 'QUESTION', 'PROBLEMDETAILS', 'REDACTED QUESTION'];
+        const items = entries.map((e, idx) => {
+          const original = {};
+          questionKeys.forEach((key) => {
+            if (e[key]) original[key] = e[key];
+          });
+          if (e.URL) original.URL = e.URL;
+          if (e.REFERRINGURL) original.REFERRINGURL = e.REFERRINGURL;
+          return { rowIndex: idx, originalData: original };
+        });
 
         // Persist an initial batch record so it shows up in the processing list (server will create BatchItems)
         const payload = {
