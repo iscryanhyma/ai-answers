@@ -233,18 +233,29 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                 const [clicked, setClicked] = useState(false);
                 if (clicked) return null;
                 return (
-                  <GcdsButton
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <GcdsButton
                       size="small"
                       onClick={() => {
-                      if (processingBatches.includes(String(_id))) return;
-                      // Immediately set clicked so button disables without waiting for parent state
-                      setClicked(true);
-                      handleProcess(_id, aiProvider);
-                    }}
+                        if (processingBatches.includes(String(_id))) return;
+                        // Immediately set clicked so button disables without waiting for parent state
+                        setClicked(true);
+                        handleProcess(_id, aiProvider);
+                      }}
                       disabled={processingBatches.includes(String(_id)) || clicked}
-                  >
-                    {t('batch.list.actions.process')}
-                  </GcdsButton>
+                    >
+                      {t('batch.list.actions.process')}
+                    </GcdsButton>
+                    <GcdsButton
+                      size="small"
+                      onClick={() => {
+                        handleDelete(_id);
+                        setClicked(true);
+                      }}
+                    >
+                      {t('batch.list.actions.delete') || 'Delete'}
+                    </GcdsButton>
+                  </div>
                 );
               };
               root.render(<ProcessButton />);
@@ -253,15 +264,26 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                 const [clicked, setClicked] = useState(false);
                 if (clicked) return null;
                 return (
-                  <GcdsButton
-                    size="small"
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <GcdsButton
+                      size="small"
                       onClick={() => {
-                      handleProcess(_id, aiProvider);
-                      setClicked(true);
-                    }}
-                  >
-                    {t('batch.list.actions.process')}
-                  </GcdsButton>
+                        handleProcess(_id, aiProvider);
+                        setClicked(true);
+                      }}
+                    >
+                      {t('batch.list.actions.process')}
+                    </GcdsButton>
+                    <GcdsButton
+                      size="small"
+                      onClick={() => {
+                        handleDelete(_id);
+                        setClicked(true);
+                      }}
+                    >
+                      {t('batch.list.actions.delete') || 'Delete'}
+                    </GcdsButton>
+                  </div>
                 );
               };
               root.render(<ActionButtonComplete />);
@@ -270,15 +292,26 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                 const [clicked, setClicked] = useState(false);
                 if (clicked) return null;
                 return (
-                  <GcdsButton
-                    size="small"
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <GcdsButton
+                      size="small"
                       onClick={() => {
-                      handleCancel(_id, aiProvider);
-                      setClicked(true);
-                    }}
-                  >
-                    {t('batch.list.actions.cancel')}
-                  </GcdsButton>
+                        handleCancel(_id, aiProvider);
+                        setClicked(true);
+                      }}
+                    >
+                      {t('batch.list.actions.cancel')}
+                    </GcdsButton>
+                    <GcdsButton
+                      size="small"
+                      onClick={() => {
+                        handleDelete(_id);
+                        setClicked(true);
+                      }}
+                    >
+                      {t('batch.list.actions.delete') || 'Delete'}
+                    </GcdsButton>
+                  </div>
                 );
               };
               root.render(<ActionButtonCancel />);
