@@ -38,8 +38,8 @@
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
       "or": "ou",
-  "thankYou": "Merci d'avoir donné votre avis!",
-  "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
+      "thankYou": "Merci d'avoir donné votre avis!",
+      "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
     },
     "publicFeedback": {
       "surveyLink": "Répondez à une enquête de rétroaction de 3 minutes (s'ouvre dans un nouvel onglet)",
@@ -188,7 +188,7 @@
       "links": {
         "onThisPage": "Links on this page",
         "newEvaluation": "Nouveau lot",
-        "runningBatches": "Lots en cours",
+  "runningBatches": "Lots incomplets",
         "processedBatches": "Lots traités"
       }
     },
@@ -197,7 +197,7 @@
         "title": "Nouveau lot"
       },
       "running": {
-        "title": "Lots en cours"
+        "title": "Lots incomplets"
       },
       "processed": {
         "title": "Lots traités"
@@ -249,10 +249,10 @@
       }
     },
     "list": {
-      
       "title": "title",
       "columns": {
         "batchName": "Nom",
+        "totals": "Totaux",
         "batchId": "ID du lot",
         "createdDate": "Date de création",
         "provider": "Fournisseur",
@@ -275,11 +275,12 @@
   },
   "admin": {
     "title": "Tableau de bord d'administration de Réponses IA",
-      "partnerTitle": "Tableau de bord partenaire Réponses IA",
+    "backToAdmin": "Retour à l'administration",
+    "partnerTitle": "Tableau de bord partenaire Réponses IA",
     "navigation": {
       "ariaLabel": "Navigation administrateur",
       "title": "Menu administrateur",
-  "partnerMenu": "Menu partenaire",
+      "partnerMenu": "Menu partenaire",
       "aiAnswers": "Utiliser Réponses IA avec les options de rétroaction d'expert",
       "batches": "Voir et gérer les lots",
       "users": "Gérer les comptes utilisateurs",
@@ -306,7 +307,6 @@
       "activeFilters": "Filtres actifs",
       "noActiveFilters": "Aucun filtre actif"
     },
-
     "dateRange": {
       "title": "Sélectionner la période",
       "filterType": "Type de filtre de date",
@@ -427,15 +427,13 @@
       "cds": "CDS (travailleur en arrière-plan)",
       "vercel": "Vercel (attendre la fin de l'évaluation)",
       "serverless": "Serverless (attendre la fin de l'évaluation)"
-    }
-    ,
+    },
     "vectorServiceTypeLabel": "Type de service de vecteurs",
     "vectorServiceType": {
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
-    }
-  ,
-  "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données"
+    },
+    "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données"
   },
   "outage": {
     "title": "Service indisponible",
@@ -488,7 +486,7 @@
         "description": "Évaluations automatisées par IA basées sur les évaluations d'experts de questions similaires",
         "total": "Total des questions évaluées",
         "correct": "Correct",
-        "needsImprovement": "Nécessite une amélioration",       
+        "needsImprovement": "Nécessite une amélioration",
         "hasError": "Contient une erreur"
       },
       "userScored": {

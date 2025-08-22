@@ -10,22 +10,15 @@ import dotenv from 'dotenv';
 import openAIHandler from '../api/openai/openai-message.js';
 import azureHandler from '../api/azure/azure-message.js';
 import azureContextHandler from '../api/azure/azure-context.js';
-import azureBatchProcessResultsHandler from '../api/azure/azure-batch-process-results.js';
 import anthropicAgentHandler from '../api/anthropic/anthropic-message.js';
 import dbChatLogsHandler from '../api/db/db-chat-logs.js';
-import anthropicBatchHandler from '../api/anthropic/anthropic-batch.js';
-import openAIBatchHandler from '../api/openai/openai-batch.js';
-import anthropicBatchStatusHandler from '../api/anthropic/anthropic-batch-status.js';
-import openAIBatchStatusHandler from '../api/openai/openai-batch-status.js';
 import contextSearchHandler from '../api/search/search-context.js';
-import anthropicBatchContextHandler from '../api/anthropic/anthropic-batch-context.js';
-import openAIBatchContextHandler from '../api/openai/openai-batch-context.js';
-import dbBatchListHandler from '../api/db/db-batch-list.js';
-import anthropicBatchProcessResultsHandler from '../api/anthropic/anthropic-batch-process-results.js';
-import openAIBatchProcessResultsHandler from '../api/openai/openai-batch-process-results.js';
-import dbBatchRetrieveHandler from '../api/db/db-batch-retrieve.js';
-import anthropicBatchCancelHandler from '../api/anthropic/anthropic-batch-cancel.js';
-import openAIBatchCancelHandler from '../api/openai/openai-batch-cancel.js';
+import dbBatchListHandler from '../api/batch/batch-list.js';
+import dbBatchRetrieveHandler from '../api/batch/batch-retrieve.js';
+import dbBatchPersistHandler from '../api/batch/batch-persist.js';
+import dbBatchItemsUpsertHandler from '../api/batch/batch-items-upsert.js';
+import dbBatchDeleteHandler from '../api/batch/batch-delete.js';
+import batchesDeleteAllHandler from '../api/batch/batches-delete-all.js';
 import anthropicContextAgentHandler from '../api/anthropic/anthropic-context.js';
 import openAIContextAgentHandler from '../api/openai/openai-context.js';
 import dbChatSessionHandler from '../api/db/db-chat-session.js';
@@ -47,7 +40,6 @@ import dbDatabaseManagementHandler from '../api/db/db-database-management.js';
 import dbDeleteSystemLogsHandler from '../api/db/db-delete-system-logs.js';
 import settingHandler from '../api/setting/setting-handler.js';
 import settingPublicHandler from '../api/setting/setting-public-handler.js';
-
 import dbPublicEvalListHandler from '../api/db/db-public-eval-list.js';
 import dbChatHandler from '../api/db/db-chat.js';
 import dbExpertFeedbackCountHandler from '../api/db/db-expert-feedback-count.js';
@@ -59,6 +51,7 @@ import dbMigratePublicFeedbackHandler from '../api/db/db-migrate-public-feedback
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
+import dbBatchStatsHandler from '../api/batch/batch-stats.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -101,7 +94,6 @@ app.get('/api/util/util-check-url', checkUrlHandler);
 app.post('/api/vector/vector-reinitialize', vectorReinitializeHandler);
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
-// app.get('/api/db/db-public-site-status', dbPublicSiteStatusHandler);
 app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);
 app.get('/api/db/db-chat', dbChatHandler);
 app.post('/api/db/db-persist-feedback', dbPersistFeedback);
@@ -110,8 +102,14 @@ app.post('/api/feedback/feedback-persist-public', feedbackPersistPublicHandler);
 app.post('/api/db/db-persist-interaction', dbPersistInteraction);
 app.get('/api/db/db-chat-session', dbChatSessionHandler);
 app.get('/api/db/db-verify-chat-session', dbVerifyChatSessionHandler);
-app.get('/api/db/db-batch-list', dbBatchListHandler);
-app.get('/api/db/db-batch-retrieve', dbBatchRetrieveHandler);
+app.get('/api/batch/batch-list', dbBatchListHandler);
+app.get('/api/batch/batch-retrieve', dbBatchRetrieveHandler);
+
+app.post('/api/batch/batch-persist', dbBatchPersistHandler);
+app.post('/api/batch/batch-items-upsert', dbBatchItemsUpsertHandler);
+app.delete('/api/batch/batch-delete', dbBatchDeleteHandler);
+app.delete('/api/batch/batch-delete-all', batchesDeleteAllHandler);
+app.get('/api/batch/batch-stats', dbBatchStatsHandler);
 app.get('/api/db/db-check', dbCheckhandler);
 app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);
@@ -135,28 +133,10 @@ app.post('/api/db/db-repair-expert-feedback', dbRepairExpertFeedbackHandler);
 app.post('/api/db/db-migrate-public-feedback', dbMigratePublicFeedbackHandler);
 app.post("/api/openai/openai-message", openAIHandler);
 app.post("/api/openai/openai-context", openAIContextAgentHandler);
-app.post('/api/openai/openai-batch', openAIBatchHandler);
-app.post('/api/openai/openai-batch-context', openAIBatchContextHandler);
-app.get('/api/openai/openai-batch-process-results', openAIBatchProcessResultsHandler);
-app.get('/api/openai/openai-batch-status', openAIBatchStatusHandler);
-app.get('/api/openai/openai-batch-cancel', openAIBatchCancelHandler);
-
 app.post('/api/anthropic/anthropic-message', anthropicAgentHandler);
 app.post('/api/anthropic/anthropic-context', anthropicContextAgentHandler);
-app.post('/api/anthropic/anthropic-batch', anthropicBatchHandler);
-app.post('/api/anthropic/anthropic-batch-context', anthropicBatchContextHandler);
-app.get('/api/anthropic/anthropic-batch-process-results', anthropicBatchProcessResultsHandler);
-app.get('/api/anthropic/anthropic-batch-status', anthropicBatchStatusHandler);
-app.get('/api/anthropic/anthropic-batch-cancel', anthropicBatchCancelHandler);
-
 app.post("/api/azure/azure-message", azureHandler);  // Updated Azure endpoint
 app.post("/api/azure/azure-context", azureContextHandler);
-//app.post('/api/azure/azure-batch', azureBatchHandler);
-//app.get('/api/azure/azure-batch-status', azureBatchStatusHandler);
-//app.post('/api/azure/azure-batch-context', azureBatchContextHandler);
-//app.get('/api/azure/azure-batch-cancel', azureBatchCancelHandler);
-//app.get('/api/azure-batch-process-results', azureBatchProcessResultsHandler);
-
 app.post('/api/search/search-context', contextSearchHandler);
 
 

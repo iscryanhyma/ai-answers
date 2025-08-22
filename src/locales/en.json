@@ -38,8 +38,8 @@
       "useful": "Good",
       "notUseful": "Needs improvement",
       "or": "or",
-  "thankYou": "Thank you for your feedback!",
-  "error": "Error submitting feedback, contact admin."
+      "thankYou": "Thank you for your feedback!",
+      "error": "Error submitting feedback, contact admin."
     },
     "publicFeedback": {
       "surveyLink": "Take a 3 minute feedback survey (opens in new tab)",
@@ -187,7 +187,7 @@
       "title": "On this page",
       "links": {
         "newEvaluation": "New Batch",
-        "runningBatches": "Running batches",
+  "runningBatches": "Incomplete batches",
         "processedBatches": "Processed Batches",
         "onThisPage": "Links on this page"
       }
@@ -197,7 +197,7 @@
         "title": "New Batch"
       },
       "running": {
-        "title": "Running Batches"
+        "title": "Incomplete Batches"
       },
       "processed": {
         "title": "Processed Batches"
@@ -251,12 +251,13 @@
     "list": {
       "columns": {
         "batchId": "Batch ID",
+        "totals": "Totals",
         "createdDate": "Created Date",
         "provider": "Provider",
         "type": "Type",
         "status": "Status",
         "batchName": "Name",
-        "action" : "Action"
+        "action": "Action"
       },
       "actions": {
         "csv": "CSV",
@@ -273,11 +274,12 @@
   },
   "admin": {
     "title": "AI Answers Admin dashboard",
-      "partnerTitle": "AI Answers Partner Dashboard",
+    "backToAdmin": "Back to Admin",
+    "partnerTitle": "AI Answers Partner Dashboard",
     "navigation": {
       "ariaLabel": "Admin Navigation",
       "title": "Admin Menu",
-    "partnerMenu": "Partner Menu",
+      "partnerMenu": "Partner Menu",
       "aiAnswers": "Use AI Answers with expert feedback options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
@@ -288,7 +290,6 @@
       "publicEval": "Public Evaluation",
       "logout": "Sign out",
       "vector": "Vector Administration"
-  
     },
     "filters": {
       "title": "Filters - select then Apply to view",
@@ -299,12 +300,12 @@
       "days": "days",
       "allTime": "All time",
       "referringUrl": "Referring URL",
-      "referringUrlPlaceholder": "Enter referring URL...",      "department": "Department",
+      "referringUrlPlaceholder": "Enter referring URL...",
+      "department": "Department",
       "allDepartments": "All departments",
       "activeFilters": "Active filters",
       "noActiveFilters": "No active filters"
     },
-
     "dateRange": {
       "title": "Select time period",
       "filterType": "Date filter type",
@@ -425,15 +426,13 @@
       "cds": "CDS (Background worker)",
       "vercel": "Vercel (Wait for completion)",
       "serverless": "Serverless (Wait for completion)"
-    }
-    ,
+    },
     "vectorServiceTypeLabel": "Vector Service Type",
     "vectorServiceType": {
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
-    }
-  ,
-  "logChatsToDatabaseLabel": "Log chats to database"
+    },
+    "logChatsToDatabaseLabel": "Log chats to database"
   },
   "outage": {
     "title": "Service Unavailable",
@@ -529,6 +528,4 @@
     "getSimilarChats": "Get Similar Chats",
     "loadingSimilarChats": "Loading similar chats..."
   }
-  
-     
 }
