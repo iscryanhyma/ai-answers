@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { GcdsContainer, GcdsHeading, GcdsText } from '@cdssnc/gcds-components-react';
-import MessageService from '../../services/AnswerService.js';
-import ContextService from '../../services/ContextService.js';
+import BatchService from '../../services/BatchService.js';
 import '../../styles/App.css';
 import * as XLSX from 'xlsx';
 
@@ -70,9 +69,53 @@ const BatchUpload = ({ lang }) => {
       }
 
       try {
-        await file.text();
-        setFileUploaded(true);
-        setError(null);
+  // Hide the upload button immediately to prevent duplicate submissions
+  // and give the user immediate feedback that the upload started.
+  setFileUploaded(true);
+
+  const text = await file.text();
+        // Parse CSV to entries and prepare items for server-side BatchItem creation
+        const entries = processCSV(text);
+
+        const items = entries.map((e, idx) => ({ rowIndex: idx, originalData: e }));
+
+        // Persist an initial batch record so it shows up in the processing list (server will create BatchItems)
+        const payload = {
+          name: batchName || `client-batch-${Date.now()}`,
+          aiProvider: selectedAI,
+          pageLanguage: selectedLanguage,
+          searchProvider: selectedSearch,
+          type: 'client',
+          status: 'uploaded',
+          items,
+        };
+
+        try {
+          const persisted = await BatchService.persistBatch(payload);
+          const id = persisted?.batchId || persisted?._id || persisted?.id || null;
+          setBatchId(id);
+          setBatchStatus('uploaded');
+          setResults({ fileName: file.name, entriesProcessed: entries.length });
+          setError(null);
+          // Reset the upload form so the user can upload another file
+          setFile(null);
+          setBatchName('');
+          setFileUploaded(false);
+          // Clear the file input DOM value (best-effort)
+          try {
+            const input = document.getElementById('csvFile');
+            if (input) input.value = '';
+          } catch (domErr) {
+            // ignore DOM reset errors
+          }
+          // Re-show the upload button so the user can upload another file
+          setFileUploaded(false);
+        } catch (persistErr) {
+          console.error('Failed to persist batch:', persistErr);
+          setError(persistErr?.message || 'Failed to save batch to server');
+          // Re-show the upload button so the user can retry
+          setFileUploaded(false);
+        }
       } catch (err) {
         setError('Failed to read the file. Please try uploading again.');
         console.error('Error reading file:', err);
@@ -127,101 +170,9 @@ const BatchUpload = ({ lang }) => {
     }
   };
 
-  const needsContext = (entries) => {
-    return entries.some((entry) => !entry['CONTEXT.CREATEDAT']);
-  };
-
-  const processBatch = async (entries) => {
-    try {
-      console.log(`Starting batch processing for ${entries.length} entries...`);
-
-      setProcessing(true);
-      setBatchStatus('preparing');
-      setError(null);
-
-      if (needsContext(entries)) {
-        console.log('Some entries need context. Deriving context batch processing...');
-        const result = await ContextService.deriveContextBatch(
-          entries,
-          selectedLanguage,
-          selectedAI,
-          batchName,
-          selectedSearch
-        );
-        console.log('Context batch started: ' + result.batchId);
-        return result;
-      } else {
-        try {
-          const data = await MessageService.sendBatchMessages(
-            selectedAI,
-            entries,
-            selectedLanguage,
-            batchName
-          );
-
-          console.log(`${selectedAI} batch response:`, data);
-
-          if (data.batchId) {
-            console.log(`Batch created successfully. Batch ID: ${data.batchId}`);
-          } else {
-            throw new Error('No batch ID received from API');
-          }
-          return data;
-        } catch (error) {
-          if (error.name === 'AbortError') {
-            throw new Error(
-              'Request timed out while creating batch. The operation may still be processing.'
-            );
-          }
-          throw error;
-        }
-      }
-    } catch (error) {
-      console.error('Error processing batch:', error);
-      setError(`Failed to start batch processing: ${error.message}`);
-      setProcessing(false);
-      setBatchStatus(null);
-    }
-  };
-
-  const handleProcessFile = async () => {
-    if (!file) return;
-
-    console.log('Starting process, current states:', {
-      processing,
-      batchStatus,
-    });
-
-    setProcessing(true);
-    setError(null);
-
-    try {
-      const text = await file.text();
-      const entries = processCSV(text);
-      console.log('After setting initial states:', {
-        processing: true,
-        entriesLength: entries.length,
-      });
-      await processBatch(entries);
-      setBatchStatus('started');
-      resetForm();
-    } catch (error) {
-      console.error('Process file error:', error);
-      resetForm();
-      setError(error.message);
-    }
-  };
-
-  const resetForm = () => {
-    setFile(null);
-    setProcessing(false);
-    setResults(null);
-    setError(null);
-    setFileUploaded(false);
-    setBatchId(null);
-    setBatchStatus(null);
-    document.getElementById('csvFile').value = ''; // Reset file input
-  };
+  
+  
+  
 
 
   useEffect(() => {
@@ -241,7 +192,6 @@ const BatchUpload = ({ lang }) => {
           <ul>
             <li>{t('batch.upload.csvRequirements.items.problemDetails')}</li>
             <li>{t('batch.upload.csvRequirements.items.url')}</li>
-            <li>{t('batch.upload.csvRequirements.items.context')}</li>
           </ul>
 
           <form onSubmit={handleUpload} className="mt-400">
@@ -282,14 +232,14 @@ const BatchUpload = ({ lang }) => {
                   <div className="ai-toggle_option">
                     <input
                       type="radio"
-                      id="claude"
+                      id="azure"
                       name="ai-selection"
-                      value="anthropic"
-                      checked={selectedAI === 'anthropic'}
+                      value="azure"
+                      checked={selectedAI === 'azure'}
                       onChange={handleAIToggle}
                       className="ai-toggle_radio-input"
                     />
-                    <label htmlFor="claude">{t('batch.upload.aiService.anthropic')}</label>
+                    <label htmlFor="azure">{t('batch.upload.aiService.azure')}</label>
                   </div>
                 </div>
               </fieldset>
@@ -392,35 +342,8 @@ const BatchUpload = ({ lang }) => {
               </button>
             )}
 
-            {processing && (
-              <div className="mt-4">
-                {batchStatus === 'preparing' && selectedAI === 'openai' && (
-                  <div className="text-sm text-gray-500 mt-2">
-                    {t('batch.upload.status.openaiWait')}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {results && (
-              <div className="results-section mt-400">
-                <GcdsHeading tag="h3">{t('batch.upload.results.title')}</GcdsHeading>
-                <GcdsText>
-                  {t('batch.upload.results.file')} {results.fileName}
-                </GcdsText>
-                <GcdsText>
-                  {t('batch.upload.results.entriesProcessed')} {results.entriesProcessed}
-                </GcdsText>
-              </div>
-            )}
-
-            {fileUploaded && (
-              <div className="processing-controls">
-                <button onClick={handleProcessFile} className="secondary-button force-style-button">
-                  {t('batch.upload.buttons.startProcessing')}
-                </button>
-              </div>
-            )}
+           
+           
           </form>
         </div>
       </div>
