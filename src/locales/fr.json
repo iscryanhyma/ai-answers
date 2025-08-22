@@ -237,6 +237,7 @@
         "upload": "Télécharger le fichier",
         "startProcessing": "Démarrer le traitement"
       },
+  "processing": "Traitement du fichier, veuillez patienter...",
       "status": {
         "preparing": "Création du lot...",
         "started": "Lot démarré...",

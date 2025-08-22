@@ -232,6 +232,7 @@
         "upload": "Upload File",
         "startProcessing": "Start Processing"
       },
+  "processing": "Processing file, please wait...",
       "status": {
         "preparing": "Creating batch...",
         "started": "Batch started...",
