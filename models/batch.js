@@ -1,8 +1,7 @@
 import mongoose from 'mongoose';
 
 const BatchSchema = new mongoose.Schema({
-  status: { type: String, required: false, default: 'queued' },
-  batchId: { type: String, required: true, default: '' },
+  status: { type: String, required: false, default: 'uploaded' },
   type: { type: String, required: true, default: '' },
   name: { type: String, required: true, default: '' },
   aiProvider: { type: String, required: true, default: '' },
