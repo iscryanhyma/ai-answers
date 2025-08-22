@@ -3,6 +3,7 @@ import { getApiUrl } from '../utils/apiToUrl.js';
 import { GcdsContainer, GcdsHeading, GcdsText, GcdsButton, GcdsLink } from '@cdssnc/gcds-components-react';
 import AuthService from '../services/AuthService.js';
 import DataStoreService from '../services/DataStoreService.js';
+import BatchService from '../services/BatchService.js';
 import streamSaver from 'streamsaver';
 import { useTranslations } from '../hooks/useTranslations.js';
 
@@ -14,6 +15,7 @@ const DatabasePage = ({ lang }) => {
   const [isImporting, setIsImporting] = useState(false);
   const [isDroppingIndexes, setIsDroppingIndexes] = useState(false);
   const [isDeletingSystemLogs, setIsDeletingSystemLogs] = useState(false);
+  const [isDeletingAllBatches, setIsDeletingAllBatches] = useState(false);
   const [isRepairingTimestamps, setIsRepairingTimestamps] = useState(false);
   const [isRepairingExpertFeedback, setIsRepairingExpertFeedback] = useState(false);
   const [isMigratingPublicFeedback, setIsMigratingPublicFeedback] = useState(false);
@@ -311,6 +313,37 @@ const DatabasePage = ({ lang }) => {
     }
   };
 
+  const handleDeleteAllBatches = async () => {
+    if (!window.confirm(
+      lang === 'en'
+        ? 'This will delete ALL batches and batchItems. This cannot be undone. Are you sure you want to continue?'
+        : "Cela supprimera TOUS les lots et batchItems. Cette action est irréversible. Êtes-vous sûr de vouloir continuer?"
+    )) return;
+
+    setIsDeletingAllBatches(true);
+    setMessage('');
+    try {
+      const result = await BatchService.deleteAllBatches();
+      // Expecting { deletedBatches, deletedBatchItems } or similar
+  const deletedBatches = (result && result.deletedBatches != null) ? result.deletedBatches : (result && result.deleted != null ? result.deleted : 0);
+  const deletedBatchItems = (result && result.deletedBatchItems != null) ? result.deletedBatchItems : 0;
+      setMessage(
+        lang === 'en'
+          ? `Deleted batches: ${deletedBatches}, deleted batchItems: ${deletedBatchItems}`
+          : `Lots supprimés : ${deletedBatches}, batchItems supprimés : ${deletedBatchItems}`
+      );
+    } catch (error) {
+      setMessage(
+        lang === 'en'
+          ? `Delete all batches failed: ${error.message}`
+          : `Échec de la suppression des lots : ${error.message}`
+      );
+      console.error('Delete all batches error:', error);
+    } finally {
+      setIsDeletingAllBatches(false);
+    }
+  };
+
   const handleRepairTimestamps = async () => {    if (!window.confirm(
       lang === 'en'
         ? 'This will add updatedAt timestamps to existing tool records without them. Are you sure you want to continue?'
@@ -541,6 +574,25 @@ const DatabasePage = ({ lang }) => {
         >          {isRepairingTimestamps
             ? (lang === 'en' ? 'Repairing...' : 'Réparation...')
             : (lang === 'en' ? 'Repair Tool Timestamps' : 'Réparer les horodatages des outils')}
+        </GcdsButton>
+      </div>
+
+      <div className="mb-400">
+        <GcdsHeading tag="h2">{lang === 'en' ? 'Delete All Batches' : 'Supprimer tous les lots'}</GcdsHeading>
+        <GcdsText>
+          {lang === 'en'
+            ? 'Delete all batch records and their associated batchItems. This is destructive and cannot be undone.'
+            : 'Supprimer tous les enregistrements de lots et leurs batchItems associés. Cette action est destructive et irréversible.'}
+        </GcdsText>
+        <GcdsButton
+          onClick={handleDeleteAllBatches}
+          disabled={isDeletingAllBatches}
+          variant="danger"
+          className="mb-200"
+        >
+          {isDeletingAllBatches
+            ? (lang === 'en' ? 'Deleting...' : 'Suppression...')
+            : (lang === 'en' ? 'Delete All Batches' : 'Supprimer tous les lots')}
         </GcdsButton>
       </div>
 
