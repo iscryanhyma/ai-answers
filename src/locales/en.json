@@ -38,8 +38,8 @@
       "useful": "Good",
       "notUseful": "Needs improvement",
       "or": "or",
-      "thankYou": "Thank you for your feedback!",
-      "error": "Error submitting feedback, contact admin."
+          "thankYou": "Thank you for your feedback!",
+          "error": "Error submitting feedback, contact admin."
     },
     "publicFeedback": {
       "surveyLink": "Take a 3 minute feedback survey (opens in new tab)",
@@ -147,9 +147,9 @@
         "yourQuestionWas": "Your question was:",
         "yourAnswerIs": "Your answer is:",
         "warning": "Warning:",
-        "shortQueryMessage": "Your short query wasn't sent to the AI service because it didn't contain enough details.",
-        "shortQueryDetails": "Ask again with more details, or to search, use this link made with your query:",
-        "shortQuerySearch": " Canada.ca search"
+        "shortQueryMessage": "Your question was too short.",
+        "shortQueryDetails": "Try again with more details, or use this link to search Canada.ca for the words you entered.",
+        "shortQuerySearch": "Canada.ca search"
       },
       "citation": {
         "confidence": "Confidence:",
@@ -275,7 +275,6 @@
   },
   "admin": {
     "title": "AI Answers Admin dashboard",
-    "backToAdmin": "Back to Admin",
     "partnerTitle": "AI Answers Partner Dashboard",
     "navigation": {
       "ariaLabel": "Admin Navigation",
