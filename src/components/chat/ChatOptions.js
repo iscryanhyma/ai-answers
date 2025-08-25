@@ -8,6 +8,8 @@ const ChatOptions = ({
   handleAIToggle,
   selectedSearch,
   handleSearchToggle,
+  workflow,
+  handleWorkflowChange,
   referringUrl,
   handleReferringUrlChange
 }) => {
@@ -60,6 +62,22 @@ const ChatOptions = ({
               </div>
             </div>
           </fieldset>
+        </div>
+
+        <div className="workflow-select">
+          <div className="mrgn-bttm-10">
+            <label htmlFor="workflow">{safeT('homepage.chat.options.workflow.label')}</label>
+            <select
+              id="workflow"
+              name="workflow"
+              value={workflow}
+              onChange={handleWorkflowChange}
+              className="chat-border"
+            >
+              <option value="Default">Default</option>
+              <option value="DefaultWithVector">DefaultWithVector</option>
+            </select>
+          </div>
         </div>
 
         <div className="search-toggle">
