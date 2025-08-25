@@ -209,8 +209,8 @@
       "csvRequirements": {
         "title": "Le CSV doit contenir :",
         "items": {
-          "problemDetails": "Détails du problème/Question - requis",
-          "url": "URL - optionnel"
+          "problemDetails": "Détails du problème / Question — requis (en-têtes : REDACTEDQUESTION, QUESTION, PROBLEM DETAILS; insensible à la casse)",
+          "url": "URL / URL de référence — optionnel (en-têtes : URL, REFERRINGURL; insensible à la casse)"
         }
       },
       "adminCode": "Entrez le code administrateur pour activer le téléchargement :",
