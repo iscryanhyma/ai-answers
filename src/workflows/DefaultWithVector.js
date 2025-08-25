@@ -56,6 +56,54 @@ export class DefaultWithVector {
     }
   }
 
+  // Query the chat-similar-answer endpoint and return a short-circuit
+  // response object if an answer is available. Returns null to continue
+  // the normal workflow when no similar answer is found or an error occurs.
+  async checkSimilarAnswer(chatId, userMessage, onStatusUpdate) {
+    try {
+      const similarResp = await fetch('/api/chat/chat-similar-answer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId, question: userMessage })
+      });
+      if (similarResp && similarResp.ok) {
+        const similarJson = await similarResp.json();
+        if (similarJson && similarJson.answer) {
+          await LoggingService.info(chatId, 'chat-similar-answer returned, short-circuiting workflow', {
+            similar: similarJson
+          });
+          this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
+          // Build an answer object that matches the UI's expected shape so
+          // the message content is displayed. Prefer `paragraphs` (rendered
+          // first), but also include `sentences` and `content` for safety.
+          const answerText = similarJson.answer;
+          return {
+            answer: {
+              answerType: 'external',
+              content: answerText,
+              paragraphs: [answerText],
+              sentences: [answerText],
+              // expose metadata for potential UI display
+              providedByInteractionId: similarJson.interactionId || null,
+              similarity: similarJson.similarity || null
+            },
+            context: null,
+            question: userMessage,
+            citationUrl: null,
+            confidenceRating: similarJson.similarity || null
+          };
+        }
+      } else {
+        await LoggingService.info(chatId, 'chat-similar-answer call failed or returned no result', {
+          status: similarResp && similarResp.status
+        });
+      }
+    } catch (err) {
+      await LoggingService.info(chatId, 'chat-similar-answer error, continuing workflow', { error: err && err.message });
+    }
+    return null;
+  }
+
   async verifyCitation(originalCitationUrl, lang, redactedText, selectedDepartment, t, chatId = null) {
     const validationResult = await urlToSearch.validateAndCheckUrl(
       originalCitationUrl,
@@ -87,7 +135,9 @@ export class DefaultWithVector {
 
     this.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
-    await this.processRedaction(userMessage, lang);
+  await this.processRedaction(userMessage, lang);
+  const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, onStatusUpdate);
+  if (similarShortCircuit) return similarShortCircuit;
   await LoggingService.info(chatId, 'Starting DefaultWithVector with data:', {
       userMessage,
       lang,
