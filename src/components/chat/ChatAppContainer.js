@@ -3,7 +3,7 @@ import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
-import { ChatPipelineService, RedactionError, ShortQueryValidation } from '../../services/ChatPipelineService.js';
+import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 // Utility functions go here, before the component
@@ -236,7 +236,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       ]);
       try {
         const aiMessageId = messageIdCounter.current++;
-        const interaction = await ChatPipelineService.processResponse(
+  const interaction = await ChatWorkflowService.processResponse(
           chatId,
           userMessage,
           aiMessageId,

@@ -38,8 +38,8 @@
       "useful": "Good",
       "notUseful": "Needs improvement",
       "or": "or",
-      "thankYou": "Thank you for your feedback!",
-      "error": "Error submitting feedback, contact admin."
+          "thankYou": "Thank you for your feedback!",
+          "error": "Error submitting feedback, contact admin."
     },
     "publicFeedback": {
       "surveyLink": "Take a 3 minute feedback survey (opens in new tab)",
@@ -187,7 +187,7 @@
       "title": "On this page",
       "links": {
         "newEvaluation": "New Batch",
-        "runningBatches": "Running batches",
+  "runningBatches": "Incomplete batches",
         "processedBatches": "Processed Batches",
         "onThisPage": "Links on this page"
       }
@@ -197,7 +197,7 @@
         "title": "New Batch"
       },
       "running": {
-        "title": "Running Batches"
+        "title": "Incomplete Batches"
       },
       "processed": {
         "title": "Processed Batches"
@@ -210,15 +210,14 @@
         "title": "CSV must contain:",
         "items": {
           "problemDetails": "Problem Details/Question - required",
-          "url": "URL - optional",
-          "context": "Context Properties - optional - If left blank, the batch will first derive context, if provided it will use the provided context to retrieve answers"
+          "url": "URL - optional"
         }
       },
       "adminCode": "Enter Admin Code to enable file upload:",
       "aiService": {
         "label": "AI Service:",
         "openai": "OpenAI",
-        "anthropic": "Anthropic"
+        "azure": "Azure OpenAI"
       },
       "language": {
         "label": "Evaluation Language:",
@@ -233,6 +232,7 @@
         "upload": "Upload File",
         "startProcessing": "Start Processing"
       },
+  "processing": "Processing file, please wait...",
       "status": {
         "preparing": "Creating batch...",
         "started": "Batch started...",
@@ -252,6 +252,7 @@
     "list": {
       "columns": {
         "batchId": "Batch ID",
+        "totals": "Totals",
         "createdDate": "Created Date",
         "provider": "Provider",
         "type": "Type",
@@ -263,6 +264,7 @@
         "csv": "CSV",
         "excel": "Excel",
         "process": "Process",
+        "delete": "Delete",
         "cancel": "Cancel"
       }
     }
@@ -304,7 +306,6 @@
       "activeFilters": "Active filters",
       "noActiveFilters": "No active filters"
     },
-
     "dateRange": {
       "title": "Select time period",
       "filterType": "Date filter type",

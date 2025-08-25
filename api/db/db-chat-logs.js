@@ -2,9 +2,10 @@
 
 import dbConnect from './db-connect.js';
 import { Chat } from '../../models/chat.js';
+import { BatchItem } from '../../models/batchItem.js';
 import {
   authMiddleware,
-  adminMiddleware,
+
   withProtection
 } from '../../middleware/auth.js';
 
@@ -19,11 +20,11 @@ async function chatLogsHandler(req, res) {
       days, startDate, endDate,
       filterType, presetValue,
       department, referringUrl,
-      limit = 100, lastId
+       limit = 100, lastId, batchId,
     } = req.query;
 
 
-    const dateFilter = {};
+  let dateFilter = {};
     if (startDate && endDate) {
       dateFilter.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
     }
@@ -31,7 +32,7 @@ async function chatLogsHandler(req, res) {
     if (lastId && lastId !== 'null' && lastId !== null) {
       dateFilter._id = { $gt: lastId };
     }
-
+   
     const totalCount = await Chat.countDocuments(dateFilter);
 
     const chatPopulate = [
@@ -67,6 +68,7 @@ async function chatLogsHandler(req, res) {
 
     let chats;
 
+    // If department or referringUrl filters are used, we use an aggregation pipeline
     if (department || referringUrl) {
       const pipeline = [];
       if (Object.keys(dateFilter).length) pipeline.push({ $match: dateFilter });
@@ -191,7 +193,6 @@ async function chatLogsHandler(req, res) {
 
       // Build AND filters
       const andFilters = [];
-
       if (department) {
         const parts = department
           .split('-')
@@ -247,6 +248,16 @@ async function chatLogsHandler(req, res) {
 
       chats = await Chat.aggregate(pipeline);
     } else {
+      // Non-aggregate branch
+      // Apply batch filter if batchId is provided
+      if (batchId) {
+        const batchChatItems = await BatchItem.find({ batch: batchId }).select('chat');
+        const batchChatIds = batchChatItems.filter(item => item.chat).map(item => item.chat);
+        dateFilter = Object.keys(dateFilter).length
+          ? { $and: [ dateFilter, { _id: { $in: batchChatIds } } ] }
+          : { _id: { $in: batchChatIds } };
+      }
+
       let query = Chat.find(dateFilter)
         .populate(chatPopulate)
         .sort({ _id: 1 }) // Ensure consistent ordering for pagination

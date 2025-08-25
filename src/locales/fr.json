@@ -38,8 +38,8 @@
       "useful": "Bonne",
       "notUseful": "Nécessite une amélioration",
       "or": "ou",
-      "thankYou": "Merci d'avoir donné votre avis!",
-      "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
+          "thankYou": "Merci d'avoir donné votre avis!",
+          "error": "Erreur lors de la soumission de la rétroaction, contactez l'administrateur."
     },
     "publicFeedback": {
       "surveyLink": "Répondez à une enquête de rétroaction de 3 minutes (s'ouvre dans un nouvel onglet)",
@@ -188,7 +188,7 @@
       "links": {
         "onThisPage": "Links on this page",
         "newEvaluation": "Nouveau lot",
-        "runningBatches": "Lots en cours",
+  "runningBatches": "Lots incomplets",
         "processedBatches": "Lots traités"
       }
     },
@@ -197,7 +197,7 @@
         "title": "Nouveau lot"
       },
       "running": {
-        "title": "Lots en cours"
+        "title": "Lots incomplets"
       },
       "processed": {
         "title": "Lots traités"
@@ -210,15 +210,14 @@
         "title": "Le CSV doit contenir :",
         "items": {
           "problemDetails": "Détails du problème/Question - requis",
-          "url": "URL - optionnel",
-          "context": "Propriétés de contexte - optionnel - Si laissé vide, le lot dérivera d'abord le contexte, si fourni, il utilisera le contexte fourni pour récupérer les réponses"
+          "url": "URL - optionnel"
         }
       },
       "adminCode": "Entrez le code administrateur pour activer le téléchargement :",
       "aiService": {
         "label": "Service d'IA :",
         "openai": "OpenAI",
-        "anthropic": "Anthropic"
+        "azure": "Azure OpenAI"
       },
       "language": {
         "label": "Langue d'évaluation :",
@@ -238,6 +237,7 @@
         "upload": "Télécharger le fichier",
         "startProcessing": "Démarrer le traitement"
       },
+  "processing": "Traitement du fichier, veuillez patienter...",
       "status": {
         "preparing": "Création du lot...",
         "started": "Lot démarré...",
@@ -253,6 +253,7 @@
       "title": "title",
       "columns": {
         "batchName": "Nom",
+        "totals": "Totaux",
         "batchId": "ID du lot",
         "createdDate": "Date de création",
         "provider": "Fournisseur",
@@ -264,6 +265,7 @@
         "csv": "CSV",
         "excel": "Excel",
         "process": "Traiter",
+        "delete": "Supprimer",
         "cancel": "Annuler"
       }
     }
@@ -305,7 +307,6 @@
       "activeFilters": "Filtres actifs",
       "noActiveFilters": "Aucun filtre actif"
     },
-
     "dateRange": {
       "title": "Sélectionner la période",
       "filterType": "Type de filtre de date",
