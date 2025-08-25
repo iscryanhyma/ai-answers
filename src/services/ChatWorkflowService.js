@@ -74,15 +74,21 @@ export const ChatWorkflowService = {
     referringUrl,
     selectedAI,
     translationF,
+    workflow,
     onStatusUpdate,
     searchProvider
   ) => {
-    // Phase 1 shim: delegate to DefaultWorkflow to enable multi-workflow refactor later.
-    // Keep signature and behavior identical for all callers.
-    const mod = await import('../workflows/DefaultWorkflow.js');
-    const DefaultWorkflow = mod.DefaultWorkflow || mod.default;
-    const workflow = new DefaultWorkflow();
-    return workflow.processResponse(
+    // Select workflow implementation based on the `workflow` parameter.
+    // Default to DefaultWorkflow when unknown.
+    let mod;
+    if (workflow === 'DefaultWithVector') {
+      mod = await import('../workflows/DefaultWithVector.js');
+    } else {
+      mod = await import('../workflows/DefaultWorkflow.js');
+    }
+    const Impl = mod.DefaultWithVector || mod.DefaultWorkflow || mod.default;
+    const implInstance = new Impl();
+    return implInstance.processResponse(
       chatId,
       userMessage,
       userMessageId,
