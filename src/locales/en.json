@@ -208,9 +208,9 @@
       "intro": "Select the AI service, language, and your CSV file. Use one you've downloaded and cleaned from the Feedback viewer.",
       "csvRequirements": {
         "title": "CSV must contain:",
-        "items": {
-          "problemDetails": "Problem Details/Question - required",
-          "url": "URL - optional"
+          "items": {
+          "problemDetails": "Problem Details / Question — required (headers: REDACTEDQUESTION, QUESTION, PROBLEM DETAILS; case‑insensitive)",
+          "url": "URL / Referring URL — optional (headers: URL, REFERRINGURL; case‑insensitive)"
         }
       },
       "adminCode": "Enter Admin Code to enable file upload:",
@@ -274,8 +274,9 @@
     "refresh": "Refresh"
   },
   "admin": {
-    "title": "AI Answers Admin dashboard",
-    "partnerTitle": "AI Answers Partner Dashboard",
+  "title": "AI Answers Admin dashboard",
+  "partnerTitle": "AI Answers Partner Dashboard",
+  "backToAdmin": "Back to Admin",
     "navigation": {
       "ariaLabel": "Admin Navigation",
       "title": "Admin Menu",
