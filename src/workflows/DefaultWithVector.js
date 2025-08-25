@@ -7,8 +7,8 @@ import LoggingService from '../services/ClientLoggingService.js';
 
 import { RedactionError, ShortQueryValidation, WorkflowStatus } from '../services/ChatWorkflowService.js';
 
-export class DefaultWorkflow {
-  constructor() { }
+export class DefaultWithVector {
+  constructor() {}
 
   sendStatusUpdate(onStatusUpdate, status) {
     const displayableStatuses = [
@@ -88,7 +88,7 @@ export class DefaultWorkflow {
     this.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
     await this.processRedaction(userMessage, lang);
-    await LoggingService.info(chatId, 'Starting DefaultWorkflow with data:', {
+  await LoggingService.info(chatId, 'Starting DefaultWithVector with data:', {
       userMessage,
       lang,
       department,
@@ -168,7 +168,7 @@ export class DefaultWorkflow {
       selectedAI: selectedAI,
       question: userMessage,
       userMessageId: userMessageId,
-      referringUrl: referringUrl,
+      referringUrl:referringUrl,
       answer: answer,
       finalCitationUrl: finalCitationUrl,
       confidenceRating: confidenceRating,
