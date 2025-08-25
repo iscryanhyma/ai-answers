@@ -274,8 +274,9 @@
     "refresh": "Refresh"
   },
   "admin": {
-    "title": "AI Answers Admin dashboard",
-    "partnerTitle": "AI Answers Partner Dashboard",
+  "title": "AI Answers Admin dashboard",
+  "partnerTitle": "AI Answers Partner Dashboard",
+  "backToAdmin": "Back to Admin",
     "navigation": {
       "ariaLabel": "Admin Navigation",
       "title": "Admin Menu",
