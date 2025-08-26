@@ -164,7 +164,7 @@ export const departments_EN = [
     "name": "Canada Post",
     "url": "https://www.canadapost-postescanada.ca/cpc/en/home.page",
     "abbr": "CPC",
-    "abbrKey": "CPC-CCP"
+    "abbrKey": "CPC-SCP"
   },
   {
     "name": "Canada Research Chairs",
