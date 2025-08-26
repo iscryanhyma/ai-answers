@@ -4,6 +4,8 @@ import DataStoreService from '../services/DataStoreService.js';
 import { urlToSearch } from '../utils/urlToSearch.js';
 import RedactionService from '../services/RedactionService.js';
 import LoggingService from '../services/ClientLoggingService.js';
+import { getApiUrl } from '../utils/apiToUrl.js';
+import AuthService from '../services/AuthService.js';
 
 import { RedactionError, ShortQueryValidation, WorkflowStatus } from '../services/ChatWorkflowService.js';
 
@@ -61,7 +63,7 @@ export class DefaultWithVector {
   // the normal workflow when no similar answer is found or an error occurs.
   async checkSimilarAnswer(chatId, userMessage, onStatusUpdate) {
     try {
-      const similarResp = await fetch('/api/chat/chat-similar-answer', {
+      const similarResp = await AuthService.fetchWithAuth(getApiUrl('chat-similar-answer'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chatId, question: userMessage })
