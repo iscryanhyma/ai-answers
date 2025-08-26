@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.30.0](https://github.com/cds-snc/ai-answers/compare/v1.29.9...v1.30.0) (2025-08-26)
+
+
+### Features
+
+* add 'Back to Admin' button in admin dashboard for better navigation ([4a4c6e6](https://github.com/cds-snc/ai-answers/commit/4a4c6e630cbb43b4f01cc6bd677cb62e96f7134a))
+* add onBatchSaved callback to BatchUpload for immediate list refresh ([85093a4](https://github.com/cds-snc/ai-answers/commit/85093a42108bb05d973a263f5a6ea7c1c8a0bea7))
+* add processing state and user feedback during batch upload ([68b7ddb](https://github.com/cds-snc/ai-answers/commit/68b7ddb9a00fbc90530d3c488ae0f25456f02058))
+* enhance action buttons in BatchList with delete functionality and improved layout ([7914474](https://github.com/cds-snc/ai-answers/commit/7914474d4eb82876bece22c11c3f6775121fa120))
+* fix message ([142d7a9](https://github.com/cds-snc/ai-answers/commit/142d7a918789889b682b3f80f6ba6e7a74cebf02))
+* fix message ([544e5fa](https://github.com/cds-snc/ai-answers/commit/544e5fa21bb7bdc188c7e5990aae2e65c7eac826))
+* implement batch deletion handler with related item and chat cleanup ([dcd0e18](https://github.com/cds-snc/ai-answers/commit/dcd0e186d66b333a5b57749d810e86d884974420))
+* implement batch processing API with upsert and retrieval functionalities ([437539b](https://github.com/cds-snc/ai-answers/commit/437539bcc1c5bc9c24ce28c28afc7a0b1135fe76))
+
+
+### Bug Fixes
+
+* correct feedback messages for clarity and consistency in English and French locales ([13da36e](https://github.com/cds-snc/ai-answers/commit/13da36e873c949a9de296ff5b0c37845f75d3f09))
+* enhance CSV requirements descriptions for clarity in English and French locales ([72fc607](https://github.com/cds-snc/ai-answers/commit/72fc607eecee0c11586218db32bd83a8a654e95c))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump form-data from 4.0.1 to 4.0.4 in /server ([0b72e42](https://github.com/cds-snc/ai-answers/commit/0b72e4202a53cf82fbe6bbe0801beaeec39e9c4c))
+
+
+### Code Refactoring
+
+* add batchId support to chat logs handler for filtering by batch ([b9c3ab2](https://github.com/cds-snc/ai-answers/commit/b9c3ab23a364a8b222a3049dfd43cb12d3aaab35))
+* add BatchItem model to table counts handler ([8375275](https://github.com/cds-snc/ai-answers/commit/83752758619c99d687fb9d641396b26e799016f7))
+* clean up package.json dependencies formatting ([0f38451](https://github.com/cds-snc/ai-answers/commit/0f384517819fad38ceac8fb9516dd723be93da4b))
+* clean up package.json dependencies formatting ([62ffc29](https://github.com/cds-snc/ai-answers/commit/62ffc29b074c37262e3d1b56303d745b2124a373))
+* enhance CSV processing to retain only necessary fields and update URL handling ([1736536](https://github.com/cds-snc/ai-answers/commit/1736536360a620cefeb5833f3b01bb6a7cfd021b))
+* implement delete all batches functionality with confirmation dialog ([693605d](https://github.com/cds-snc/ai-answers/commit/693605ddab1e7e37f14de23f92eea7740fe81bf1))
+* remove batch processing methods from AnswerService and ContextService ([bff27d5](https://github.com/cds-snc/ai-answers/commit/bff27d5f1f4f65c0259bd1cb5677d5a22ae623c9))
+* remove batch processing methods from DataStoreService ([85112cf](https://github.com/cds-snc/ai-answers/commit/85112cf4c7098e2f9861955fc3bc6ad1003c1efe))
+* remove ChatPipelineService and update documentation for deployment and service usage ([a473710](https://github.com/cds-snc/ai-answers/commit/a473710c49615175da7b46adaa0c5f6ab4a48ce2))
+* remove deprecated Anthropics batch processing endpoints ([1c3dcbe](https://github.com/cds-snc/ai-answers/commit/1c3dcbef2434e43f1f7d14e6df924a41a137cf47))
+* remove deprecated Azure and OpenAI batch handling endpoints ([7f6db1f](https://github.com/cds-snc/ai-answers/commit/7f6db1fc7b774fdf064d58bf0207e20aa53bc660))
+* remove exportBatchResults method to streamline export functionality ([12e3211](https://github.com/cds-snc/ai-answers/commit/12e32116867e85e156a88c76e4bf4e5e97ad181a))
+* reorganize batch API endpoints and update localization strings for clarity ([3c585ce](https://github.com/cds-snc/ai-answers/commit/3c585ce5f2b3aaf6c073b5ddf4bb99130d5b8bb5))
+* replace ChatPipelineService with ChatWorkflowService and add DefaultWorkflow implementation ([45d9963](https://github.com/cds-snc/ai-answers/commit/45d99635323f6c2260cb7fc84e3313c4c8dad56c))
+* update AI service label to Azure OpenAI in English and French locales ([152c0ba](https://github.com/cds-snc/ai-answers/commit/152c0baa3a5d57a96623ae4e496ac582fd361d9d))
+* update Batch schema to change default status and remove batchId field ([8c92b2a](https://github.com/cds-snc/ai-answers/commit/8c92b2acf87c774fffcfc802e377f0c28dc05092))
+* update Batch schema to set default status and add BatchItem model ([93f2b36](https://github.com/cds-snc/ai-answers/commit/93f2b36c9ebcd9a1edf868f983d093c262511bf0))
+* update CSV input fields and add delete option in English and French locales ([ab504e5](https://github.com/cds-snc/ai-answers/commit/ab504e5bb063fc07c39c55644bee102b27a8ce49))
+
 ## [1.29.9](https://github.com/cds-snc/ai-answers/compare/v1.29.8...v1.29.9) (2025-08-15)
 
 
