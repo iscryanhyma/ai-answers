@@ -22,7 +22,8 @@ export default async function handler(req, res) {
         // rating values if provided, otherwise default to .95 and 100.
         const requestedSimilarity = typeof req.body?.similarity === 'number' ? req.body.similarity : 0.95;
         const requestedRating = typeof req.body?.expertFeedbackRating === 'number' ? req.body.expertFeedbackRating : 100;
-        const matchesArr = await VectorService.matchQuestions([question], { k: 1, threshold: requestedSimilarity, expertFeedbackRating: requestedRating });
+        const selectedAI = req.body?.selectedAI || 'openai';
+        const matchesArr = await VectorService.matchQuestions([question], { provider: selectedAI, k: 1, threshold: requestedSimilarity, expertFeedbackRating: requestedRating });
         const matches = Array.isArray(matchesArr) && matchesArr.length ? matchesArr[0] : [];
 
         if (!matches || matches.length === 0) {
@@ -33,7 +34,7 @@ export default async function handler(req, res) {
         // Load the top interaction and its Answer
         await dbConnect();
         const Interaction = mongoose.model('Interaction');
-        
+
 
         const top = matches[0];
         const interaction = await Interaction.findById(top.interactionId).populate('answer').lean();

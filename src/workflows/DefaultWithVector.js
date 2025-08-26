@@ -61,12 +61,12 @@ export class DefaultWithVector {
   // Query the chat-similar-answer endpoint and return a short-circuit
   // response object if an answer is available. Returns null to continue
   // the normal workflow when no similar answer is found or an error occurs.
-  async checkSimilarAnswer(chatId, userMessage, onStatusUpdate) {
+  async checkSimilarAnswer(chatId, userMessage, onStatusUpdate, selectedAI) {
     try {
       const similarResp = await AuthService.fetchWithAuth(getApiUrl('chat-similar-answer'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId, question: userMessage })
+        body: JSON.stringify({ chatId, question: userMessage, selectedAI })
       });
       if (similarResp && similarResp.ok) {
         const similarJson = await similarResp.json();
@@ -138,7 +138,7 @@ export class DefaultWithVector {
     this.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
   await this.processRedaction(userMessage, lang);
-  const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, onStatusUpdate);
+  const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, onStatusUpdate, selectedAI);
   if (similarShortCircuit) return similarShortCircuit;
   await LoggingService.info(chatId, 'Starting DefaultWithVector with data:', {
       userMessage,
