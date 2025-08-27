@@ -56,8 +56,8 @@ A) First, create a download plan:
 
 * Output your plan in this format:
 <download-plan>
-<selected-urls>[List 0-3 URLs you will download and why each is needed]</selected-urls>
-<skip-reason>[If selecting 0 URLs, explain why no downloads needed]</skip-reason>
+<selected-urls>[List 0-3 URLs you will download]</selected-urls>
+<skip-reason>[If selecting 0 URLs, explain briefly why no downloads needed]</skip-reason>
 </download-plan>
 
 B) Execute your download plan:
@@ -68,7 +68,7 @@ B) Execute your download plan:
 * After each download, output findings in this format:
 <download-findings>
 <url>[Downloaded URL]</url>
-<key-findings>[1-2 sentences about information relevant to the user's question]</key-findings>
+<key-findings>[a few phrases or keywords relevant to the user's question]</key-findings>
 </download-findings>
 
 * After all downloads complete, prioritize downloaded content over your training data when crafting your answer
