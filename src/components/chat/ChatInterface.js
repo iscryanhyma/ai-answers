@@ -15,6 +15,8 @@ const ChatInterface = ({
   handleReload,
   handleAIToggle,
   handleSearchToggle,
+  workflow,
+  handleWorkflowChange,
   handleReferringUrlChange,
   formatAIResponse,
   selectedAI,
@@ -485,6 +487,8 @@ const ChatInterface = ({
             handleAIToggle={handleAIToggle}
             selectedSearch={selectedSearch}
             handleSearchToggle={handleSearchToggle}
+            workflow={workflow}
+            handleWorkflowChange={handleWorkflowChange}
             referringUrl={referringUrl}
             handleReferringUrlChange={handleReferringUrlChange}
           />

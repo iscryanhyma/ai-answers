@@ -119,6 +119,11 @@
           "canadaca": "Canada.ca",
           "google": "Google"
         },
+        "workflow": {
+          "label": "Flux de travail :",
+          "Default": "Par défaut",
+          "DefaultWithVector": "Par défaut avec vecteur"
+        },
         "referringUrl": {
           "label": "URL de référence Canada.ca (facultatif)"
         }

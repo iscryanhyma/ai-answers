@@ -4,11 +4,13 @@ import DataStoreService from '../services/DataStoreService.js';
 import { urlToSearch } from '../utils/urlToSearch.js';
 import RedactionService from '../services/RedactionService.js';
 import LoggingService from '../services/ClientLoggingService.js';
+import { getApiUrl } from '../utils/apiToUrl.js';
+import AuthService from '../services/AuthService.js';
 
 import { RedactionError, ShortQueryValidation, WorkflowStatus } from '../services/ChatWorkflowService.js';
 
-export class DefaultWorkflow {
-  constructor() { }
+export class DefaultWithVector {
+  constructor() {}
 
   sendStatusUpdate(onStatusUpdate, status) {
     const displayableStatuses = [
@@ -56,6 +58,54 @@ export class DefaultWorkflow {
     }
   }
 
+  // Query the chat-similar-answer endpoint and return a short-circuit
+  // response object if an answer is available. Returns null to continue
+  // the normal workflow when no similar answer is found or an error occurs.
+  async checkSimilarAnswer(chatId, userMessage, onStatusUpdate, selectedAI) {
+    try {
+      const similarResp = await AuthService.fetchWithAuth(getApiUrl('chat-similar-answer'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatId, question: userMessage, selectedAI })
+      });
+      if (similarResp && similarResp.ok) {
+        const similarJson = await similarResp.json();
+        if (similarJson && similarJson.answer) {
+          await LoggingService.info(chatId, 'chat-similar-answer returned, short-circuiting workflow', {
+            similar: similarJson
+          });
+          this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
+          // Build an answer object that matches the UI's expected shape so
+          // the message content is displayed. Prefer `paragraphs` (rendered
+          // first), but also include `sentences` and `content` for safety.
+          const answerText = similarJson.answer;
+          return {
+            answer: {
+              answerType: 'external',
+              content: answerText,
+              paragraphs: [answerText],
+              sentences: [answerText],
+              // expose metadata for potential UI display
+              providedByInteractionId: similarJson.interactionId || null,
+              similarity: similarJson.similarity || null
+            },
+            context: null,
+            question: userMessage,
+            citationUrl: null,
+            confidenceRating: similarJson.similarity || null
+          };
+        }
+      } else {
+        await LoggingService.info(chatId, 'chat-similar-answer call failed or returned no result', {
+          status: similarResp && similarResp.status
+        });
+      }
+    } catch (err) {
+      await LoggingService.info(chatId, 'chat-similar-answer error, continuing workflow', { error: err && err.message });
+    }
+    return null;
+  }
+
   async verifyCitation(originalCitationUrl, lang, redactedText, selectedDepartment, t, chatId = null) {
     const validationResult = await urlToSearch.validateAndCheckUrl(
       originalCitationUrl,
@@ -87,8 +137,10 @@ export class DefaultWorkflow {
 
     this.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
-    await this.processRedaction(userMessage, lang);
-    await LoggingService.info(chatId, 'Starting DefaultWorkflow with data:', {
+  await this.processRedaction(userMessage, lang);
+  const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, onStatusUpdate, selectedAI);
+  if (similarShortCircuit) return similarShortCircuit;
+  await LoggingService.info(chatId, 'Starting DefaultWithVector with data:', {
       userMessage,
       lang,
       department,
@@ -168,7 +220,7 @@ export class DefaultWorkflow {
       selectedAI: selectedAI,
       question: userMessage,
       userMessageId: userMessageId,
-      referringUrl: referringUrl,
+      referringUrl:referringUrl,
       answer: answer,
       finalCitationUrl: finalCitationUrl,
       confidenceRating: confidenceRating,
