@@ -2,7 +2,7 @@ import { contextSearch as canadaContextSearch } from '../../agents/tools/canadaC
 import { contextSearch as googleContextSearch } from '../../agents/tools/googleContextSearch.js';
 import { exponentialBackoff } from '../../src/utils/backoff.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
-import { invokeSearchAgent } from '../../services/SearchAgentService.js';
+import { invokeQueryAndPIIAgent } from '../../services/QueryAndPIIAgentService.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
     const searchFunction = searchService.toLowerCase() === 'google' 
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
         try {
             // Call SearchAgentService to get the search query and originalLang, passing referring URL for context
-            const agentResult = await invokeSearchAgent(agentType, { chatId, question: message, referringUrl });
+            const agentResult = await invokeQueryAndPIIAgent(agentType, { chatId, question: message, referringUrl });
             const searchQuery = agentResult.query;
             const originalLang = agentResult.originalLang || '';
 
