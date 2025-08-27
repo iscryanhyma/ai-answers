@@ -264,7 +264,7 @@ const ChatInterface = ({
                 >
                   {message.text}
                 </p>
-                {message.redactedItems?.length > 0 && message.redactedText && (
+                {message.redactedText && (
                   <p
                     className={
                       message.redactedText?.includes('XXX')

@@ -2,8 +2,8 @@
 import loadContextSystemPrompt from './contextSystemPrompt.js';
 import { getProviderApiUrl, getApiUrl } from '../utils/apiToUrl.js';
 import LoggingService from './ClientLoggingService.js';
-import AuthService from './AuthService.js';
-import ClientLoggingService from './ClientLoggingService.js';
+import { RedactionError } from './ChatWorkflowService.js';
+
 
 const ContextService = {
   prepareMessage: async (
@@ -123,7 +123,7 @@ const ContextService = {
     try {
       await LoggingService.info(
         chatId,
-        `Context Service: Analyzing question: page lang: ${lang}: ${JSON.stringify(question)}`
+        `Context Service: Analyzing question: page lang: ${lang}`
       );
       const searchResults = await ContextService.contextSearch(
         question,
@@ -138,7 +138,14 @@ const ContextService = {
         "Context Service: Agent Search completed:",searchResults
       );
       // Extract agent values from searchResults
-      const { query: searchQuery, translatedQuestion, originalLang } = searchResults;
+      const { query: searchQuery, translatedQuestion, originalLang, pii = null } = searchResults;
+
+      // If the search agent returned PII (redacted question in <pii>), throw RedactionError to stop processing
+      if (pii && String(pii).toLowerCase() !== 'null' && String(pii).trim() !== '') {
+        await LoggingService.info(chatId, 'Context Service: PII detected, throwing RedactionError', { pii });
+        // Per request: use the pii (redacted question with XXX) as redactedText and leave redactedItems as null
+        throw new RedactionError('PII detected in user message', pii, null);
+      }
       const parsedContext = ContextService.parseContext(
         await ContextService.sendMessage(
           aiProvider,

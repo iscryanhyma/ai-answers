@@ -16,6 +16,7 @@ export const WorkflowStatus = {
   NEED_CLARIFICATION: 'needClarification',
 };
 
+
 // Helper function to control which status updates are actually sent to the UI
 const sendStatusUpdate = (onStatusUpdate, status) => {
   // Only send status updates for the statuses we want to display
@@ -126,7 +127,17 @@ export const ChatWorkflowService = {
       throw new RedactionError('Blocked content detected', redactedText, redactedItems);
     }
   },
+  // Expose the short-query validation helper so workflows can reuse the centralized logic
+  validateShortQueryOrThrow: (conversationHistory, userMessage, lang, department, translationF) => {
+    return validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
+  },
+  // Expose the status update filter helper so workflows can reuse the centralized display rules
+  sendStatusUpdate: (onStatusUpdate, status) => {
+    return sendStatusUpdate(onStatusUpdate, status);
+  }
 };
+
+export default ChatWorkflowService;
 
 export class RedactionError extends Error {
   constructor(message, redactedText, redactedItems) {
