@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.31.0](https://github.com/cds-snc/ai-answers/compare/v1.30.0...v1.31.0) (2025-08-27)
+
+
+### Features
+
+* enhance PII detection and redaction process in search agent workflow ([28b109a](https://github.com/cds-snc/ai-answers/commit/28b109a2301ab35d58cbaf8f33a0aacf9942bcd8))
+* enhance search and workflow services with PII handling and status update improvements ([b2857a2](https://github.com/cds-snc/ai-answers/commit/b2857a2cd01904e34e197ed7103d6901bbb9fd44))
+* implement query and PII handling agent with associated prompt a… ([3ffabfc](https://github.com/cds-snc/ai-answers/commit/3ffabfc5705514f5a09495fb6a117f7534a68cf1))
+* implement query and PII handling agent with associated prompt and service integration ([225133d](https://github.com/cds-snc/ai-answers/commit/225133d2dacb5d1ba88e90ab5134728fad4b3c58))
+
+
+### Bug Fixes
+
+* abbreviation canada post ([e60e371](https://github.com/cds-snc/ai-answers/commit/e60e371a4ce64217bad53b8839a333790604bd46))
+* downloadWebPage ([219cb13](https://github.com/cds-snc/ai-answers/commit/219cb1374570aafc2bbf5f87d1d95090c49bc18e))
+* downloadWebPage ([a4d01f4](https://github.com/cds-snc/ai-answers/commit/a4d01f495e7f1cae0e270b157cfc9e3dfc82f85b))
+* is_GC for canada post question ([daf33b3](https://github.com/cds-snc/ai-answers/commit/daf33b325d92eec61055fc6f5e2a7879254ef8d0))
+* reduce length of outputs for downloads ([5877fbd](https://github.com/cds-snc/ai-answers/commit/5877fbd7d1a8e0ea73436a04780c9a13402a3964))
+
+
+### Miscellaneous Chores
+
+* update search agent prompt file for consistency and clarity ([6dbe07d](https://github.com/cds-snc/ai-answers/commit/6dbe07ddbdc52e81291985e0ca236a67a7f2a720))
+
 ## [1.30.0](https://github.com/cds-snc/ai-answers/compare/v1.29.9...v1.30.0) (2025-08-26)
 
 
