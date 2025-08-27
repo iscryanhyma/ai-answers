@@ -123,7 +123,7 @@ const ContextService = {
     try {
       await LoggingService.info(
         chatId,
-        `Context Service: Analyzing question: page lang: ${lang}: ${JSON.stringify(question)}`
+        `Context Service: Analyzing question: page lang: ${lang}`
       );
       const searchResults = await ContextService.contextSearch(
         question,

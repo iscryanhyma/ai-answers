@@ -5,68 +5,13 @@ import { urlToSearch } from '../utils/urlToSearch.js';
 import RedactionService from '../services/RedactionService.js';
 import LoggingService from '../services/ClientLoggingService.js';
 
-import { RedactionError, ShortQueryValidation, WorkflowStatus } from '../services/ChatWorkflowService.js';
+import ChatWorkflowService, { RedactionError, ShortQueryValidation, WorkflowStatus } from '../services/ChatWorkflowService.js';
 
 export class DefaultWorkflow {
   constructor() { }
 
   sendStatusUpdate(onStatusUpdate, status) {
-    const displayableStatuses = [
-      WorkflowStatus.MODERATING_QUESTION,
-      WorkflowStatus.SEARCHING,
-      WorkflowStatus.GENERATING_ANSWER,
-      WorkflowStatus.VERIFYING_CITATION,
-      WorkflowStatus.MODERATING_ANSWER,
-      WorkflowStatus.ERROR,
-      WorkflowStatus.NEED_CLARIFICATION
-    ];
-    if (onStatusUpdate && displayableStatuses.includes(status)) {
-      onStatusUpdate(status);
-    }
-  }
-
-  countWords(text) {
-    if (!text || typeof text !== 'string') return 0;
-    const words = text.trim().split(/\s+/);
-    return Math.min(words.length, 4);
-  }
-
-  isShortQuery(wordCount) {
-    return wordCount <= 2;
-  }
-
-  hasAnyLongUserMessage(conversationHistory) {
-    return conversationHistory.some(m => m.sender === 'user' && !m.error && this.countWords(m.text) > 2);
-  }
-
-  validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF) {
-    const wordCount = this.countWords(userMessage);
-    if (!this.hasAnyLongUserMessage(conversationHistory) && this.isShortQuery(wordCount)) {
-      const searchUrl = urlToSearch.generateFallbackSearchUrl(lang, userMessage, department, translationF);
-      throw new ShortQueryValidation('Short query detected', userMessage, searchUrl.fallbackUrl);
-    }
-  }
-
-  async processRedaction(userMessage, lang) {
-    await RedactionService.ensureInitialized(lang);
-    const { redactedText, redactedItems } = RedactionService.redactText(userMessage, lang);
-    const hasBlockedContent = redactedText.includes('#') || redactedText.includes('XXX');
-    if (hasBlockedContent) {
-      throw new RedactionError('Blocked content detected', redactedText, redactedItems);
-    }
-  }
-
-  async verifyCitation(originalCitationUrl, lang, redactedText, selectedDepartment, t, chatId = null) {
-    const validationResult = await urlToSearch.validateAndCheckUrl(
-      originalCitationUrl,
-      lang,
-      redactedText,
-      selectedDepartment,
-      t,
-      chatId
-    );
-    await LoggingService.info(chatId, 'Validated URL:', validationResult);
-    return validationResult;
+    ChatWorkflowService.sendStatusUpdate(onStatusUpdate, status);
   }
 
   async processResponse(
@@ -83,13 +28,12 @@ export class DefaultWorkflow {
     searchProvider
   ) {
     const startTime = Date.now();
-    this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.MODERATING_QUESTION);
+    ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.MODERATING_QUESTION);
 
-    this.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
+    ChatWorkflowService.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
-    await this.processRedaction(userMessage, lang);
+    await ChatWorkflowService.processRedaction(userMessage, lang);
     await LoggingService.info(chatId, 'Starting DefaultWorkflow with data:', {
-      userMessage,
       lang,
       department,
       referringUrl,
@@ -137,7 +81,7 @@ export class DefaultWorkflow {
 
     if (answer.answerType === 'normal') {
       this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.VERIFYING_CITATION);
-      const citationResult = await this.verifyCitation(
+      const citationResult = await ChatWorkflowService.verifyCitation(
         answer.citationUrl,
         lang,
         userMessage,
