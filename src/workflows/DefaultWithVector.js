@@ -1,29 +1,14 @@
 import ContextService from '../services/ContextService.js';
 import AnswerService from '../services/AnswerService.js';
 import DataStoreService from '../services/DataStoreService.js';
-import { urlToSearch } from '../utils/urlToSearch.js';
-import RedactionService from '../services/RedactionService.js';
 import LoggingService from '../services/ClientLoggingService.js';
 import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from '../services/AuthService.js';
 
-import ChatWorkflowService, { RedactionError, ShortQueryValidation, WorkflowStatus } from '../services/ChatWorkflowService.js';
+import ChatWorkflowService, { WorkflowStatus } from '../services/ChatWorkflowService.js';
 
 export class DefaultWithVector {
   constructor() { }
-
-  sendStatusUpdate(onStatusUpdate, status) {
-    ChatWorkflowService.sendStatusUpdate(onStatusUpdate, status);
-  }
-
-  async processRedaction(userMessage, lang) {
-    await RedactionService.ensureInitialized(lang);
-    const { redactedText, redactedItems } = RedactionService.redactText(userMessage, lang);
-    const hasBlockedContent = redactedText.includes('#') || redactedText.includes('XXX');
-    if (hasBlockedContent) {
-      throw new RedactionError('Blocked content detected', redactedText, redactedItems);
-    }
-  }
 
   // Query the chat-similar-answer endpoint and return a short-circuit
   // response object if an answer is available. Returns null to continue
@@ -41,7 +26,7 @@ export class DefaultWithVector {
           await LoggingService.info(chatId, 'chat-similar-answer returned, short-circuiting workflow', {
             similar: similarJson
           });
-          this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
+          ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
           // Build an answer object that matches the UI's expected shape so
           // the message content is displayed. Prefer `paragraphs` (rendered
           // first), but also include `sentences` and `content` for safety.
@@ -96,7 +81,6 @@ export class DefaultWithVector {
     const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, onStatusUpdate, selectedAI);
     if (similarShortCircuit) return similarShortCircuit;
     await LoggingService.info(chatId, 'Starting DefaultWithVector with data:', {
-      userMessage,
       lang,
       department,
       referringUrl,
@@ -126,7 +110,7 @@ export class DefaultWithVector {
     }
     await LoggingService.info(chatId, 'Derived context:', { context });
 
-    this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
+  ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
 
     const answer = await AnswerService.sendMessage(
       selectedAI,
@@ -143,7 +127,7 @@ export class DefaultWithVector {
       confidenceRating = null;
 
     if (answer.answerType === 'normal') {
-      this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.VERIFYING_CITATION);
+  ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.VERIFYING_CITATION);
       const citationResult = await ChatWorkflowService.verifyCitation(
         answer.citationUrl,
         lang,
@@ -162,7 +146,7 @@ export class DefaultWithVector {
     }
 
     if (answer.answerType && answer.answerType.includes('question')) {
-      this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.NEED_CLARIFICATION);
+  ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.NEED_CLARIFICATION);
     }
 
     const endTime = Date.now();

@@ -230,8 +230,8 @@ const createContextAgent = async (agentType, chatId = 'system') => {
   return agent;
 };
 
-// New: createSearchAgent, identical to createContextAgent but uses 4o-mini for openai and azure
-const createSearchAgent = async (agentType, chatId = 'system') => {
+
+const createQueryAndPIIAgent = async (agentType, chatId = 'system') => {
   let llm;
   switch (agentType) {
     case 'openai': {
@@ -295,4 +295,4 @@ const getAgent = (agents, selectedAgent) => {
   }
 };
 
-export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createDirectOpenAIClient, createDirectAzureOpenAIClient, createSearchAgent };
+export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createDirectOpenAIClient, createDirectAzureOpenAIClient, createQueryAndPIIAgent  };

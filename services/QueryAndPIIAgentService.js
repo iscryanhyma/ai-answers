@@ -1,10 +1,10 @@
-import { createSearchAgent } from '../agents/AgentService.js';
-import { PROMPT } from '../agents/prompts/searchAgentPrompt.js';
+import { createQueryAndPIIAgent } from '../agents/AgentService.js';
+import { PROMPT } from '../agents/prompts/queryAndPIIAgentPrompt.js';
 
-const invokeSearchAgent = async (agentType, request) => {
+const invokeQueryAndPIIAgent = async (agentType, request) => {
     try {
         const { chatId, question, referringUrl = '' } = request;
-        const searchAgent = await createSearchAgent(agentType, chatId);
+        const searchAgent = await createQueryAndPIIAgent(agentType, chatId);
 
         const messages = [
             {
@@ -63,4 +63,4 @@ const invokeSearchAgent = async (agentType, request) => {
     }
 };
 
-export { invokeSearchAgent };
+export { invokeQueryAndPIIAgent };
