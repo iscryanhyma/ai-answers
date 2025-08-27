@@ -33,9 +33,31 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [textareaKey, setTextareaKey] = useState(0);
-  const [selectedAI, setSelectedAI] = useState('azure'); // comment to cause change
-  const [selectedSearch, setSelectedSearch] = useState('google'); 
+  
   const [showFeedback, setShowFeedback] = useState(false);
+  // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
+  const storageKey = (k) => `aiAnswers.${k}`;
+  const [selectedAI, setSelectedAI] = useState(() => {
+    try {
+      return localStorage.getItem(storageKey('selectedAI')) || 'azure';
+    } catch (e) {
+      return 'azure';
+    }
+  }); // comment to cause change
+  const [selectedSearch, setSelectedSearch] = useState(() => {
+    try {
+      return localStorage.getItem(storageKey('selectedSearch')) || 'google';
+    } catch (e) {
+      return 'google';
+    }
+  }); 
+  const [workflow, setWorkflow] = useState(() => {
+    try {
+      return localStorage.getItem(storageKey('workflow')) || 'Default';
+    } catch (e) {
+      return 'Default';
+    }
+  });
   const [referringUrl, setReferringUrl] = useState(pageUrl || '');
   const [selectedDepartment, setSelectedDepartment] = useState(urlDepartment || '');
   const [turnCount, setTurnCount] = useState(0);
@@ -162,6 +184,36 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     console.log('Search toggled to:', e.target.value);
   };
 
+  // Persist selection changes to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey('selectedAI'), selectedAI);
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [selectedAI]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey('selectedSearch'), selectedSearch);
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [selectedSearch]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey('workflow'), workflow);
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [workflow]);
+
+  const handleWorkflowChange = (e) => {
+    setWorkflow(e.target.value);
+    console.log('Workflow changed to:', e.target.value);
+  };
+
   const clearInput = useCallback(() => {
     setInputText('');
     setTextareaKey(prevKey => prevKey + 1);
@@ -235,7 +287,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         }
       ]);
       try {
-        const aiMessageId = messageIdCounter.current++;
+  const aiMessageId = messageIdCounter.current++;
   const interaction = await ChatWorkflowService.processResponse(
           chatId,
           userMessage,
@@ -245,9 +297,10 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           selectedDepartment,
           referringUrl,
           selectedAI,
-          t,
-          updateStatusWithTimer,  // Pass our new status handler
-          selectedSearch  // Add this parameter
+    t,
+    workflow,
+    updateStatusWithTimer,  // Pass our new status handler
+    selectedSearch  // Add this parameter
         );
         clearInput();
         
@@ -328,7 +381,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     inputText,
     referringUrl,
     selectedAI,
-    selectedSearch,  // Add this dependency
+  selectedSearch,  // Add this dependency
+  workflow,
     lang,
     t,
     clearInput,
@@ -416,6 +470,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         handleReload={handleReload}
         handleAIToggle={handleAIToggle}
         handleSearchToggle={handleSearchToggle} // Add this line
+  workflow={workflow}
+  handleWorkflowChange={handleWorkflowChange}
         handleReferringUrlChange={handleReferringUrlChange}
         formatAIResponse={formatAIResponse}
         selectedAI={selectedAI}

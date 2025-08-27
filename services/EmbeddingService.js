@@ -89,6 +89,21 @@ class EmbeddingService {
       .trim();
   }
 
+  /**
+   * Format an array of question strings into the labelled form used for
+   * questionsEmbedding (e.g. "Question 1: ...", "Question 2: ...").
+   * Returns an array of formatted strings in the same order.
+   * @param {string[]} questions
+   * @returns {string[]}
+   */
+  formatQuestionsForEmbedding(questions = []) {
+    if (!Array.isArray(questions)) return [];
+    return questions.map((q, i) => {
+      const cleaned = this.cleanTextForEmbedding(String(q || ''));
+      return `Question ${i + 1}: ${cleaned}`.trim();
+    }).filter(s => s && s.length > 0);
+  }
+
   async createEmbedding(interaction, provider = "openai", modelName = null) {
     try {
       const populatedInteraction = await interaction.populate(

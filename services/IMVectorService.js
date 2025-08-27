@@ -30,6 +30,7 @@ class IMVectorService {
    */
   constructor({ filterQuery = {}, preCheck = false } = {}) {
     this.qaDB = new VectorDB();
+  this.questionsDB = new VectorDB();
     this.sentenceDB = new VectorDB();
     this.isInitialized = false;
     this.initializingPromise = null;
@@ -47,8 +48,9 @@ class IMVectorService {
       sentenceSearches: 0,
       totalSearchTime: 0,
       lastInitTime: null,
-      embeddings: 0,
-      sentences: 0,
+  embeddings: 0,
+  questions: 0,
+  sentences: 0,
       vectorMemoryUsage: {},
       initDurationMs: 0,
     };
@@ -72,7 +74,7 @@ class IMVectorService {
         ...this.filterQuery,
       };
       const qaDocs = await Embedding.find(qaQuery)
-        .select('_id interactionId questionsAnswerEmbedding createdAt')
+        .select('_id interactionId questionsAnswerEmbedding questionsEmbedding createdAt')
         .lean();
 
       if (!qaDocs.length) {
@@ -118,6 +120,19 @@ class IMVectorService {
         });
       }
 
+      // Also populate questions-only index when available
+      for (const doc of qaDocsWithEF) {
+        if (Array.isArray(doc.questionsEmbedding) && doc.questionsEmbedding.length) {
+          const qid = `${doc._id.toString()}:q`;
+          const qvec = toPlainNumberArray(doc.questionsEmbedding);
+          this.questionsDB.add({ id: qid, embedding: qvec });
+          this.qaMeta.set(qid, {
+            interactionId: doc.interactionId?.toString() || null,
+            expertFeedbackId: interactionToEF.get(doc.interactionId?.toString() || '') || null,
+          });
+        }
+      }
+
       // ----- Load Sentence docs (SentenceEmbedding) -----
       const sentenceDocs = await SentenceEmbedding.find({
         parentEmbeddingId: { $in: qaDocsWithEF.map(d => d._id) },
@@ -150,21 +165,24 @@ class IMVectorService {
       }
 
       // stats
-      this.stats.embeddings = qaDocs.length;
-      this.stats.sentences = sentenceDocs.length;
+  // counts reflect what was loaded into the in-memory indexes
+  this.stats.embeddings = qaDocsWithEF.length;
+  this.stats.questions = qaDocsWithEF.filter(d => Array.isArray(d.questionsEmbedding) && d.questionsEmbedding.length).length;
+  this.stats.sentences = sentenceDocs.length;
       this.stats.lastInitTime = new Date();
       this.stats.initDurationMs = Date.now() - t0;
 
       // quick memory usage estimate (optional)
       this._calculateVectorMemoryUsage(
-        qaDocs[0]?.questionsAnswerEmbedding?.length || 0,
+        qaDocsWithEF[0]?.questionsAnswerEmbedding?.length || 0,
+        qaDocsWithEF[0]?.questionsEmbedding?.length || 0,
         sentenceDocs[0]?.embedding?.length || 0
       );
 
       this.isInitialized = true;
       this.initializingPromise = null;
       ServerLoggingService.info(
-        `IMVectorService initialized: ${this.stats.embeddings} QA, ${this.stats.sentences} sentences. Init took ${this.stats.initDurationMs}ms.`,
+        `IMVectorService initialized: ${this.stats.embeddings} QA, ${this.stats.questions} questions, ${this.stats.sentences} sentences. Init took ${this.stats.initDurationMs}ms.`,
         'vector-service'
       );
     })();
@@ -173,16 +191,24 @@ class IMVectorService {
   }
 
   _calculateVectorMemoryUsage(qaDim, sentDim) {
-    const qaVectorMemory = this.stats.embeddings * qaDim * 8;     // 8 bytes/float
-    const sentenceVectorMemory = this.stats.sentences * sentDim * 8;
+  // qaDim: dimension of QA (questionsAnswerEmbedding)
+  // questionDim: dimension of questions-only embeddings
+  // sentDim: dimension of sentence embeddings
+  const questionDim = arguments.length >= 2 ? arguments[1] : 0;
+  const sentDimArg = arguments.length >= 3 ? arguments[2] : sentDim;
+
+  const qaVectorMemory = this.stats.embeddings * qaDim * 8;     // 8 bytes/float
+  const questionVectorMemory = (this.stats.questions || 0) * questionDim * 8;
+  const sentenceVectorMemory = this.stats.sentences * sentDimArg * 8;
     const metadataMemory =
       [...this.qaMeta.values(), ...this.sentMeta.values()]
         .reduce((sum, v) => sum + Buffer.byteLength(JSON.stringify(v), 'utf8'), 0);
 
-    const total = qaVectorMemory + sentenceVectorMemory + metadataMemory;
+    const total = qaVectorMemory + questionVectorMemory + sentenceVectorMemory + metadataMemory;
     this.stats.vectorMemoryUsage = {
       total: `${(total / 1024 / 1024).toFixed(2)} MB`,
       qaVectors: `${(qaVectorMemory / 1024 / 1024).toFixed(2)} MB`,
+      questionVectors: `${(questionVectorMemory / 1024 / 1024).toFixed(2)} MB`,
       sentenceVectors: `${(sentenceVectorMemory / 1024 / 1024).toFixed(2)} MB`,
       metadata: `${(metadataMemory / 1024 / 1024).toFixed(2)} MB`,
     };
@@ -223,7 +249,8 @@ class IMVectorService {
   /**
    * Optional: allow appending vectors at runtime (kept for compatibility)
    */
-  addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, createdAt, questionsAnswerEmbedding, sentenceEmbeddings }) {
+  addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, createdAt, questionsAnswerEmbedding, questionsEmbedding, sentenceEmbeddings }) {
+    // Add QA (questions+answer) embedding
     if (questionsAnswerEmbedding && expertFeedbackId) {
       const qaId = `${interactionId || this.stats.embeddings}:${Date.now()}`; // unique-enough
       const vec = toPlainNumberArray(questionsAnswerEmbedding);
@@ -233,6 +260,18 @@ class IMVectorService {
         expertFeedbackId: expertFeedbackId?.toString() || null,
       });
       this.stats.embeddings++;
+    }
+
+    // Add question-only embedding if provided
+    if (Array.isArray(questionsEmbedding) && questionsEmbedding.length && expertFeedbackId) {
+      const qid = `${interactionId || this.stats.embeddings}:q:${Date.now()}`;
+      const qvec = toPlainNumberArray(questionsEmbedding);
+      this.questionsDB.add({ id: qid, embedding: qvec });
+      this.qaMeta.set(qid, {
+        interactionId: interactionId?.toString() || null,
+        expertFeedbackId: expertFeedbackId?.toString() || null,
+      });
+      this.stats.questions = (this.stats.questions || 0) + 1;
     }
 
     if (Array.isArray(sentenceEmbeddings) && expertFeedbackId) {
@@ -316,11 +355,64 @@ class IMVectorService {
     return out;
   }
 
+  /**
+   * Match an array of plain question strings against the in-memory QA index.
+   * Returns an array where each entry corresponds to the top-k neighbors for
+   * the respective question.
+   * @param {string[]} questions
+   * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
+   */
+  async matchQuestions(questions = [], opts = {}) {
+    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100 } = opts;
+    if (!Array.isArray(questions) || questions.length === 0) return [];
+
+    // Ensure vectors are loaded
+    if (!this.isInitialized) await this.initialize();
+
+    // Use EmbeddingService to format and embed
+    const EmbeddingService = (await import('./EmbeddingService.js')).default;
+    const formatted = EmbeddingService.formatQuestionsForEmbedding(questions);
+    if (!formatted.length) return [];
+
+    const client = EmbeddingService.createEmbeddingClient(provider, modelName);
+    if (!client) throw new Error('Failed to create embedding client');
+
+    const embeddings = await client.embedDocuments(formatted);
+
+    const resultsPerQuestion = [];
+    for (const emb of embeddings) {
+  // Prefer questionsDB (questions-only embeddings) if populated, else fall back to qaDB
+  const searchDb = (this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0) ? this.questionsDB : this.qaDB;
+  let results = await searchDb.query(emb, k * 2);
+      results = results.sort((a, b) => b.similarity - a.similarity);
+      const out = [];
+      for (const r of results) {
+        const id = r.document.id;
+        const meta = this.qaMeta.get(id) || {};
+        const sim = r.similarity;
+        if (threshold !== null && sim < threshold) break;
+  const expertFeedbackId = meta.expertFeedbackId || null;
+  out.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
+        if (out.length >= k * 2) break; // we've already limited earlier, keep enough for promotion
+      }
+      // Promote top expert-feedback-backed result if present
+      const withEF = out.find(s => s.expertFeedbackId);
+      if (withEF) {
+        const rest = out.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
+        resultsPerQuestion.push([withEF, ...rest]);
+      } else {
+        resultsPerQuestion.push(out.slice(0, k));
+      }
+    }
+    return resultsPerQuestion;
+  }
+
   getStats() {
-    const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime, embeddings, sentences, initDurationMs } = this.stats;
+    const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime, embeddings, questions, sentences, initDurationMs } = this.stats;
     return {
       isInitialized: this.isInitialized,
       embeddings,
+      questions,
       sentences,
       searches,
       qaSearches,

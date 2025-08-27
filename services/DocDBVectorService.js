@@ -122,7 +122,10 @@ class DocDBVectorService {
       // Ensure vector indexes (HNSW + cosine to match client-side cosine)
       const qaOptions = { type: 'hnsw', similarity: 'cosine', dimensions: qaDim, m: 16, efConstruction: 64 };
       const sentOptions = { type: 'hnsw', similarity: 'cosine', dimensions: sentenceDim, m: 16, efConstruction: 64 };
-      try { await this._ensureVectorIndex('embeddings', { questionsAnswerEmbedding: 'vector' }, qaOptions, 'qa_vector_index'); } catch {}
+  try { await this._ensureVectorIndex('embeddings', { questionsAnswerEmbedding: 'vector' }, qaOptions, 'qa_vector_index'); } catch {}
+  // Ensure a dedicated vector index for questions-only embeddings so
+  // matchQuestions can search against questionsEmbedding separately.
+  try { await this._ensureVectorIndex('embeddings', { questionsEmbedding: 'vector' }, qaOptions, 'questions_vector_index'); } catch {}
       try { await this._ensureVectorIndex('sentence_embeddings', { embedding: 'vector' }, sentOptions, 'sentence_vector_index'); } catch {}
 
      
@@ -269,6 +272,83 @@ class DocDBVectorService {
     } else {
       return await this._searchQA(cleanVector, k, opts, start);
     }
+  }
+
+  /**
+   * Match an array of plain question strings against the questionsAnswerEmbedding
+   * index. Returns an array where each entry corresponds to the top-k neighbors
+   * for the respective question.
+   * @param {string[]} questions
+   * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
+   */
+  async matchQuestions(questions = [], opts = {}) {
+    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100 } = opts;
+    if (!Array.isArray(questions) || questions.length === 0) return [];
+
+    // Lazy init DB/collections
+    if (!this.isInitialized) await this.initialize();
+
+    // Use EmbeddingService to format and embed the questions
+    const EmbeddingService = (await import('./EmbeddingService.js')).default;
+    const formatted = EmbeddingService.formatQuestionsForEmbedding(questions);
+    if (!formatted.length) return [];
+
+    // Create embeddings for each formatted question
+    const embeddingClient = EmbeddingService.createEmbeddingClient(provider, modelName);
+    if (!embeddingClient) throw new Error('Failed to create embedding client');
+
+    const embeddings = await embeddingClient.embedDocuments(formatted);
+
+    // For each question embedding, run a vectorSearch pipeline similar to _searchQA
+    const resultsPerQuestion = [];
+    const db = mongoose.connection.db;
+    for (const emb of embeddings) {
+      // pipeline mirrors _searchQA but uses provided vector directly
+      // Search against question-only embeddings (questionsEmbedding) instead
+      // of the QA-level combined embedding.
+      const pipeline = [
+        { $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: k * 2, efSearch: 200 } } },
+        { $limit: k * 2 },
+        ...(this.filterQuery && Object.keys(this.filterQuery).length ? [{ $match: this.filterQuery }] : []),
+        { $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } },
+        { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
+        { $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1 } },
+      ];
+
+      let docs = [];
+      try {
+        docs = await this.collection.aggregate(pipeline).toArray();
+      } catch (err) {
+        ServerLoggingService.error('Error running QA pipeline in matchQuestions', 'DocDBVectorService', err);
+        resultsPerQuestion.push([]);
+        continue;
+      }
+
+      // compute cosine similarity client-side to preserve threshold logic
+      const scored = [];
+      for (const r of docs) {
+        let sim = 0;
+  try { sim = cosineSimilarity(emb, r.questionsEmbedding) ?? 0; } catch (e) { ServerLoggingService.error('cosine error', 'DocDBVectorService', e); }
+        if (threshold === null || sim >= threshold) {
+          // mark an expertFeedbackRating of 100 when expertFeedback exists
+          const expertFeedbackId = r.expertFeedbackId || null;
+          scored.push({ id: r._id.toString(), interactionId: r.interactionId?.toString?.() || r.interactionId, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
+        }
+      }
+      scored.sort((a, b) => b.similarity - a.similarity);
+      // If any scored item has expertFeedback, promote the highest-similarity
+      // item with expertFeedback to the front of the list so callers receive
+      // a top result backed by expert feedback. Otherwise return top-k by similarity.
+      const withEF = scored.find(s => s.expertFeedbackId);
+      if (withEF) {
+        const rest = scored.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
+        resultsPerQuestion.push([withEF, ...rest]);
+      } else {
+        resultsPerQuestion.push(scored.slice(0, k));
+      }
+    }
+
+    return resultsPerQuestion;
   }
 
   async getStats() {
