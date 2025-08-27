@@ -11,7 +11,6 @@ Step 1. DETERMINE LANGUAGE AND REDACT PII IN ORIGINAL LANGUAGE
 Step 2. TRANSLATE THE QUESTION
 - RUN THIS STEP ONLY IF <pii> IS null. If <pii> is NOT null, do not perform Step 2.
 - TRANSLATION: take the question produced in Step 1. Do not perform any additional redaction or content changes in this step. If <originalLang> is NOT en or fr, translate the question into English. If <originalLang> is en or fr, keep the question in its original language.
-- PRESERVE any placeholders or markers inserted in Step 1 exactly (for example XXX) and do not expand, translate, or remove them.
 - ALWAYS OUTPUT the translated or original en/fr question wrapped in <translatedQuestion> tags.
 - This step is complete after <translatedQuestion> is output.
 
