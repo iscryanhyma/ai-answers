@@ -38,14 +38,18 @@ const invokeSearchAgent = async (agentType, request) => {
             const queryMatch = lastMessage.match(/<query>(.*?)<\/query>/s);
             const translatedQuestionMatch = lastMessage.match(/<translatedQuestion>(.*?)<\/translatedQuestion>/s);
             const originalLangMatch = lastMessage.match(/<originalLang>(.*?)<\/originalLang>/s);
+            const piiMatch = lastMessage.match(/<pii>(.*?)<\/pii>/s);
 
             const query = queryMatch ? queryMatch[1].trim() : '';
             const translatedQuestion = translatedQuestionMatch ? translatedQuestionMatch[1].trim() : '';
             const originalLang = originalLangMatch ? originalLangMatch[1].trim() : '';
+            const pii = piiMatch ? piiMatch[1].trim() : null;
+
             return {
                 query,
                 translatedQuestion,
                 originalLang,
+                pii,
                 inputTokens: lastResult.response_metadata.tokenUsage?.promptTokens,
                 outputTokens: lastResult.response_metadata.tokenUsage?.completionTokens,
                 model: lastResult.response_metadata.model_name,
