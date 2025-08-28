@@ -1,3 +1,5 @@
+// DEPRECATED: Use services/PIIAgentService.js and services/QueryRewriteAgentService.js
+// This combined agent is kept temporarily for backward compatibility.
 import { createQueryAndPIIAgent } from '../agents/AgentService.js';
 import { PROMPT } from '../agents/prompts/queryAndPIIAgentPrompt.js';
 

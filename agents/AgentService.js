@@ -295,4 +295,77 @@ const getAgent = (agents, selectedAgent) => {
   }
 };
 
-export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createDirectOpenAIClient, createDirectAzureOpenAIClient, createQueryAndPIIAgent  };
+// New: lightweight agents for PII-only and Query Rewrite
+const createPIIAgent = async (agentType, chatId = 'system') => {
+  let llm;
+  switch (agentType) {
+    case 'openai': {
+      const openaiConfig = getModelConfig('openai', 'gpt-4.1-mini');
+      llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: openaiConfig.name,
+        temperature: openaiConfig.temperature,
+        maxTokens: openaiConfig.maxTokens,
+        timeout: openaiConfig.timeoutMs,
+      });
+      break;
+    }
+    case 'azure': {
+      const azureConfig = getModelConfig('azure', 'openai-gpt41-mini');
+      llm = new AzureChatOpenAI({
+        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        azureOpenAIApiDeploymentName: azureConfig.name,
+        temperature: azureConfig.temperature,
+        maxTokens: azureConfig.maxTokens,
+        timeout: azureConfig.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for PII: ${agentType}`);
+  }
+  const callbacks = [new ToolTrackingHandler(chatId)];
+  const agent = await createReactAgent({ llm, tools: [] });
+  agent.callbacks = callbacks;
+  return agent;
+};
+
+const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
+  let llm;
+  switch (agentType) {
+    case 'openai': {
+      const openaiConfig = getModelConfig('openai', 'gpt-4.1-mini');
+      llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: openaiConfig.name,
+        temperature: openaiConfig.temperature,
+        maxTokens: openaiConfig.maxTokens,
+        timeout: openaiConfig.timeoutMs,
+      });
+      break;
+    }
+    case 'azure': {
+      const azureConfig = getModelConfig('azure', 'openai-gpt41-mini');
+      llm = new AzureChatOpenAI({
+        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        azureOpenAIApiDeploymentName: azureConfig.name,
+        temperature: azureConfig.temperature,
+        maxTokens: azureConfig.maxTokens,
+        timeout: azureConfig.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for rewrite: ${agentType}`);
+  }
+  const callbacks = [new ToolTrackingHandler(chatId)];
+  const agent = await createReactAgent({ llm, tools: [] });
+  agent.callbacks = callbacks;
+  return agent;
+};
+
+export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createDirectOpenAIClient, createDirectAzureOpenAIClient, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent };
