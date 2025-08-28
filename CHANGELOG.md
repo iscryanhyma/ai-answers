@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.32.0](https://github.com/cds-snc/ai-answers/compare/v1.31.0...v1.32.0) (2025-08-28)
+
+
+### Features
+
+* add workflow handling to batch processing and UI components ([1932c38](https://github.com/cds-snc/ai-answers/commit/1932c38f952f296d675e3ce0ad62e8306658a2de))
+* add workflow handling to batch processing and UI components ([cd1719a](https://github.com/cds-snc/ai-answers/commit/cd1719ac78d35f0e0bd6c426ed0ee8b68ec16440))
+* increase default concurrency for batch processing to improve performance ([b5dcfbd](https://github.com/cds-snc/ai-answers/commit/b5dcfbdf3cc7dccf394f924bec6da7c4705c28d3))
+
 ## [1.31.0](https://github.com/cds-snc/ai-answers/compare/v1.30.0...v1.31.0) (2025-08-27)
 
 
