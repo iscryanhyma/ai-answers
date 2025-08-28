@@ -58,8 +58,9 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
         },
       },
       { title: t('batch.list.columns.createdDate'), data: 'createdAt' },
-      { title: t('batch.list.columns.provider'), data: 'aiProvider' },
-      { title: t('batch.list.columns.type'), data: 'type' },
+  { title: t('batch.list.columns.provider'), data: 'aiProvider' },
+  { title: t('batch.list.columns.workflow') || 'Workflow', data: 'workflow' },
+  { title: t('batch.list.columns.type'), data: 'type' },
       { title: t('batch.list.columns.status'), data: 'status' },
       { title: t('batch.list.columns.totals') || 'Totals', data: null },
       {
@@ -101,7 +102,8 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
   // Handle button actions mapped to explicit handlers
   const handleExport = (batchId, type) => onExport && onExport(batchId, type);
   const handleDelete = (batchId) => onDelete && onDelete(batchId);
-  const handleProcess = (batchId, provider) => onProcess && onProcess(batchId, provider);
+  // Pass workflow through when invoking onProcess so restarts can reuse the saved workflow
+  const handleProcess = (batchId, provider, workflow) => onProcess && onProcess(batchId, provider, workflow);
   const handleCancel = (batchId, provider) => onCancel && onCancel(batchId, provider);
 
   // Filter batches based on batchStatus and search text (use normalized status)
@@ -207,7 +209,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                           if (isLocallyProcessing) return;
                           // Immediately mark clicked so the button disables in the UI before any async work
                           setClicked(true);
-                          handleProcess(_id, aiProvider);
+                          handleProcess(_id, aiProvider, data.workflow || data?.workflow || 'Default');
                         }}
                         disabled={isLocallyProcessing || clicked}
                       >
@@ -236,11 +238,11 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <GcdsButton
                       size="small"
-                      onClick={() => {
+                        onClick={() => {
                         if (processingBatches.includes(String(_id))) return;
                         // Immediately set clicked so button disables without waiting for parent state
                         setClicked(true);
-                        handleProcess(_id, aiProvider);
+                          handleProcess(_id, aiProvider, data.workflow || data?.workflow || 'Default');
                       }}
                       disabled={processingBatches.includes(String(_id)) || clicked}
                     >
@@ -268,7 +270,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                     <GcdsButton
                       size="small"
                       onClick={() => {
-                        handleProcess(_id, aiProvider);
+                        handleProcess(_id, aiProvider, data.workflow || data?.workflow || 'Default');
                         setClicked(true);
                       }}
                     >

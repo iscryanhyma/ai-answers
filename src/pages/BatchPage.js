@@ -47,7 +47,7 @@ const BatchPage = ({ lang = 'en' }) => {
 
   };
 
-  const onProcess = async (batchId) => {
+  const onProcess = async (batchId, provider, workflowParam) => {
     // Mark locally so the UI immediately hides the Process button
     markProcessing(batchId);
 
@@ -74,8 +74,10 @@ const BatchPage = ({ lang = 'en' }) => {
         selectedAI: persisted?.aiProvider || 'openai',
         lang: persisted?.pageLanguage || language || 'en',
         searchProvider: persisted?.searchProvider || '',
+        // Prefer the workflow explicitly provided by the caller (restart), fall back to the persisted value
+        workflow: workflowParam || persisted?.workflow || 'Default',
         batchId,
-        concurrency: 4, // temporary: increase for concurrency testing
+        concurrency: 8, 
       }).then(async () => {
         try {
           // Preserve batch metadata when updating final status, exclude items and _id
@@ -120,7 +122,7 @@ const BatchPage = ({ lang = 'en' }) => {
 
       <section id="evaluator" className="mb-600">
         <h2 className="mt-400 mb-400">{t('batch.sections.evaluator.title')}</h2>
-  <BatchUpload lang={lang} onBatchSaved={triggerRefresh} />
+        <BatchUpload lang={lang} onBatchSaved={triggerRefresh} />
       </section>
 
       <section id="running-evaluation" className="mb-600">

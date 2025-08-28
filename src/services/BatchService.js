@@ -12,7 +12,7 @@ import { getApiUrl } from '../utils/apiToUrl.js';
  */
 
 const DEFAULT_RETRIES = 2;
-const DEFAULT_CONCURRENCY = 1; // default sequential to avoid provider rate limits
+const DEFAULT_CONCURRENCY = 8; // default sequential to avoid provider rate limits
 
 class BatchService {
   constructor() {
@@ -23,7 +23,7 @@ class BatchService {
    * Start a batch: decide whether to derive context or send batch messages.
    * Returns whatever the underlying service returns (usually an object with batchId).
    */
-  async startBatch({ entries = [], selectedAI = 'openai', selectedLanguage = 'en', batchName = '', selectedSearch = 'google', concurrency = DEFAULT_CONCURRENCY, retries = DEFAULT_RETRIES, onProgress = () => { }, onStatusUpdate = () => { }, abortSignal = null, statsPollingIntervalMs = 5000, batchId = null } = {}) {
+  async startBatch({ entries = [], selectedAI = 'openai', selectedLanguage = 'en', batchName = '', selectedSearch = 'google', workflow = 'Default', concurrency = DEFAULT_CONCURRENCY, retries = DEFAULT_RETRIES, onProgress = () => { }, onStatusUpdate = () => { }, abortSignal = null, statsPollingIntervalMs = 5000, batchId = null } = {}) {
     if (!entries || !entries.length) throw new Error('No entries provided to startBatch');
     if (!batchId) throw new Error('startBatch requires a server-persisted batchId; call persistBatch first');
 
@@ -33,8 +33,9 @@ class BatchService {
       entries,
       batchName: batchName || `client-batch-${Date.now()}`,
       selectedAI,
-      lang: selectedLanguage,
-      searchProvider: selectedSearch,
+  lang: selectedLanguage,
+  searchProvider: selectedSearch,
+  workflow,
       concurrency,
       retries,
       onProgress,
@@ -214,7 +215,8 @@ class BatchService {
     batchName = `client-batch-${Date.now()}`,
     selectedAI = 'openai',
     lang = 'en',
-    searchProvider = '',
+  searchProvider = '',
+  workflow = 'Default',
     batchId = null,
     concurrency = DEFAULT_CONCURRENCY,
     retries = DEFAULT_RETRIES,
@@ -311,9 +313,7 @@ class BatchService {
             try {
               const perItemStatus = (status) => onStatusUpdate({ index: i, status, chatId });
 
-              // Temporary delay to make concurrency visible
-              await this._sleep(2000);
-
+              
               const res = await ChatWorkflowService.processResponse(
                 chatId,
                 question,
@@ -324,6 +324,7 @@ class BatchService {
                 original?.url || original?.URL || original?.referringUrl || original?.REFERRINGURL || '',
                 selectedAI,
                 null, // translationF
+                workflow,
                 perItemStatus,
                 searchProvider
               );

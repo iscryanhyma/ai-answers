@@ -12,13 +12,14 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const [processing, setProcessing] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
-  const [selectedAI, setSelectedAI] = useState('openai');
+  const [selectedAI, setSelectedAI] = useState('azure');
   const [fileUploaded, setFileUploaded] = useState(false);
   const [batchId, setBatchId] = useState(null);
   const [batchStatus, setBatchStatus] = useState(null);
   const [selectedLanguage, setSelectedLanguage] = useState('en');
   const [batchName, setBatchName] = useState('');
   const [selectedSearch, setSelectedSearch] = useState('google');
+  const [selectedWorkflow, setSelectedWorkflow] = useState('Default');
 
   const handleFileChange = (event) => {
     setError(null);
@@ -45,6 +46,10 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
 
   const handleSearchToggle = (e) => {
     setSelectedSearch(e.target.value);
+  };
+
+  const handleWorkflowChange = (e) => {
+    setSelectedWorkflow(e.target.value);
   };
 
   const handleLanguageToggle = (e) => {
@@ -98,6 +103,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           aiProvider: selectedAI,
           pageLanguage: selectedLanguage,
           searchProvider: selectedSearch,
+          workflow: selectedWorkflow,
           type: 'client',
           status: 'uploaded',
           items,
@@ -303,6 +309,25 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                   </div>
                 </div>
               </fieldset>
+            </div>
+
+            <div className="workflow-select mrgn-bttm-20">
+              <div className="mrgn-bttm-10">
+                <label htmlFor="workflow" className="mrgn-bttm-10 display-block">
+                  {t('batch.upload.workflow.label') || 'Workflow'}
+                </label>
+                <select
+                  id="workflow"
+                  name="workflow"
+                  value={selectedWorkflow}
+                  onChange={handleWorkflowChange}
+                  className="chat-border"
+                  style={{ width: 'auto', display: 'inline-block' }}
+                >
+                  <option value="Default">Default</option>
+                  <option value="DefaultWithVector">DefaultWithVector</option>
+                </select>
+              </div>
             </div>
 
             <div className="language-toggle mrgn-bttm-20">

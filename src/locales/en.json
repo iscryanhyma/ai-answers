@@ -229,6 +229,11 @@
         "english": "English",
         "french": "French"
       },
+      "workflow": {
+        "label": "Workflow",
+        "Default": "Default",
+        "DefaultWithVector": "Default with vector"
+      },
       "file": {
         "label": "Select feedback CSV file:",
         "selected": "Selected file:"
@@ -261,6 +266,7 @@
         "createdDate": "Created Date",
         "provider": "Provider",
         "type": "Type",
+  "workflow": "Workflow",
         "status": "Status",
         "batchName": "Name",
         "action": "Action"
