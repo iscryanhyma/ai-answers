@@ -47,7 +47,7 @@ const BatchPage = ({ lang = 'en' }) => {
 
   };
 
-  const onProcess = async (batchId) => {
+  const onProcess = async (batchId, provider, workflowParam) => {
     // Mark locally so the UI immediately hides the Process button
     markProcessing(batchId);
 
@@ -68,12 +68,14 @@ const BatchPage = ({ lang = 'en' }) => {
         console.error('Failed to update batch status to processing:', e);
       }
 
-      BatchService.runBatch({
+    BatchService.runBatch({
         entries,
         batchName: persisted?.name || batchId,
         selectedAI: persisted?.aiProvider || 'openai',
         lang: persisted?.pageLanguage || language || 'en',
-        searchProvider: persisted?.searchProvider || '',
+  searchProvider: persisted?.searchProvider || '',
+  // Prefer the workflow explicitly provided by the caller (restart), fall back to the persisted value
+  workflow: workflowParam || persisted?.workflow || 'Default',
         batchId,
         concurrency: 4, // temporary: increase for concurrency testing
       }).then(async () => {

@@ -229,6 +229,11 @@
         "english": "Anglais",
         "french": "Français"
       },
+      "workflow": {
+        "label": "Flux de travail",
+        "Default": "Par défaut",
+        "DefaultWithVector": "Par défaut avec vecteur"
+      },
       "file": {
         "label": "Sélectionner le fichier CSV de rétroaction :",
         "selected": "Fichier sélectionné :"
@@ -263,6 +268,7 @@
         "createdDate": "Date de création",
         "provider": "Fournisseur",
         "type": "Type",
+  "workflow": "Flux de travail",
         "status": "Statut",
         "action": "Action"
       },

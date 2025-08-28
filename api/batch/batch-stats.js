@@ -75,7 +75,7 @@ async function batchStatsHandler(req, res) {
 
     console.log(`[batch-stats] Counts(agg): total=${total} processed=${processed} failed=${failed} skipped=${skipped}`);
 
-    return res.status(200).json({ batchId: String(batch._id), total, processed, failed, skipped });
+  return res.status(200).json({ batchId: String(batch._id), workflow: batch.workflow || 'Default', total, processed, failed, skipped });
   } catch (err) {
     console.error('Error computing batch stats:', err);
     return res.status(500).json({ message: 'Failed to compute stats', error: err.message });
