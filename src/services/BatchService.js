@@ -12,7 +12,7 @@ import { getApiUrl } from '../utils/apiToUrl.js';
  */
 
 const DEFAULT_RETRIES = 2;
-const DEFAULT_CONCURRENCY = 4; // default sequential to avoid provider rate limits
+const DEFAULT_CONCURRENCY = 8; // default sequential to avoid provider rate limits
 
 class BatchService {
   constructor() {
@@ -313,9 +313,7 @@ class BatchService {
             try {
               const perItemStatus = (status) => onStatusUpdate({ index: i, status, chatId });
 
-              // Temporary delay to make concurrency visible
-              await this._sleep(2000);
-
+              
               const res = await ChatWorkflowService.processResponse(
                 chatId,
                 question,
