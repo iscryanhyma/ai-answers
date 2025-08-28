@@ -79,7 +79,11 @@ export class DefaultWithVector {
 
     await ChatWorkflowService.processRedaction(userMessage, lang);
     const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, onStatusUpdate, selectedAI);
-    if (similarShortCircuit) return similarShortCircuit;
+    if (similarShortCircuit) {
+      // Only run PII check when we are short-circuiting without deriving new context
+      await ChatWorkflowService.checkPIIOnNoContextOrThrow(chatId, userMessage, selectedAI);
+      return similarShortCircuit;
+    }
     await LoggingService.info(chatId, 'Starting DefaultWithVector with data:', {
       lang,
       department,
@@ -90,12 +94,16 @@ export class DefaultWithVector {
     let context = null;
     conversationHistory = conversationHistory.filter((message) => !message.error);
     conversationHistory = conversationHistory.filter((message) => message.sender === 'ai');
-    if (
+    const usedExistingContext = (
       conversationHistory.length > 0 &&
       !conversationHistory[conversationHistory.length - 1].interaction.answer.answerType.includes('question')
-    ) {
+    );
+
+    if (usedExistingContext) {
       const lastMessage = conversationHistory[conversationHistory.length - 1];
       context = lastMessage.interaction.context;
+      // Only run PII check when we did NOT derive new context
+      await ChatWorkflowService.checkPIIOnNoContextOrThrow(chatId, userMessage, selectedAI);
     } else {
       context = await ContextService.deriveContext(
         selectedAI,

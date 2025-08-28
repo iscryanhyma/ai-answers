@@ -1,4 +1,5 @@
 import { urlToSearch } from '../utils/urlToSearch.js';
+import { getApiUrl } from '../utils/apiToUrl.js';
 import RedactionService from './RedactionService.js';
 import LoggingService from './ClientLoggingService.js';
 
@@ -102,6 +103,54 @@ export const ChatWorkflowService = {
       onStatusUpdate,
       searchProvider
     );
+  },
+  checkPIIOnNoContextOrThrow: async (chatId, userMessage, selectedAI) => {
+    try {
+      const url = getApiUrl('chat-pii-check');
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          chatId,
+          agentType: selectedAI,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        await LoggingService.error(
+          chatId,
+          'PII check API error response:',
+          { errorText }
+        );
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      const pii = result && Object.prototype.hasOwnProperty.call(result, 'pii') ? result.pii : null;
+      await LoggingService.info(chatId, 'PII check (no-context path) result:', { pii });
+
+      const isEmptyPIIValue = (v) => {
+        if (v === null || v === undefined) return true;
+        if (typeof v === 'string') {
+          const s = v.trim().toLowerCase();
+          return s === '' || s === 'null';
+        }
+        if (Array.isArray(v)) return v.length === 0;
+        if (typeof v === 'object') return Object.keys(v).length === 0;
+        return false;
+      };
+
+      const piiPresent = !isEmptyPIIValue(pii);
+      if (piiPresent) {
+        // Use pii (redacted text) as redactedText and null for redactedItems to align with ContextService behavior
+        throw new RedactionError('PII detected in user message', pii, null);
+      }
+    } catch (error) {
+      await LoggingService.error(chatId, 'Error during PII check (no-context path):', error);
+      throw error;
+    }
   },
   verifyCitation: async (originalCitationUrl, lang, redactedText, selectedDepartment, t, chatId = null) => {
     const validationResult = await urlToSearch.validateAndCheckUrl(
