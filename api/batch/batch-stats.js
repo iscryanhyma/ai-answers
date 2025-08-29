@@ -13,10 +13,7 @@ async function batchStatsHandler(req, res) {
   try {
     await dbConnect();
 
-    // Resolve the batch document safely. Accept either a Mongo _id or a legacy
-    // `batchId` string. If the provided value looks like a valid ObjectId, use
-    // findById (fast and type-safe). Otherwise fall back to querying the
-    // `batchId` field so legacy ids like "batch-123..." continue to work.
+    
     let batch = null;
     if (mongoose.Types.ObjectId.isValid(batchId)) {
       batch = await Batch.findById(batchId);

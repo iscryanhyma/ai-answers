@@ -1,7 +1,6 @@
 import dbConnect from '../db/db-connect.js';
 import { Batch } from '../../models/batch.js';
 import { BatchItem } from '../../models/batchItem.js';
-import { Chat } from '../../models/chat.js';
 import { authMiddleware, adminMiddleware, withProtection } from '../../middleware/auth.js';
 
 async function batchPersistHandler(req, res) {
@@ -17,16 +16,15 @@ async function batchPersistHandler(req, res) {
     await dbConnect();
 
     // If a batchId is provided, update the existing batch (or upsert when not found).
-    if (batchData.batchId) {
-      console.log(`[batch-persist] updating existing batch ${batchData.batchId}`);
-      // Do not upsert here: updating an existing batch should not create a new batch.
-      // Creating new batches is handled by the creation branch below.
+    if (batchData._id) {
+      console.log(`[batch-persist] updating existing batch ${batchData._id}`);
+     
       const updated = await Batch.findOneAndUpdate(
-        { batchId: batchData.batchId },
+        { _id: batchData._id },
         { $set: batchData },
-        { new: true }
+        { new: true, upsert: true }
       );
-      console.log(`[batch-persist] updated result:`, updated ? { _id: updated._id, batchId: updated.batchId } : null);
+      console.log(`[batch-persist] updated result:`, updated ? { _id: updated._id } : null);
 
       if (!updated) {
         return res.status(404).json({ message: 'Batch not found' });
@@ -36,7 +34,7 @@ async function batchPersistHandler(req, res) {
     }
 
     // No batchId provided: create a new batch and generate a batchId if missing
-    if (!batchData.batchId) {
+    if (!batchData._id) {
       console.log(`[batch-persist] creating new batch (batchId will be set to _id) with ${batchData.items?.length || 0} items`);
       const batch = new Batch(batchData);
       await batch.save();
