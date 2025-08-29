@@ -2,7 +2,8 @@ import { contextSearch as canadaContextSearch } from '../../agents/tools/canadaC
 import { contextSearch as googleContextSearch } from '../../agents/tools/googleContextSearch.js';
 import { exponentialBackoff } from '../../src/utils/backoff.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
-import { invokeQueryAndPIIAgent } from '../../services/QueryAndPIIAgentService.js';
+import { invokePIIAgent } from '../../services/PIIAgentService.js';
+import { invokeQueryRewriteAgent } from '../../services/QueryRewriteAgentService.js';
 
 async function performSearch(query, lang, searchService = 'canadaca', chatId = 'system') {
     const searchFunction = searchService.toLowerCase() === 'google' 
@@ -18,13 +19,10 @@ export default async function handler(req, res) {
         ServerLoggingService.info('Received request to search.', chatId, { searchService, referringUrl });
 
         try {
-            // Call SearchAgentService to get the search query and originalLang, passing referring URL for context
-            const agentResult = await invokeQueryAndPIIAgent(agentType, { chatId, question: message, referringUrl });
-            const searchQuery = agentResult.query;
-            const originalLang = agentResult.originalLang || '';
+            // First: detect PII and language
+            const piiResult = await invokePIIAgent(agentType, { chatId, question: message });
 
-            // If the context/search agent returned PII information, skip external search
-            // and return empty search results merged with the agent result.
+            // If PII present, short-circuit and return empty search results with PII metadata
             const isEmptyPIIValue = (v) => {
                 if (v === null || v === undefined) return true;
                 if (typeof v === 'string') {
@@ -36,18 +34,23 @@ export default async function handler(req, res) {
                 return false;
             };
 
-            const piiPresent = agentResult && ('pii' in agentResult) && !isEmptyPIIValue(agentResult.pii);
+            const piiPresent = piiResult && ('pii' in piiResult) && !isEmptyPIIValue(piiResult.pii);
 
             if (piiPresent) {
-                ServerLoggingService.info('PII present in agentResult; skipping external search and returning agentResult with empty search results.', chatId, { agentResult });
+                ServerLoggingService.info('PII present; skipping external search and returning PII result with empty search results.', chatId, { piiResult });
                 const emptySearchResults = { results: [], items: [], total: 0, searchResults: [] };
                 res.json({
                     ...emptySearchResults,
-                    ...agentResult
+                    ...piiResult
                 });
                 return;
             }
-            ServerLoggingService.info('SearchContextAgent:', chatId, agentResult );
+            
+            // No PII: perform query rewrite (translation + search query)
+            const rewriteResult = await invokeQueryRewriteAgent(agentType, { chatId, question: message, referringUrl });
+            const searchQuery = rewriteResult.query;
+            const originalLang = (rewriteResult.originalLang || '').toString();
+            ServerLoggingService.info('SearchContextAgent rewrite result:', chatId, { originalLang, ...rewriteResult });
             
             // Determine lang
             const lang = originalLang.toLowerCase().includes('fr') ? 'fr' : 'en';
@@ -56,7 +59,9 @@ export default async function handler(req, res) {
             // Merge agentResult values into the response
             res.json({
                 ...searchResults,
-                ...agentResult
+                ...rewriteResult,
+                originalLang,
+                pii: null
             });
         } catch (error) {
             ServerLoggingService.error('Error processing search:', chatId, error);
