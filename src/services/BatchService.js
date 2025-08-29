@@ -33,9 +33,9 @@ class BatchService {
       entries,
       batchName: batchName || `client-batch-${Date.now()}`,
       selectedAI,
-  lang: selectedLanguage,
-  searchProvider: selectedSearch,
-  workflow,
+      lang: selectedLanguage,
+      searchProvider: selectedSearch,
+      workflow,
       concurrency,
       retries,
       onProgress,
@@ -178,24 +178,25 @@ class BatchService {
   // Given an array of batches, fetch their latest statuses from server (mirrors DataStoreService logic)
   async getBatchStatuses(batches) {
     try {
+     
       const statusPromises = batches.map(async (batch) => {
-        if (!batch.status || batch.status !== 'processed') {
+        try {
+          // Always fetch the latest server-side stats for this batch. Use
+          // the document _id which the server expects for `batch-stats`.
           const statusResult = await this.getBatchStatus(batch._id, batch.aiProvider);
-          // If the DB reports not_found, don't attempt a provider cancel from the client.
-          // Client-side cancel should be done via `cancelBatch` which aborts local processing.
           return statusResult;
-        } else {
-          // Keep the shape compatible with getBatchStatus results (which use `batchId`)
-          // by returning an object where `batchId` is the batch's `_id`.
-          return { batchId: batch._id, status: batch.status };
+        } catch (err) {
+          // Preserve the client-side values as a fallback so a single failing
+          // batch doesn't break the whole list rendering.
+          return { batchId: String(batch._id), status: batch.status || 'unknown', stats: batch.stats || {} };
         }
       });
       const statusResults = await Promise.all(statusPromises);
       return batches.map((batch) => {
-        const statusResult = statusResults.find((status) => status.batchId === batch._id);
+        const statusResult = statusResults.find((status) => status && status.batchId === String(batch._id));
         return {
           ...batch,
-          status: statusResult ? statusResult.status : 'Unknown',
+          status: statusResult ? statusResult.status : (batch.status || 'Unknown'),
           stats: statusResult ? statusResult.stats || {} : batch.stats || {},
         };
       });
@@ -215,8 +216,8 @@ class BatchService {
     batchName = `client-batch-${Date.now()}`,
     selectedAI = 'openai',
     lang = 'en',
-  searchProvider = '',
-  workflow = 'Default',
+    searchProvider = '',
+    workflow = 'Default',
     batchId = null,
     concurrency = DEFAULT_CONCURRENCY,
     retries = DEFAULT_RETRIES,
@@ -313,7 +314,7 @@ class BatchService {
             try {
               const perItemStatus = (status) => onStatusUpdate({ index: i, status, chatId });
 
-              
+
               const res = await ChatWorkflowService.processResponse(
                 chatId,
                 question,
