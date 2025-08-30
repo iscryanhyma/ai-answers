@@ -1,9 +1,11 @@
 import { createPIIAgent } from '../agents/AgentService.js';
 import { PROMPT } from '../agents/prompts/piiAgentPrompt.js';
+import ServerLoggingService from './ServerLoggingService.js';
 
 const invokePIIAgent = async (agentType, request) => {
+  const { chatId, question } = request;
   try {
-    const { chatId, question } = request;
+
     const piiAgent = await createPIIAgent(agentType, chatId);
 
     const messages = [
@@ -57,6 +59,7 @@ const invokePIIAgent = async (agentType, request) => {
     const code = (dataErr?.code || err?.code || '').toString().toLowerCase();
     const msg = dataErr?.message || err?.message || '';
 
+
     const contentFilter =
       status === 400 &&
       (
@@ -64,7 +67,7 @@ const invokePIIAgent = async (agentType, request) => {
         code.includes('content_policy') ||
         /response was filtered due to the prompt triggering Azure OpenAI/i.test(msg)
       );
-
+    ServerLoggingService.error("contentFilter", chatId, { contentFilter, status, code, msg });
     if (contentFilter) {
       const usage = err?.response?.data?.usage || {};
       return {
@@ -75,7 +78,7 @@ const invokePIIAgent = async (agentType, request) => {
         model: err?.response?.data?.model ?? null,
       };
     }
-    
+
     throw err;
   }
 };
