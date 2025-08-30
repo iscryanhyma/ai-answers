@@ -51,6 +51,30 @@ const invokePIIAgent = async (agentType, request) => {
       return 'No messages available';
     }
   } catch (error) {
+    // Azure content filter commonly throws 400 with an error message/code.
+    const status = err?.response?.status;
+    const dataErr = err?.response?.data?.error;
+    const code = (dataErr?.code || err?.code || '').toString().toLowerCase();
+    const msg = dataErr?.message || err?.message || '';
+
+    const contentFilter =
+      status === 400 &&
+      (
+        code.includes('content_filter') ||
+        code.includes('content_policy') ||
+        /response was filtered due to the prompt triggering Azure OpenAI/i.test(msg)
+      );
+
+    if (contentFilter) {
+      const usage = err?.response?.data?.usage || {};
+      return {
+        pii: null,
+        blocked: true,
+        inputTokens: usage.prompt_tokens ?? null,
+        outputTokens: usage.completion_tokens ?? null,
+        model: err?.response?.data?.model ?? null,
+      };
+    }
     console.error(`Error with ${agentType} PII agent:`, error);
     throw error;
   }
