@@ -30,7 +30,7 @@ const sendStatusUpdate = (onStatusUpdate, status) => {
     WorkflowStatus.ERROR,
     WorkflowStatus.NEED_CLARIFICATION
   ];
-  
+
   if (displayableStatuses.includes(status)) {
     onStatusUpdate(status);
   }
@@ -129,22 +129,13 @@ export const ChatWorkflowService = {
 
       const result = await response.json();
       const pii = result && Object.prototype.hasOwnProperty.call(result, 'pii') ? result.pii : null;
-      await LoggingService.info(chatId, 'PII check (no-context path) result:', { pii });
 
-      const isEmptyPIIValue = (v) => {
-        if (v === null || v === undefined) return true;
-        if (typeof v === 'string') {
-          const s = v.trim().toLowerCase();
-          return s === '' || s === 'null';
-        }
-        if (Array.isArray(v)) return v.length === 0;
-        if (typeof v === 'object') return Object.keys(v).length === 0;
-        return false;
-      };
 
-      const piiPresent = !isEmptyPIIValue(pii);
-      if (piiPresent) {
-        // Use pii (redacted text) as redactedText and null for redactedItems to align with ContextService behavior
+      if (result.blocked) {
+        await LoggingService.info(chatId, 'Context Service: Blocked content detected, throwing RedactionError');
+        throw new RedactionError('Blocked content detected in user message', pii, null);
+      } else if (pii !== null) {
+        await LoggingService.info(chatId, 'Context Service: PII detected, redacting...');
         throw new RedactionError('PII detected in user message', pii, null);
       }
     } catch (error) {

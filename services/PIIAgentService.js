@@ -23,8 +23,23 @@ const invokePIIAgent = async (agentType, request) => {
       const lastResult = answer.messages[answer.messages.length - 1];
       const lastMessage = lastResult.content || '';
 
+      // Check finish_reason and return blocked if not "stop"
+      const finishReason = lastResult.response_metadata?.finish_reason;
+      if (finishReason && finishReason !== 'stop') {
+        return {
+          pii: null,
+          blocked: true,
+          inputTokens: lastResult.response_metadata?.tokenUsage?.promptTokens,
+          outputTokens: lastResult.response_metadata?.tokenUsage?.completionTokens,
+          model: lastResult.response_metadata?.model_name,
+        };
+      }
+
       const piiMatch = lastMessage.match(/<pii>(.*?)<\/pii>/s);
-      const pii = piiMatch ? piiMatch[1].trim() : null;
+      let pii = piiMatch ? piiMatch[1].trim() : null;
+      if (pii === 'null') {
+        pii = null;
+      }
 
       return {
         pii,
