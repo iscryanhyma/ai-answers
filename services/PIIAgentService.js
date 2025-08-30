@@ -61,7 +61,6 @@ const invokePIIAgent = async (agentType, request) => {
 
 
     const contentFilter =
-      status === 400 &&
       (
         code.includes('content_filter') ||
         code.includes('content_policy') ||
