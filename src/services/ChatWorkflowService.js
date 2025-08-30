@@ -133,7 +133,7 @@ export const ChatWorkflowService = {
 
       if (result.blocked) {
         await LoggingService.info(chatId, 'ChatWorkflowService Blocked content detected, throwing RedactionError');
-        throw new RedactionError('Blocked content detected in user message', pii, null);
+        throw new RedactionError('Blocked content detected in user message', "#############", null);
       } else if (pii !== null) {
         await LoggingService.info(chatId, 'ChatWorkflowService PII detected, redacting...');
         throw new RedactionError('PII detected in user message', pii, null);

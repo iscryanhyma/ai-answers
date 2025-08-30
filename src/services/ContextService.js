@@ -143,7 +143,7 @@ const ContextService = {
       // If the search agent returned blocked content, throw RedactionError to stop processing
       if (blocked) {
         await LoggingService.info(chatId, 'Context Service: Blocked content detected, throwing RedactionError');
-        throw new RedactionError('Blocked content detected in user message', pii, null);
+        throw new RedactionError('Blocked content detected in user message', "#############", null);
       } else if (pii !== null) {
         await LoggingService.info(chatId, 'Context Service: PII detected, redacting...');
         throw new RedactionError('PII detected in user message', pii, null);

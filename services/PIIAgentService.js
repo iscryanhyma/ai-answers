@@ -44,6 +44,7 @@ const invokePIIAgent = async (agentType, request) => {
       }
 
       return {
+        blocked: false,
         pii,
         inputTokens: lastResult.response_metadata?.tokenUsage?.promptTokens,
         outputTokens: lastResult.response_metadata?.tokenUsage?.completionTokens,
