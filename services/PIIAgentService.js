@@ -50,7 +50,7 @@ const invokePIIAgent = async (agentType, request) => {
     } else {
       return 'No messages available';
     }
-  } catch (error) {
+  } catch (err) {
     // Azure content filter commonly throws 400 with an error message/code.
     const status = err?.response?.status;
     const dataErr = err?.response?.data?.error;
@@ -75,8 +75,8 @@ const invokePIIAgent = async (agentType, request) => {
         model: err?.response?.data?.model ?? null,
       };
     }
-    console.error(`Error with ${agentType} PII agent:`, error);
-    throw error;
+    
+    throw err;
   }
 };
 
