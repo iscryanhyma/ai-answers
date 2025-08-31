@@ -1,5 +1,5 @@
 // api/claude.js
-import { createClaudeAgent } from '../../agents/AgentService.js';
+import { createClaudeAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 
 const NUM_RETRIES = 3;

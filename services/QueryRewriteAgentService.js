@@ -1,4 +1,4 @@
-import { createQueryRewriteAgent } from '../agents/AgentService.js';
+import { createQueryRewriteAgent } from '../agents/AgentFactory.js';
 import { PROMPT } from '../agents/prompts/queryRewriteAgentPrompt.js';
 
 const invokeQueryRewriteAgent = async (agentType, request) => {

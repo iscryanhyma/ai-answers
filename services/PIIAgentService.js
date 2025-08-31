@@ -1,4 +1,4 @@
-import { createPIIAgent } from '../agents/AgentService.js';
+import { createPIIAgent } from '../agents/AgentFactory.js';
 import { PROMPT } from '../agents/prompts/piiAgentPrompt.js';
 import ServerLoggingService from './ServerLoggingService.js';
 

@@ -1,4 +1,4 @@
-import { createContextAgent } from '../agents/AgentService.js';
+import { createContextAgent } from '../agents/AgentFactory.js';
 
 const invokeContextAgent = async (agentType, request) => {
   try {
