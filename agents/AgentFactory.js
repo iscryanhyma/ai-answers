@@ -8,52 +8,10 @@ import checkUrlStatusTool from './tools/checkURL.js';
 import createContextAgentTool from './tools/contextAgentTool.js';
 import { ToolTrackingHandler } from './ToolTrackingHandler.js';
 import { getModelConfig } from '../config/ai-models.js';
+import { PROMPT as RERANKER_PROMPT } from './prompts/rerankerPrompt.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
-
-// Direct OpenAI client creation for non-LangChain usage
-const createDirectOpenAIClient = () => {
-  try {
-    if (!process.env.OPENAI_API_KEY) {
-      return null;
-    }
-    const modelConfig = getModelConfig('openai');
-    return new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      maxRetries: 3,
-      timeout: modelConfig.timeoutMs,
-    });
-  } catch (error) {
-    console.error('Error creating OpenAI client:', error);
-    return null;
-  }
-};
-
-// Direct Azure OpenAI client creation for non-LangChain usage
-const createDirectAzureOpenAIClient = () => {
-  try {
-    if (!process.env.AZURE_OPENAI_API_KEY || !process.env.AZURE_OPENAI_ENDPOINT) {
-      return null;
-    }
-    const modelConfig = getModelConfig('azure');
-    console.log('Creating Azure OpenAI client with model:', modelConfig.name);
-    return new OpenAI({
-
-      apiKey: process.env.AZURE_OPENAI_API_KEY,
-      azureOpenAIApiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
-      azureOpenAIEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
-      azureOpenAIApiDeploymentName: modelConfig.name,
-
-      maxRetries: 3,
-      timeout: modelConfig.timeoutMs,
-    });
-    
-  } catch (error) {
-    console.error('Error creating Azure OpenAI client:', error);
-    return null;
-  }
-};
 
 const createTools = (chatId = 'system', agentType = 'openai') => {
   const callbacks = [new ToolTrackingHandler(chatId)];
@@ -269,33 +227,7 @@ const createQueryAndPIIAgent = async (agentType, chatId = 'system') => {
   return agent;
 };
 
-const createAgents = async (chatId = 'system') => {
-  const openAIAgent = await createOpenAIAgent(chatId);
-  const azureAgent = await createAzureOpenAIAgent(chatId);
-  const cohereAgent = null; //await createCohereAgent(chatId);
-  const claudeAgent = await createClaudeAgent(chatId);
-  const contextAgent = await createContextAgent('openai', chatId);
-  return { openAIAgent, azureAgent, cohereAgent, claudeAgent, contextAgent };
-};
 
-const getAgent = (agents, selectedAgent) => {
-  switch (selectedAgent) {
-    case 'openai':
-      return agents.openAIAgent;
-    case 'azure':
-      return agents.azureAgent;
-    case 'cohere':
-      return agents.cohereAgent;
-    case 'claude':
-      return agents.claudeAgent;
-    case 'context':
-      return agents.contextAgent;
-    default:
-      throw new Error('Invalid agent specified');
-  }
-};
-
-// New: lightweight agents for PII-only and Query Rewrite
 const createPIIAgent = async (agentType, chatId = 'system') => {
   let llm;
   switch (agentType) {
@@ -368,4 +300,40 @@ const createQueryRewriteAgent = async (agentType, chatId = 'system') => {
   return agent;
 };
 
-export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createDirectOpenAIClient, createDirectAzureOpenAIClient, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent };
+// Ranker agent: LLM-only agent that uses the reranker prompt. Supports 'openai' and 'azure'.
+const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
+  let llm;
+  switch (agentType) {
+    case 'openai': {
+      const cfg = getModelConfig('openai', 'gpt-4.1-mini');
+      llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: cfg.name,
+        temperature: cfg.temperature,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    case 'azure': {
+      const cfg = getModelConfig('azure', 'openai-gpt41-mini');
+      llm = new AzureChatOpenAI({
+        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        azureOpenAIApiDeploymentName: cfg.name,
+        temperature: cfg.temperature,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for ranker: ${agentType}`);
+  }
+
+ 
+  return llm;
+};
+
+export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createDirectOpenAIClient, createDirectAzureOpenAIClient, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent };
