@@ -305,7 +305,8 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
   let llm;
   switch (agentType) {
     case 'openai': {
-      const cfg = getModelConfig('openai', 'gpt-4.1-2025-04-14');
+  // Use the smaller 4.1-mini model for ranking to reduce latency/cost
+  const cfg = getModelConfig('openai', 'gpt-4.1-mini');
       llm = new ChatOpenAI({
         openAIApiKey: process.env.OPENAI_API_KEY,
         modelName: cfg.name,
@@ -316,7 +317,8 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
       break;
     }
     case 'azure': {
-      const cfg = getModelConfig('azure', 'openai-gpt41');
+  // Use the Azure deployment mapped to the mini variant when available
+  const cfg = getModelConfig('azure', 'openai-gpt41-mini');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
         azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
