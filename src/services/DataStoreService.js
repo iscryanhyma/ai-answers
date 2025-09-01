@@ -84,58 +84,7 @@ class DataStoreService {
   }
 
   
-  static async persistFeedback(feedback, chatId, userMessageId) {
-    let payload = {};
-    if (feedback?.type === 'expert') {
-      const formattedExpertFeedback = {
-        ...feedback,
-        totalScore: feedback.totalScore ?? null,
-        sentence1Score: feedback.sentence1Score ?? null,
-        sentence2Score: feedback.sentence2Score ?? null,
-        sentence3Score: feedback.sentence3Score ?? null,
-        sentence4Score: feedback.sentence4Score ?? null,
-        citationScore: feedback.citationScore ?? null,
-        answerImprovement: feedback.answerImprovement || '',
-        expertCitationUrl: feedback.expertCitationUrl || '',
-        feedback: feedback.feedback
-      };
-      payload.expertFeedback = formattedExpertFeedback;
-      console.log('User feedback:', JSON.stringify(formattedExpertFeedback, null, 2));
-    } else if (feedback?.type === 'public') {
-      const formattedPublicFeedback = {
-        feedback: feedback.feedback,
-        publicFeedbackReason: feedback.publicFeedbackReason || '',
-        publicFeedbackScore: feedback.publicFeedbackScore ?? null
-      };
-      payload.publicFeedback = formattedPublicFeedback;
-      console.log('User feedback:', JSON.stringify(formattedPublicFeedback, null, 2));
-    } else {
-      return;
-    }
-
-    try {
-      const response = await fetch(getApiUrl('db-persist-feedback'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chatId: chatId,
-          interactionId: userMessageId,
-          ...payload
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to log feedback');
-      }
-
-      console.log('Feedback logged successfully to database');
-    } catch (error) {
-      console.log('Development mode: Feedback not logged to console', payload);
-    }
-
-  }
+  
   static async getChatSession(sessionId) {
     try {
       const response = await fetch(getApiUrl(`db-chat-session?sessionId=${sessionId}`));

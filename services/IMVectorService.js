@@ -30,7 +30,7 @@ class IMVectorService {
    */
   constructor({ filterQuery = {}, preCheck = false } = {}) {
     this.qaDB = new VectorDB();
-  this.questionsDB = new VectorDB();
+    this.questionsDB = new VectorDB();
     this.sentenceDB = new VectorDB();
     this.isInitialized = false;
     this.initializingPromise = null;
@@ -48,9 +48,9 @@ class IMVectorService {
       sentenceSearches: 0,
       totalSearchTime: 0,
       lastInitTime: null,
-  embeddings: 0,
-  questions: 0,
-  sentences: 0,
+      embeddings: 0,
+      questions: 0,
+      sentences: 0,
       vectorMemoryUsage: {},
       initDurationMs: 0,
     };
@@ -165,10 +165,10 @@ class IMVectorService {
       }
 
       // stats
-  // counts reflect what was loaded into the in-memory indexes
-  this.stats.embeddings = qaDocsWithEF.length;
-  this.stats.questions = qaDocsWithEF.filter(d => Array.isArray(d.questionsEmbedding) && d.questionsEmbedding.length).length;
-  this.stats.sentences = sentenceDocs.length;
+      // counts reflect what was loaded into the in-memory indexes
+      this.stats.embeddings = qaDocsWithEF.length;
+      this.stats.questions = qaDocsWithEF.filter(d => Array.isArray(d.questionsEmbedding) && d.questionsEmbedding.length).length;
+      this.stats.sentences = sentenceDocs.length;
       this.stats.lastInitTime = new Date();
       this.stats.initDurationMs = Date.now() - t0;
 
@@ -191,15 +191,15 @@ class IMVectorService {
   }
 
   _calculateVectorMemoryUsage(qaDim, sentDim) {
-  // qaDim: dimension of QA (questionsAnswerEmbedding)
-  // questionDim: dimension of questions-only embeddings
-  // sentDim: dimension of sentence embeddings
-  const questionDim = arguments.length >= 2 ? arguments[1] : 0;
-  const sentDimArg = arguments.length >= 3 ? arguments[2] : sentDim;
+    // qaDim: dimension of QA (questionsAnswerEmbedding)
+    // questionDim: dimension of questions-only embeddings
+    // sentDim: dimension of sentence embeddings
+    const questionDim = arguments.length >= 2 ? arguments[1] : 0;
+    const sentDimArg = arguments.length >= 3 ? arguments[2] : sentDim;
 
-  const qaVectorMemory = this.stats.embeddings * qaDim * 8;     // 8 bytes/float
-  const questionVectorMemory = (this.stats.questions || 0) * questionDim * 8;
-  const sentenceVectorMemory = this.stats.sentences * sentDimArg * 8;
+    const qaVectorMemory = this.stats.embeddings * qaDim * 8;     // 8 bytes/float
+    const questionVectorMemory = (this.stats.questions || 0) * questionDim * 8;
+    const sentenceVectorMemory = this.stats.sentences * sentDimArg * 8;
     const metadataMemory =
       [...this.qaMeta.values(), ...this.sentMeta.values()]
         .reduce((sum, v) => sum + Buffer.byteLength(JSON.stringify(v), 'utf8'), 0);
@@ -249,7 +249,7 @@ class IMVectorService {
   /**
    * Optional: allow appending vectors at runtime (kept for compatibility)
    */
-  addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, createdAt, questionsAnswerEmbedding, questionsEmbedding, sentenceEmbeddings }) {
+  addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, questionsAnswerEmbedding, questionsEmbedding, sentenceEmbeddings }) {
     // Add QA (questions+answer) embedding
     if (questionsAnswerEmbedding && expertFeedbackId) {
       const qaId = `${interactionId || this.stats.embeddings}:${Date.now()}`; // unique-enough
