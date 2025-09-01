@@ -15,10 +15,11 @@ export default async function handler(req, res) {
         return res.status(validated.error.code).end(validated.error.message);
     }
 
-    const { chatId, question, selectedAI, recencyDays, requestedRating } = validated;
+    const { chatId, questions, selectedAI, recencyDays, requestedRating } = validated;
 
     try {
-        const matches = await retrieveMatches(question, selectedAI, requestedRating, 10);
+
+        const matches = await retrieveMatches(questions, selectedAI, requestedRating, 10);
         if (!matches || matches.length === 0) {
             ServerLoggingService.info('No similar chat matches found', 'chat-similar-answer');
             return res.json({});
@@ -31,26 +32,36 @@ export default async function handler(req, res) {
             return res.json({});
         }
 
-        const { candidateQuestions, orderedCandidates } = await buildQuestionFlows(finalCandidates);
+        const { candidateQuestions, orderedEntries } = await buildQuestionFlows(finalCandidates);
         if (!candidateQuestions || candidateQuestions.length === 0) {
             ServerLoggingService.info('No candidate questions available after building chat flows', 'chat-similar-answer');
             return res.json({});
         }
 
         const formattedForEmbedding = EmbeddingService.formatQuestionsForEmbedding(candidateQuestions);
+        const formattedUserQuestions = EmbeddingService.formatQuestionsForEmbedding(questions);
         const createAgentFn = createRankerAdapter();
-        const rankResult = await callOrchestrator({ chatId, selectedAI, question, formattedForEmbedding, createAgentFn });
-        const topIndex = interpretRankResult(rankResult, formattedForEmbedding);
+        const rankResult = await callOrchestrator({ chatId, selectedAI, userQuestions: formattedUserQuestions, candidateQuestions: formattedForEmbedding, createAgentFn });
+        const topIndex = interpretRankResult(rankResult);
 
-        const chosen = selectChosen(orderedCandidates, finalCandidates, topIndex);
-        const formatted = formatAnswerFromChosen(chosen);
+        if (topIndex === -1) {
+            ServerLoggingService.info('Ranker produced no usable result; continuing normal flow', 'chat-similar-answer');
+            return res.json({});
+        }
+        const topRankerItem = (rankResult && Array.isArray(rankResult.results) && rankResult.results.length) ? rankResult.results[0] : null;
+        const topChecks = (topRankerItem && typeof topRankerItem === 'object' && topRankerItem.checks) ? topRankerItem.checks : null;
+
+        const targetTurnIndex = Math.max(0, (questions?.length || 1) - 1);
+        const rankedIndices = getRankedIndices(rankResult, orderedEntries.length);
+        const chosen = selectChosenByTurn(orderedEntries, finalCandidates, rankedIndices, topIndex, targetTurnIndex);
+        const formatted = formatAnswerFromChosen(chosen, targetTurnIndex);
         if (!formatted) {
             ServerLoggingService.info('No final chosen interaction', 'chat-similar-answer');
             return res.json({});
         }
 
         ServerLoggingService.info('Returning chat similarity result (re-ranked)', 'chat-similar-answer', { interactionId: formatted.interactionId, sourceSimilarity: chosen.match?.similarity });
-        return res.json({ answer: formatted.text, interactionId: formatted.interactionId, reRanked: true });
+        return res.json({ answer: formatted.text, interactionId: formatted.interactionId, reRanked: true, rankerTop: { index: topIndex, checks: topChecks } });
     } catch (err) {
         ServerLoggingService.error('Error in chat-similar-answer', 'chat-similar-answer', err);
         return res.status(500).json({ error: 'internal error' });
@@ -59,17 +70,20 @@ export default async function handler(req, res) {
     function validateAndExtract(req) {
         if (req.method !== 'POST') return { error: { code: 405, message: `Method ${req.method} Not Allowed`, headers: { Allow: ['POST'] } } };
         const chatId = req.body?.chatId || null;
-        const question = req.body?.question || req.body?.q || '';
-        if (!question) return { error: { code: 400, message: 'Missing question' } };
+        const questions = Array.isArray(req.body?.questions) ? req.body.questions.filter(q => typeof q === 'string' && q.trim()).map(q => q.trim()) : [];
+        if (questions.length === 0) return { error: { code: 400, message: 'Missing questions' } };
         const selectedAI = req.body?.selectedAI || 'openai';
         const recencyDays = typeof req.body?.recencyDays === 'number' ? req.body.recencyDays : 7;
         const requestedRating = typeof req.body?.expertFeedbackRating === 'number' ? req.body.expertFeedbackRating : 100;
-        return { chatId, question, selectedAI, recencyDays, requestedRating };
+        return { chatId, questions, selectedAI, recencyDays, requestedRating };
     }
 
-    async function retrieveMatches(question, selectedAI, requestedRating, kCandidates = 10) {
+
+
+    async function retrieveMatches(questionsArr, selectedAI, requestedRating, kCandidates = 10) {
         if (!VectorService) await initVectorService();
-        const matchesArr = await VectorService.matchQuestions([question], { provider: selectedAI, k: kCandidates, threshold: null, expertFeedbackRating: requestedRating });
+        const safeQuestions = Array.isArray(questionsArr) && questionsArr.length ? questionsArr : [''];
+        const matchesArr = await VectorService.matchQuestions(safeQuestions, { provider: selectedAI, k: kCandidates, threshold: null, expertFeedbackRating: requestedRating });
         return Array.isArray(matchesArr) && matchesArr.length ? matchesArr[0] : [];
     }
 
@@ -108,28 +122,27 @@ export default async function handler(req, res) {
             const interactionId = c.interaction._id || c.interaction._id?.toString?.() || c.interactionId;
             if (!interactionId) return { candidate: c, questionFlow: null };
 
-            const chat = await Chat.findOne({ interactions: interactionId }).populate({ path: 'interactions', populate: 'question' }).lean();
+            const chat = await Chat.findOne({ interactions: interactionId }).populate({ path: 'interactions', populate: ['question', 'answer'] }).lean();
             if (!chat || !Array.isArray(chat.interactions) || chat.interactions.length === 0) return { candidate: c, questionFlow: null };
 
             const idx = chat.interactions.findIndex(i => String(i._id) === String(interactionId));
             const endIndex = idx >= 0 ? idx : (chat.interactions.length - 1);
 
-            const flow = [];
-            for (let i = endIndex; i >= 0; i--) {
-                const qi = chat.interactions[i]?.question;
-                if (!qi) continue;
-                const text = qi.englishQuestion || qi.content || qi.text;
-                if (text) flow.push(text);
-            }
+            // Build flow interactions from oldest up to the current/matched index
+            const flowInteractions = chat.interactions.slice(0, endIndex + 1);
+            const flowQuestions = flowInteractions.map(int => {
+                const qi = int?.question;
+                return qi?.englishQuestion || qi?.content || qi?.text || null;
+            }).filter(Boolean);
 
-            const questionFlow = flow.length ? flow.join('\n\n') : null;
-            return { candidate: c, questionFlow };
+            const questionFlow = flowQuestions.length ? flowQuestions.join('\n\n') : null;
+            return { candidate: c, questionFlow, flowInteractions };
         }));
 
         const validEntries = entries.filter(e => e.questionFlow);
         const candidateQuestions = validEntries.map(e => e.questionFlow);
-        const orderedCandidates = validEntries.map(e => e.candidate);
-        return { candidateQuestions, orderedCandidates };
+        const orderedEntries = validEntries;
+        return { candidateQuestions, orderedEntries };
     }
 
     function createRankerAdapter() {
@@ -139,8 +152,8 @@ export default async function handler(req, res) {
         };
     }
 
-    async function callOrchestrator({ chatId, selectedAI, question, formattedForEmbedding, createAgentFn }) {
-        const orchestratorRequest = { userQuestion: question, candidateQuestions: formattedForEmbedding };
+    async function callOrchestrator({ chatId, selectedAI, userQuestions, candidateQuestions, createAgentFn }) {
+        const orchestratorRequest = { userQuestions, candidateQuestions };
         try {
             return await AgentOrchestratorService.invokeWithStrategy({ chatId, agentType: selectedAI, request: orchestratorRequest, createAgentFn, strategy: rankerStrategy });
         } catch (err) {
@@ -149,30 +162,61 @@ export default async function handler(req, res) {
         }
     }
 
-    function interpretRankResult(rankResult, formattedForEmbedding) {
-        let topIndex = 0;
-        if (rankResult && rankResult.results && Array.isArray(rankResult.results) && rankResult.results.length) {
-            const first = rankResult.results[0];
-            if (typeof first === 'number') topIndex = first;
-            else if (typeof first === 'object' && first.index !== undefined) topIndex = first.index;
-            else if (typeof first === 'string') {
-                const found = formattedForEmbedding.indexOf(first);
-                if (found !== -1) topIndex = found;
+    function interpretRankResult(rankResult) {
+        let topIndex = -1;
+        const allPass = (checks) => checks && Object.values(checks).every(v => String(v).toLowerCase() === 'pass');
+        if (rankResult && Array.isArray(rankResult.results) && rankResult.results.length) {
+            for (const item of rankResult.results) {
+                if (item && typeof item === 'object' && typeof item.index === 'number') {
+                    if (allPass(item.checks)) { topIndex = item.index; break; }
+                    else continue; // skip failed checks
+                }
+                // For legacy shapes (number/string) without checks, do not consider as a match
             }
         }
         return topIndex;
     }
-
-    function selectChosen(orderedCandidates, finalCandidates, topIndex) {
-        const safeIndex = (typeof topIndex === 'number' && topIndex >= 0 && topIndex < orderedCandidates.length) ? topIndex : 0;
-        return orderedCandidates[safeIndex] || orderedCandidates[0] || finalCandidates[0];
+    function getRankedIndices(rankResult, maxLen) {
+        const out = [];
+        const allPass = (checks) => checks && Object.values(checks).every(v => String(v).toLowerCase() === 'pass');
+        if (rankResult && Array.isArray(rankResult.results)) {
+            for (const r of rankResult.results) {
+                if (r && typeof r === 'object' && typeof r.index === 'number' && allPass(r.checks)) {
+                    out.push(r.index);
+                }
+            }
+        }
+        // Ensure indices are within range and unique in order
+        const seen = new Set();
+        const filtered = out.filter(i => Number.isInteger(i) && i >= 0 && i < maxLen && !seen.has(i) && seen.add(i));
+        return filtered;
     }
 
-    function formatAnswerFromChosen(chosen) {
-        if (!chosen || !chosen.interaction || !chosen.interaction.answer) return null;
-        const ans = chosen.interaction.answer;
+    function selectChosenByTurn(orderedEntries, finalCandidates, rankedIndices, topIndex, targetTurnIndex) {
+        // Prefer the highest-ranked entry that has at least targetTurnIndex+1 turns
+        for (const idx of rankedIndices) {
+            const entry = orderedEntries[idx];
+            if (entry && Array.isArray(entry.flowInteractions) && entry.flowInteractions.length > targetTurnIndex) {
+                return entry;
+            }
+        }
+        const safeIndex = (typeof topIndex === 'number' && topIndex >= 0 && topIndex < orderedEntries.length) ? topIndex : 0;
+        return orderedEntries[safeIndex] || orderedEntries[0] || finalCandidates[0];
+    }
+
+    function formatAnswerFromChosen(chosenEntry, targetTurnIndex) {
+        if (!chosenEntry) return null;
+        const flow = chosenEntry.flowInteractions;
+        let selected = null;
+        if (Array.isArray(flow) && flow.length) {
+            const idx = Math.min(Math.max(0, targetTurnIndex), flow.length - 1);
+            selected = flow[idx];
+        }
+        if (!selected) selected = chosenEntry.candidate?.interaction;
+        if (!selected || !selected.answer) return null;
+        const ans = selected.answer;
         const text = (Array.isArray(ans.paragraphs) && ans.paragraphs.length) ? ans.paragraphs.join('\n\n') : (ans.content || ans.englishAnswer || '');
-        return { text, interactionId: chosen.interaction._id, chosen };
+        return { text, interactionId: selected._id, chosen: chosenEntry };
     }
 
 

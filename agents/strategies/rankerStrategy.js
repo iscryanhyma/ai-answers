@@ -2,13 +2,13 @@ import { PROMPT as RERANKER_PROMPT } from '../prompts/rerankerPrompt.js';
 
 // Contract implemented for AgentOrchestratorService
 export const rankerStrategy = {
-  // request: { userQuestion: string, candidateQuestions: string[] }
+  // request: { userQuestions: string[], candidateQuestions: string[] }
   buildMessages: (request = {}) => {
-    const { userQuestion = '', candidateQuestions = [] } = request;
+    const { userQuestions = [], candidateQuestions = [] } = request;
     const system = { role: 'system', content: RERANKER_PROMPT };
     const user = {
       role: 'user',
-      content: JSON.stringify({ user_question: userQuestion, candidates: candidateQuestions })
+      content: JSON.stringify({ user_questions: userQuestions, candidates: candidateQuestions })
     };
     return [system, user];
   },

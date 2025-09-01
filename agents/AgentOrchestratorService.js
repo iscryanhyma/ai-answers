@@ -14,11 +14,11 @@ class AgentOrchestratorServiceClass {
     }
 
     try {
-  const agent = await createAgentFn(agentType, chatId);
-  const messages = strategy.buildMessages(request);
+      const agent = await createAgentFn(agentType, chatId);
+      const messages = strategy.buildMessages(request);
 
-  
-  const answer = await agent.invoke(messages);
+
+      const answer = await agent.invoke(messages);
 
       // Normalize different agent return shapes:
       // - LangGraph/react agents: { messages: [...] }

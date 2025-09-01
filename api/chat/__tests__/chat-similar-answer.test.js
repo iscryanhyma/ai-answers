@@ -19,10 +19,12 @@ vi.mock('../../../services/VectorServiceFactory.js', () => ({
 
 const mockFormat = vi.fn();
 const mockCreateClient = vi.fn();
+const mockClean = vi.fn((s) => s);
 vi.mock('../../../services/EmbeddingService.js', () => ({
   default: {
     formatQuestionsForEmbedding: mockFormat,
     createEmbeddingClient: mockCreateClient,
+    cleanTextForEmbedding: mockClean,
   },
 }));
 
@@ -45,15 +47,20 @@ describe('chat-similar-answer handler', () => {
 
     // provide basic embedding client behaviour
     mockCreateClient.mockReturnValue({ embedDocuments: async (arr) => arr.map(() => [0.1, 0.2]) });
-    mockFormat.mockImplementation((qs) => qs.map(q => `FORMATTED: ${q}`));
+    mockFormat.mockImplementation((qs) => Array.isArray(qs) ? qs.map(q => `FORMATTED: ${q}`).join('\n') : `FORMATTED: ${qs}`);
 
-    // Ensure in-memory Mongo is set up
+    // Ensure in-memory Mongo is set up and connect before resetting collections
     await setup();
-    await reset();
-
-    // Connect via the app's db-connect to keep a single connection
+    // Reset ESM module cache and db-connect cache to avoid reusing a disconnected client
+    vi.resetModules();
+    global.mongoose = { conn: null, promise: null };
     const dbConnect = (await import('../../../api/db/db-connect.js')).default;
     await dbConnect();
+    try {
+      await reset();
+    } catch (e) {
+      // Ignore intermittent disconnects between tests when deleting collections
+    }
     // Ensure Answer, Question and Interaction models are registered (db-connect imports them already)
     const AnswerModel = mongoose.model('Answer');
     const QuestionModel = mongoose.model('Question');
@@ -74,11 +81,16 @@ describe('chat-similar-answer handler', () => {
       { _id: new mongoose.Types.ObjectId('64fec1000000000000000002'), answer: answer2._id, question: question2._id, createdAt: new Date() },
     ]);
 
+    // Create a Chat containing these interactions so question flows can be built
+    const ChatModel = mongoose.model('Chat');
+    const interactions = await InteractionModel.find().sort({ _id: 1 }).lean();
+    await ChatModel.create({ chatId: 'test-chat', interactions: interactions.map(i => i._id) });
+
     // Prepare VectorService to return two matches in order
     mockMatchQuestions.mockResolvedValue([[{ id: 'doc1', interactionId: '64fec1000000000000000001' }, { id: 'doc2', interactionId: '64fec1000000000000000002' }]]);
 
-    // Make the ranker choose the second candidate (index 1)
-    mockInvokeWithStrategy.mockResolvedValue({ results: [1] });
+    // Make the ranker choose the second candidate (index 1) with all checks pass
+    mockInvokeWithStrategy.mockResolvedValue({ results: [{ index: 1, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } }] });
 
     // Import handler after mocks are set up
     handler = (await import('../chat-similar-answer.js')).default;
@@ -88,8 +100,8 @@ describe('chat-similar-answer handler', () => {
     await teardown();
   });
 
-  it('returns the top re-ranked answer from candidates', async () => {
-    const req = { method: 'POST', body: { question: 'How to reset password?', selectedAI: 'openai' } };
+  it('returns the answer matching the same turn index in the chosen flow', async () => {
+    const req = { method: 'POST', body: { questions: ['How to reset password?'], selectedAI: 'openai' } };
     const res = { setHeader: vi.fn(), status: vi.fn(() => res), json: vi.fn(() => res), end: vi.fn() };
 
     await handler(req, res);
@@ -100,12 +112,70 @@ describe('chat-similar-answer handler', () => {
     // Expect the orchestrator to have been invoked with formatted questions
     expect(mockInvokeWithStrategy).toHaveBeenCalled();
 
-    // Response should include answer from the chosen (index 1) interaction
+    // With a single-turn query (index 0), select the first turn answer from the chosen flow
     expect(res.json).toHaveBeenCalled();
     const responseBody = res.json.mock.calls[0][0];
     expect(responseBody).toBeDefined();
-    expect(responseBody.answer).toContain('Answer 2');
-  expect(responseBody.interactionId.toString()).toBe('64fec1000000000000000002');
+    expect(responseBody.answer).toContain('Answer 1');
+    expect(responseBody.interactionId.toString()).toBe('64fec1000000000000000001');
     expect(responseBody.reRanked).toBe(true);
+  });
+
+  it('uses questions array (conversation history) when provided', async () => {
+    const questions = ['How do I apply?', 'What documents are required?'];
+    const req = { method: 'POST', body: { questions, selectedAI: 'openai' } };
+    const res = { setHeader: vi.fn(), status: vi.fn(() => res), json: vi.fn(() => res), end: vi.fn() };
+
+    await handler(req, res);
+
+    // Ensure VectorService.matchQuestions invoked with the questions array
+    expect(mockMatchQuestions).toHaveBeenCalled();
+    const firstArgList = mockMatchQuestions.mock.calls[0][0];
+    expect(Array.isArray(firstArgList)).toBe(true);
+    expect(firstArgList).toEqual(questions);
+
+    // Ensure orchestrator receives formatted userQuestions array
+    expect(mockInvokeWithStrategy).toHaveBeenCalled();
+    const orchestratorArg = mockInvokeWithStrategy.mock.calls[0][0];
+    expect(Array.isArray(orchestratorArg.request.userQuestions)).toBe(true);
+    expect(orchestratorArg.request.userQuestions).toEqual(questions);
+
+    // Should still return a response body
+    expect(res.json).toHaveBeenCalled();
+  });
+
+  it('returns the second-turn answer when user is at the second turn', async () => {
+    // Ensure ranker returns an ordering that includes both candidates,
+    // so the selector can pick the one with enough turns (index 1)
+    mockInvokeWithStrategy.mockResolvedValueOnce({ results: [
+      { index: 0, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } },
+      { index: 1, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } }
+    ] });
+
+    const req = { method: 'POST', body: { questions: ['What is SCIS?', 'Where are the forms?'], selectedAI: 'openai' } };
+    const res = { setHeader: vi.fn(), status: vi.fn(() => res), json: vi.fn(() => res), end: vi.fn() };
+
+    await handler(req, res);
+
+    expect(res.json).toHaveBeenCalled();
+    const responseBody = res.json.mock.calls[0][0];
+    expect(responseBody).toBeDefined();
+    // Expect the answer to be for the second turn (interaction 2)
+    expect(responseBody.answer).toContain('Answer 2');
+    expect(responseBody.interactionId.toString()).toBe('64fec1000000000000000002');
+  });
+
+  it('returns empty when ranker yields no usable result (continue normal flow)', async () => {
+    // Force ranker to return no results so interpretRankResult -> -1
+    mockInvokeWithStrategy.mockResolvedValueOnce({ results: [] });
+
+    const req = { method: 'POST', body: { questions: ['What is SCIS?'], selectedAI: 'openai' } };
+    const res = { setHeader: vi.fn(), status: vi.fn(() => res), json: vi.fn(() => res), end: vi.fn() };
+
+    await handler(req, res);
+
+    // Orchestrator invoked but endpoint should not short-circuit
+    expect(mockInvokeWithStrategy).toHaveBeenCalled();
+    expect(res.json).toHaveBeenCalledWith({});
   });
 });

@@ -305,7 +305,7 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
   let llm;
   switch (agentType) {
     case 'openai': {
-      const cfg = getModelConfig('openai', 'gpt-4.1-mini');
+      const cfg = getModelConfig('openai', 'gpt-4.1-2025-04-14');
       llm = new ChatOpenAI({
         openAIApiKey: process.env.OPENAI_API_KEY,
         modelName: cfg.name,
@@ -316,7 +316,7 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
       break;
     }
     case 'azure': {
-      const cfg = getModelConfig('azure', 'openai-gpt41-mini');
+      const cfg = getModelConfig('azure', 'openai-gpt41');
       llm = new AzureChatOpenAI({
         azureApiKey: process.env.AZURE_OPENAI_API_KEY,
         azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,

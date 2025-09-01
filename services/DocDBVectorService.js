@@ -291,15 +291,15 @@ class DocDBVectorService {
     // Use EmbeddingService to format and embed the questions
     const EmbeddingService = (await import('./EmbeddingService.js')).default;
     const formatted = EmbeddingService.formatQuestionsForEmbedding(questions);
-    if (!formatted.length) return [];
+    if (!formatted || !formatted.length) return [];
 
     // Create embeddings for each formatted question
     const embeddingClient = EmbeddingService.createEmbeddingClient(provider, modelName);
     if (!embeddingClient) throw new Error('Failed to create embedding client');
 
-    const embeddings = await embeddingClient.embedDocuments(formatted);
+    const embeddings = await embeddingClient.embedDocuments([formatted]);
 
-    // For each question embedding, run a vectorSearch pipeline similar to _searchQA
+    // For each flow embedding, run a vectorSearch pipeline similar to _searchQA
     const resultsPerQuestion = [];
     const db = mongoose.connection.db;
     for (const emb of embeddings) {

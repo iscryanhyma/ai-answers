@@ -372,12 +372,12 @@ class IMVectorService {
     // Use EmbeddingService to format and embed
     const EmbeddingService = (await import('./EmbeddingService.js')).default;
     const formatted = EmbeddingService.formatQuestionsForEmbedding(questions);
-    if (!formatted.length) return [];
+    if (!formatted || !formatted.length) return [];
 
     const client = EmbeddingService.createEmbeddingClient(provider, modelName);
     if (!client) throw new Error('Failed to create embedding client');
 
-    const embeddings = await client.embedDocuments(formatted);
+    const embeddings = await client.embedDocuments([formatted]);
 
     const resultsPerQuestion = [];
     for (const emb of embeddings) {

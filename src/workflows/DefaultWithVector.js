@@ -13,12 +13,17 @@ export class DefaultWithVector {
   // Query the chat-similar-answer endpoint and return a short-circuit
   // response object if an answer is available. Returns null to continue
   // the normal workflow when no similar answer is found or an error occurs.
-  async checkSimilarAnswer(chatId, userMessage, onStatusUpdate, selectedAI) {
+  async checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI) {
     try {
+      // Build user-only sequence (oldest -> newest) including current user message
+      const priorUserTurns = (conversationHistory || [])
+        .filter(m => m && m.sender === 'user' && !m.error && typeof m.text === 'string' && m.text.trim())
+        .map(m => m.text.trim());
+      const questions = [...priorUserTurns, ...(typeof userMessage === 'string' && userMessage.trim() ? [userMessage.trim()] : [])];
       const similarResp = await AuthService.fetchWithAuth(getApiUrl('chat-similar-answer'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId, question: userMessage, selectedAI })
+        body: JSON.stringify({ chatId, questions, selectedAI })
       });
       if (similarResp && similarResp.ok) {
         const similarJson = await similarResp.json();
@@ -78,7 +83,7 @@ export class DefaultWithVector {
     ChatWorkflowService.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
     await ChatWorkflowService.processRedaction(userMessage, lang);
-    const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, onStatusUpdate, selectedAI);
+    const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI);
     if (similarShortCircuit) {
       // Only run PII check when we are short-circuiting without deriving new context
       await ChatWorkflowService.checkPIIOnNoContextOrThrow(chatId, userMessage, selectedAI);
