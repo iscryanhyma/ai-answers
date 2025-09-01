@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.33.0](https://github.com/cds-snc/ai-answers/compare/v1.32.0...v1.33.0) (2025-09-01)
+
+
+### Features
+
+* add adobe analytics to index ([6ab9391](https://github.com/cds-snc/ai-answers/commit/6ab93915966496d31a934a5c47e5076a904cf047))
+* implement PII check endpoint and integrate PII detection in workflows ([73929d6](https://github.com/cds-snc/ai-answers/commit/73929d685f4413ce50d4ea6fb487830f66330a11))
+
+
+### Bug Fixes
+
+* redaction-catching-form-numbers ([897a715](https://github.com/cds-snc/ai-answers/commit/897a715218b86975d32df837040c32aa2530a77c))
+* remove number redaction ([4cf4d4d](https://github.com/cds-snc/ai-answers/commit/4cf4d4d93abb74fd6e2ed2b571390b91872e9957))
+* remove-country-as-PII ([52dbf6a](https://github.com/cds-snc/ai-answers/commit/52dbf6a0bb91b20b3bec956d19a0d8db5ed67d29))
+* remove-country-as-PII - revise prompt to not catch other information that is not personally identifying ([009b897](https://github.com/cds-snc/ai-answers/commit/009b897ecc88f7cd765d5b3dffa719e9219a3317))
+
+
+### Code Refactoring
+
+* update batch handling to use _id instead of batchId for con… ([a32c202](https://github.com/cds-snc/ai-answers/commit/a32c202825bee5877371020058224c8fa630ca6e))
+* update batch handling to use _id instead of batchId for consistency ([d6fe2a2](https://github.com/cds-snc/ai-answers/commit/d6fe2a2e4a3be47adfeae355bae2121d2b32c8e4))
+
 ## [1.32.0](https://github.com/cds-snc/ai-answers/compare/v1.31.0...v1.32.0) (2025-08-28)
 
 
