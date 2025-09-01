@@ -14,15 +14,24 @@ class AgentOrchestratorServiceClass {
     }
 
     try {
-      const agent = await createAgentFn(agentType, chatId);
-      const messages = strategy.buildMessages(request);
+  const agent = await createAgentFn(agentType, chatId);
+  const messages = strategy.buildMessages(request);
 
-      const answer = await agent.invoke({ messages });
+  
+  const answer = await agent.invoke(messages);
 
-      // LangGraph/LLM response shape with { messages: [...] }
-      const lastResult = Array.isArray(answer?.messages) && answer.messages.length
-        ? answer.messages[answer.messages.length - 1]
-        : null;
+      // Normalize different agent return shapes:
+      // - LangGraph/react agents: { messages: [...] }
+      // - Direct LLM/chat model calls: return a BaseMessage or an object with content
+      let lastResult = null;
+      if (Array.isArray(answer?.messages) && answer.messages.length) {
+        lastResult = answer.messages[answer.messages.length - 1];
+      }
+      else if (answer) {
+        // ChatOpenAI.invoke and similar return a BaseMessage-like object.
+        // Some wrappers may return { message }.
+        lastResult = answer.message ?? answer;
+      }
 
       if (!lastResult) {
         if (typeof ServerLoggingService?.warn === 'function') {
@@ -31,14 +40,16 @@ class AgentOrchestratorServiceClass {
         return { error: 'no_messages' };
       }
 
-      // Minimal unified metadata extraction
-      const meta = lastResult.response_metadata || {};
-      const tokenUsage = meta.tokenUsage || meta.usage || {};
+      // Minimal unified metadata extraction from several possible locations
+      const meta = lastResult.response_metadata || lastResult.generationInfo || answer?.llmOutput || {};
+      // token usage may live in several fields depending on provider/wrapper
+      const tokenUsage = meta.tokenUsage || meta.usage || lastResult.usage_metadata || answer?.llmOutput?.tokenUsage || {};
+      const content = lastResult.content ?? lastResult.text ?? (lastResult.message && (lastResult.message.content ?? lastResult.message.text)) ?? '';
       const normalized = {
-        content: lastResult.content,
+        content,
         model: meta.model_name || meta.model || null,
-        inputTokens: tokenUsage.promptTokens ?? tokenUsage.prompt_tokens ?? null,
-        outputTokens: tokenUsage.completionTokens ?? tokenUsage.completion_tokens ?? null,
+        inputTokens: tokenUsage.promptTokens ?? tokenUsage.prompt_tokens ?? tokenUsage.input_tokens ?? tokenUsage.prompt_tokens ?? null,
+        outputTokens: tokenUsage.completionTokens ?? tokenUsage.completion_tokens ?? tokenUsage.output_tokens ?? null,
         raw: lastResult,
       };
 

@@ -381,27 +381,32 @@ class IMVectorService {
 
     const resultsPerQuestion = [];
     for (const emb of embeddings) {
-  // Prefer questionsDB (questions-only embeddings) if populated, else fall back to qaDB
-  const searchDb = (this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0) ? this.questionsDB : this.qaDB;
-  let results = await searchDb.query(emb, k * 2);
+      // Prefer questionsDB (questions-only embeddings) if populated, else fall back to qaDB
+      const searchDb = (this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0) ? this.questionsDB : this.qaDB;
+      let results = await searchDb.query(emb, k * 2);
       results = results.sort((a, b) => b.similarity - a.similarity);
-      const out = [];
+
+      // Map the top results to the simplified shape but do NOT apply a client-side
+      // similarity threshold. We trust the underlying index to return nearest
+      // neighbors in order. Keep up to k*2 items so we can promote expert-backed
+      // items and then slice down to k.
+      const mapped = [];
       for (const r of results) {
         const id = r.document.id;
         const meta = this.qaMeta.get(id) || {};
         const sim = r.similarity;
-        if (threshold !== null && sim < threshold) break;
-  const expertFeedbackId = meta.expertFeedbackId || null;
-  out.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
-        if (out.length >= k * 2) break; // we've already limited earlier, keep enough for promotion
+        const expertFeedbackId = meta.expertFeedbackId || null;
+        mapped.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
+        if (mapped.length >= k * 2) break;
       }
-      // Promote top expert-feedback-backed result if present
-      const withEF = out.find(s => s.expertFeedbackId);
+
+      // Promote the first expert-feedback-backed item, preserving the remaining order
+      const withEF = mapped.find(s => s.expertFeedbackId);
       if (withEF) {
-        const rest = out.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
+        const rest = mapped.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
         resultsPerQuestion.push([withEF, ...rest]);
       } else {
-        resultsPerQuestion.push(out.slice(0, k));
+        resultsPerQuestion.push(mapped.slice(0, k));
       }
     }
     return resultsPerQuestion;

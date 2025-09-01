@@ -122,13 +122,13 @@ class DocDBVectorService {
       // Ensure vector indexes (HNSW + cosine to match client-side cosine)
       const qaOptions = { type: 'hnsw', similarity: 'cosine', dimensions: qaDim, m: 16, efConstruction: 64 };
       const sentOptions = { type: 'hnsw', similarity: 'cosine', dimensions: sentenceDim, m: 16, efConstruction: 64 };
-  try { await this._ensureVectorIndex('embeddings', { questionsAnswerEmbedding: 'vector' }, qaOptions, 'qa_vector_index'); } catch {}
-  // Ensure a dedicated vector index for questions-only embeddings so
-  // matchQuestions can search against questionsEmbedding separately.
-  try { await this._ensureVectorIndex('embeddings', { questionsEmbedding: 'vector' }, qaOptions, 'questions_vector_index'); } catch {}
-      try { await this._ensureVectorIndex('sentence_embeddings', { embedding: 'vector' }, sentOptions, 'sentence_vector_index'); } catch {}
+      try { await this._ensureVectorIndex('embeddings', { questionsAnswerEmbedding: 'vector' }, qaOptions, 'qa_vector_index'); } catch { }
+      // Ensure a dedicated vector index for questions-only embeddings so
+      // matchQuestions can search against questionsEmbedding separately.
+      try { await this._ensureVectorIndex('embeddings', { questionsEmbedding: 'vector' }, qaOptions, 'questions_vector_index'); } catch { }
+      try { await this._ensureVectorIndex('sentence_embeddings', { embedding: 'vector' }, sentOptions, 'sentence_vector_index'); } catch { }
 
-     
+
       this.stats.lastInitTime = new Date();
       this.isInitialized = true;
       this.initializingPromise = null;
@@ -249,7 +249,7 @@ class DocDBVectorService {
    * @param {{threshold?: number, efSearch?: number, candidateMultiplier?: number}} opts
    */
   async search(vector, k, indexType = 'qa', opts = {}) {
-  ServerLoggingService.debug('search() called', 'DocDBVectorService', { k, indexType, opts });
+    ServerLoggingService.debug('search() called', 'DocDBVectorService', { k, indexType, opts });
     if (!this.isInitialized) {
       ServerLoggingService.debug('Not initialized, calling initialize()', 'DocDBVectorService');
       await this.initialize();
@@ -324,27 +324,29 @@ class DocDBVectorService {
         continue;
       }
 
-      // compute cosine similarity client-side to preserve threshold logic
-      const scored = [];
-      for (const r of docs) {
-        let sim = 0;
-  try { sim = cosineSimilarity(emb, r.questionsEmbedding) ?? 0; } catch (e) { ServerLoggingService.error('cosine error', 'DocDBVectorService', e); }
-        if (threshold === null || sim >= threshold) {
-          // mark an expertFeedbackRating of 100 when expertFeedback exists
-          const expertFeedbackId = r.expertFeedbackId || null;
-          scored.push({ id: r._id.toString(), interactionId: r.interactionId?.toString?.() || r.interactionId, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
-        }
-      }
-      scored.sort((a, b) => b.similarity - a.similarity);
-      // If any scored item has expertFeedback, promote the highest-similarity
-      // item with expertFeedback to the front of the list so callers receive
-      // a top result backed by expert feedback. Otherwise return top-k by similarity.
-      const withEF = scored.find(s => s.expertFeedbackId);
+      // We no longer compute cosine similarity or apply a client-side threshold here.
+      // The aggregation $search with vectorSearch already returns nearest neighbors.
+      // Take the top-k documents in the returned order and map them to the
+      // simplified result shape. If any item has expert feedback, promote the
+      // first such item to the front while preserving the remaining order.
+      const topDocs = Array.isArray(docs) ? docs.slice(0, k) : [];
+      const mapped = topDocs.map(r => {
+        const expertFeedbackId = r.expertFeedbackId || null;
+        return {
+          id: r._id?.toString?.() || null,
+          interactionId: r.interactionId?.toString?.() || r.interactionId,
+          expertFeedbackId,
+          expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null,
+          similarity: null,
+        };
+      });
+
+      const withEF = mapped.find(s => s.expertFeedbackId);
       if (withEF) {
-        const rest = scored.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
+        const rest = mapped.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
         resultsPerQuestion.push([withEF, ...rest]);
       } else {
-        resultsPerQuestion.push(scored.slice(0, k));
+        resultsPerQuestion.push(mapped.slice(0, k));
       }
     }
 
@@ -375,16 +377,16 @@ class DocDBVectorService {
     });
 
     const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime } = this.stats;
-      ServerLoggingService.debug('getStats result', 'DocDBVectorService', {
-        isInitialized: this.isInitialized,
-        embeddings,
-        sentences,
-        searches,
-        qaSearches,
-        sentenceSearches,
-        averageSearchTimeMs: searches ? totalSearchTime / searches : 0,
-        uptimeSeconds: lastInitTime ? (Date.now() - lastInitTime) / 1000 : 0,
-      });
+    ServerLoggingService.debug('getStats result', 'DocDBVectorService', {
+      isInitialized: this.isInitialized,
+      embeddings,
+      sentences,
+      searches,
+      qaSearches,
+      sentenceSearches,
+      averageSearchTimeMs: searches ? totalSearchTime / searches : 0,
+      uptimeSeconds: lastInitTime ? (Date.now() - lastInitTime) / 1000 : 0,
+    });
     return {
       isInitialized: this.isInitialized,
       embeddings,

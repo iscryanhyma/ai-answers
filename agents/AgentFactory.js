@@ -336,4 +336,4 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
   return llm;
 };
 
-export { createAgents, getAgent, createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createDirectOpenAIClient, createDirectAzureOpenAIClient, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent };
+export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent };
