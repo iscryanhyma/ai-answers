@@ -8,7 +8,6 @@ import checkUrlStatusTool from './tools/checkURL.js';
 import createContextAgentTool from './tools/contextAgentTool.js';
 import { ToolTrackingHandler } from './ToolTrackingHandler.js';
 import { getModelConfig } from '../config/ai-models.js';
-import { PROMPT as RERANKER_PROMPT } from './prompts/rerankerPrompt.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -338,4 +337,42 @@ const createRankerAgent = async (agentType = 'openai', chatId = 'system') => {
   return llm;
 };
 
-export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent };
+// Translation agent: LLM-only agent that uses the translation prompt. Supports 'openai' and 'azure'.
+const createTranslationAgent = async (agentType = 'openai', chatId = 'system') => {
+  let llm;
+  switch (agentType) {
+    case 'openai': {
+      // Use a compact model for translations to reduce latency/cost
+      const cfg = getModelConfig('openai', 'gpt-4.1-mini');
+      llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: cfg.name,
+        temperature: 0,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    case 'azure': {
+      const cfg = getModelConfig('azure', 'openai-gpt41-mini');
+      llm = new AzureChatOpenAI({
+        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        azureOpenAIApiDeploymentName: cfg.name,
+        temperature: 0,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for translation: ${agentType}`);
+  }
+
+  // Return the llm so callers can build messages using the translation prompt/strategy
+  return llm;
+};
+
+export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent };
+

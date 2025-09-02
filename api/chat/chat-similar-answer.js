@@ -64,6 +64,7 @@ export default async function handler(req, res) {
 
         return res.json({
             answer: formatted.text,
+            englishAnswer: formatted.englishAnswer || null,
             interactionId: formatted.interactionId,
             reRanked: true,
             similarity: chosen.match?.similarity ?? null,
@@ -233,11 +234,13 @@ export default async function handler(req, res) {
         }
         if (!selected) selected = chosenEntry.candidate?.interaction;
         if (!selected || !selected.answer) return null;
-        const ans = selected.answer;
-        const text = (Array.isArray(ans.paragraphs) && ans.paragraphs.length) ? ans.paragraphs.join('\n\n') : (ans.content || ans.englishAnswer || '');
+    const ans = selected.answer;
+    // Prefer englishAnswer when present; fall back to paragraphs or content
+    const englishAnswer = ans?.englishAnswer || null;
+    const text = englishAnswer || ((Array.isArray(ans.paragraphs) && ans.paragraphs.length) ? ans.paragraphs.join('\n\n') : (ans.content || ''));
 
-        // Extract citation fields if populated (answer.citation may be a populated doc)
-        const citationDoc = ans.citation || null;
+    // Extract citation fields if populated (answer.citation may be a populated doc)
+    const citationDoc = ans?.citation || null;
         const citation = citationDoc ? {
             providedCitationUrl: citationDoc.providedCitationUrl || null,
             aiCitationUrl: citationDoc.aiCitationUrl || null,
@@ -245,7 +248,7 @@ export default async function handler(req, res) {
             confidenceRating: citationDoc.confidenceRating || null,
         } : null;
 
-        return { text, interactionId: selected._id, citation, chosen: chosenEntry };
+    return { text, englishAnswer, interactionId: selected._id, citation, chosen: chosenEntry };
     }
 
 
