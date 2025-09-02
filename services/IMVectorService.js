@@ -22,6 +22,16 @@ function toPlainNumberArray(vec) {
   });
 }
 
+function isFrenchLanguage(lang) {
+  if (!lang) return false;
+  const v = String(lang).trim().toLowerCase();
+  return v === 'fr' || v === 'fra' || v === 'french';
+}
+
+function desiredPageLang(lang) {
+  return isFrenchLanguage(lang) ? 'fr' : 'en';
+}
+
 class IMVectorService {
   /**
    * @param {{filterQuery?: object, preCheck?: boolean}} opts
@@ -375,7 +385,7 @@ class IMVectorService {
    * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100 } = opts;
+    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100, language = null } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Ensure vectors are loaded
@@ -391,7 +401,7 @@ class IMVectorService {
 
     const embeddings = await client.embedDocuments([formatted]);
 
-    const resultsPerQuestion = [];
+  const resultsPerQuestion = [];
     for (const emb of embeddings) {
       // Prefer questionsDB (questions-only embeddings) if populated, else fall back to qaDB
       const searchDb = (this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0) ? this.questionsDB : this.qaDB;
@@ -417,14 +427,43 @@ class IMVectorService {
         const meta = this.qaMeta.get(m.id) || {};
         m.citation = meta.citation || null;
       }
+      // Language filtering: if a language was provided, resolve chats for
+      // the candidate interactionIds and filter mapped results to only those
+      // whose chat.pageLanguage matches the desired one. If no language was
+      // provided, keep existing behavior.
+      let filtered = mapped;
+      if (language) {
+        const pageLang = desiredPageLang(language);
+        const interactionIds = Array.from(new Set(mapped.map(m => m.interactionId).filter(Boolean)));
+        if (interactionIds.length) {
+          // Find chats that contain these interactions and map interactionId -> pageLanguage
+          const Chat = mongoose.model('Chat');
+          const chats = await Chat.find({ interactions: { $in: interactionIds } }).select('interactions pageLanguage').lean();
+          const interactionToLang = {};
+          for (const c of chats) {
+            const lang = c.pageLanguage || '';
+            for (const iid of (c.interactions || [])) {
+              interactionToLang[iid.toString?.() || iid] = lang;
+            }
+          }
+
+          filtered = mapped.filter(m => {
+            const lang = interactionToLang[m.interactionId?.toString?.() || m.interactionId] || '';
+            return lang === pageLang;
+          });
+        } else {
+          // no interaction ids -> no matches
+          filtered = [];
+        }
+      }
 
       // Promote the first expert-feedback-backed item, preserving the remaining order
-      const withEF = mapped.find(s => s.expertFeedbackId);
+      const withEF = filtered.find(s => s.expertFeedbackId);
       if (withEF) {
-        const rest = mapped.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
+        const rest = filtered.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
         resultsPerQuestion.push([withEF, ...rest]);
       } else {
-        resultsPerQuestion.push(mapped.slice(0, k));
+        resultsPerQuestion.push(filtered.slice(0, k));
       }
     }
     return resultsPerQuestion;

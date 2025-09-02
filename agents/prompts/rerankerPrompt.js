@@ -26,6 +26,7 @@ Output (JSON):
 Rules:
 - Consider the whole flow, not just the last question.
 - Favor candidates where all categories match; break ties by semantic closeness.
+ - If the candidate text is in a different language than the user_questions, mentally translate the candidate into the language of the flow and evaluate semantic equivalence; treat correct translations/paraphrases of entities, numbers, dates_times, negation, quantifiers, conditionals, connectives, and modifiers as "PASS". Do not require exact token-level matches across languages.
 - For EACH candidate, EVALUATE the following checks across the full flow (mentally) using this schema:
 
   {

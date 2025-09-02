@@ -374,5 +374,44 @@ const createTranslationAgent = async (agentType = 'openai', chatId = 'system') =
   return llm;
 };
 
-export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent };
+// Detect-language agent: LLM-only agent that uses the detectLanguage prompt/strategy.
+// Returns an LLM configured for low-latency deterministic responses.
+const createDetectLanguageAgent = async (agentType = 'openai', chatId = 'system') => {
+  let llm;
+  switch (agentType) {
+    case 'openai': {
+      // Use a compact model and deterministic settings
+      const cfg = getModelConfig('openai', 'gpt-4.1-mini');
+      llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: cfg.name,
+        temperature: 0,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    case 'azure': {
+      const cfg = getModelConfig('azure', 'openai-gpt41-mini');
+      llm = new AzureChatOpenAI({
+        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        azureOpenAIApiDeploymentName: cfg.name,
+        temperature: 0,
+        maxTokens: cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for detect-language: ${agentType}`);
+  }
+
+  // Return the llm so callers can build messages using the detectLanguage prompt/strategy
+  return llm;
+};
+
+export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent };
+
 

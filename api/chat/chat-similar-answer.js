@@ -15,11 +15,11 @@ export default async function handler(req, res) {
         return res.status(validated.error.code).end(validated.error.message);
     }
 
-    const { chatId, questions, selectedAI, recencyDays, requestedRating } = validated;
+    const { chatId, questions, selectedAI, recencyDays, requestedRating, language } = validated;
 
     try {
 
-        const matches = await retrieveMatches(questions, selectedAI, requestedRating, 10);
+        const matches = await retrieveMatches(questions, selectedAI, requestedRating, 10, language);
         if (!matches || matches.length === 0) {
             ServerLoggingService.info('No similar chat matches found', 'chat-similar-answer');
             return res.json({});
@@ -83,15 +83,17 @@ export default async function handler(req, res) {
         const selectedAI = req.body?.selectedAI || 'openai';
         const recencyDays = typeof req.body?.recencyDays === 'number' ? req.body.recencyDays : 7;
         const requestedRating = typeof req.body?.expertFeedbackRating === 'number' ? req.body.expertFeedbackRating : 100;
-        return { chatId, questions, selectedAI, recencyDays, requestedRating };
+        const language = typeof req.body?.language === 'string' && req.body.language.trim() ? req.body.language.trim() : null;
+        if (!language) return { error: { code: 400, message: 'Missing language' } };
+        return { chatId, questions, selectedAI, recencyDays, requestedRating, language };
     }
 
 
 
-    async function retrieveMatches(questionsArr, selectedAI, requestedRating, kCandidates = 10) {
+    async function retrieveMatches(questionsArr, selectedAI, requestedRating, kCandidates = 10, languageParam = null) {
         if (!VectorService) await initVectorService();
         const safeQuestions = Array.isArray(questionsArr) && questionsArr.length ? questionsArr : [''];
-        const matchesArr = await VectorService.matchQuestions(safeQuestions, { provider: selectedAI, k: kCandidates, threshold: null, expertFeedbackRating: requestedRating });
+        const matchesArr = await VectorService.matchQuestions(safeQuestions, { provider: selectedAI, k: kCandidates, threshold: null, expertFeedbackRating: requestedRating, language: languageParam });
         return Array.isArray(matchesArr) && matchesArr.length ? matchesArr[0] : [];
     }
 

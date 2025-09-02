@@ -7,6 +7,16 @@ import ServerLoggingService from './ServerLoggingService.js';
 import { Embedding } from '../models/embedding.js';
 import cosineSimilarity from 'compute-cosine-similarity';
 
+function isFrenchLanguage(lang) {
+  if (!lang) return false;
+  const v = String(lang).trim().toLowerCase();
+  return v === 'fr' || v === 'fra' || v === 'french';
+}
+
+function desiredPageLang(lang) {
+  return isFrenchLanguage(lang) ? 'fr' : 'en';
+}
+
 function toCleanVector(vec) {
   if (!Array.isArray(vec)) throw new Error('Query vector must be an array');
   return vec.map((v, i) => {
@@ -282,7 +292,7 @@ class DocDBVectorService {
    * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100 } = opts;
+  const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100, language = null } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Lazy init DB/collections
@@ -302,23 +312,32 @@ class DocDBVectorService {
     // For each flow embedding, run a vectorSearch pipeline similar to _searchQA
     const resultsPerQuestion = [];
     const db = mongoose.connection.db;
+    const pageLang = desiredPageLang(language);
     for (const emb of embeddings) {
       // pipeline mirrors _searchQA but uses provided vector directly
       // Search against question-only embeddings (questionsEmbedding) instead
-      // of the QA-level combined embedding.
-      const pipeline = [
-        { $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: k * 2, efSearch: 200 } } },
-        { $limit: k * 2 },
-        ...(this.filterQuery && Object.keys(this.filterQuery).length ? [{ $match: this.filterQuery }] : []),
-  // Lookup interaction to access expertFeedback and the linked answer
-  { $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } },
-  { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
-  // Lookup the answer doc for the interaction to extract citation fields
-  { $lookup: { from: 'answers', localField: 'inter.answer', foreignField: '_id', as: 'answer' } },
-  { $unwind: { path: '$answer', preserveNullAndEmptyArrays: true } },
-  // Project citation URLs from the joined answer.citation (may be missing)
-  { $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead' } },
-      ];
+      // of the QA-level combined embedding. We also join through interaction
+      // -> chat and optionally filter by chat.pageLanguage based on the
+      // requested language.
+      const pipeline = [];
+      pipeline.push({ $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: k * 2, efSearch: 200 } } });
+      pipeline.push({ $limit: k * 2 });
+      if (this.filterQuery && Object.keys(this.filterQuery).length) pipeline.push({ $match: this.filterQuery });
+
+      // Lookup interaction to access expertFeedback and the linked answer
+      pipeline.push({ $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } });
+      pipeline.push({ $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } });
+      // Lookup the answer doc for the interaction to extract citation fields
+      pipeline.push({ $lookup: { from: 'answers', localField: 'inter.answer', foreignField: '_id', as: 'answer' } });
+      pipeline.push({ $unwind: { path: '$answer', preserveNullAndEmptyArrays: true } });
+
+      // Lookup chat(s) that reference this interaction and optionally filter by pageLanguage
+      pipeline.push({ $lookup: { from: 'chats', localField: 'inter._id', foreignField: 'interactions', as: 'chat' } });
+      pipeline.push({ $unwind: { path: '$chat', preserveNullAndEmptyArrays: true } });
+      if (pageLang) pipeline.push({ $match: { 'chat.pageLanguage': pageLang } });
+
+      // Project citation URLs from the joined answer.citation (may be missing)
+      pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead' } });
 
       let docs = [];
       try {

@@ -13,17 +13,17 @@ export class DefaultWithVector {
   // Query the chat-similar-answer endpoint and return a short-circuit
   // response object if an answer is available. Returns null to continue
   // the normal workflow when no similar answer is found or an error occurs.
-  async checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI) {
+  async checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI, detectedLang = null) {
     try {
       // Build user-only sequence (oldest -> newest) including current user message
       const priorUserTurns = (conversationHistory || [])
         .filter(m => m && m.sender === 'user' && !m.error && typeof m.text === 'string' && m.text.trim())
         .map(m => m.text.trim());
       const questions = [...priorUserTurns, ...(typeof userMessage === 'string' && userMessage.trim() ? [userMessage.trim()] : [])];
-      const similarResp = await AuthService.fetchWithAuth(getApiUrl('chat-similar-answer'), {
+      const similarResp = await fetch(getApiUrl('chat-similar-answer'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId, questions, selectedAI })
+        body: JSON.stringify({ chatId, questions, selectedAI, language: detectedLang })
       });
       if (similarResp && similarResp.ok) {
         const similarJson = await similarResp.json();
@@ -65,6 +65,30 @@ export class DefaultWithVector {
     return null;
   }
 
+  // Call server-side detect-language endpoint and return a single language string.
+  // Falls back to `fallbackLang` when detection fails.
+  async detectLanguage(chatId, text, selectedAI = 'openai', fallbackLang = null) {
+    let detected = fallbackLang || null;
+    try {
+      const resp = await fetch(getApiUrl('chat-detect-language'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, selectedAI })
+      });
+      if (resp && resp.ok) {
+        const json = await resp.json();
+        if (json && json.result) {
+          detected = json.result.iso3 || json.result.language || detected;
+        }
+      } else {
+        await LoggingService.info(chatId, 'chat-detect-language call failed or returned no result', { status: resp && resp.status });
+      }
+    } catch (err) {
+      await LoggingService.info(chatId, 'chat-detect-language error, continuing workflow', { error: err && err.message });
+    }
+    return detected;
+  }
+
 
   async processResponse(
     chatId,
@@ -85,7 +109,11 @@ export class DefaultWithVector {
     ChatWorkflowService.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
     await ChatWorkflowService.processRedaction(userMessage, lang);
-    const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI);
+
+    // Detect language via server endpoint and prefer that for downstream logic
+    const detectedLang = await this.detectLanguage(chatId, userMessage, selectedAI, lang);
+
+    const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI, detectedLang);
     if (similarShortCircuit) {
       // Only run PII check when we are short-circuiting without deriving new context
       await ChatWorkflowService.checkPIIOnNoContextOrThrow(chatId, userMessage, selectedAI);
@@ -125,7 +153,7 @@ export class DefaultWithVector {
     }
     await LoggingService.info(chatId, 'Derived context:', { context });
 
-  ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
+    ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
 
     const answer = await AnswerService.sendMessage(
       selectedAI,
@@ -142,7 +170,7 @@ export class DefaultWithVector {
       confidenceRating = null;
 
     if (answer.answerType === 'normal') {
-  ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.VERIFYING_CITATION);
+      ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.VERIFYING_CITATION);
       const citationResult = await ChatWorkflowService.verifyCitation(
         answer.citationUrl,
         lang,
@@ -161,7 +189,7 @@ export class DefaultWithVector {
     }
 
     if (answer.answerType && answer.answerType.includes('question')) {
-  ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.NEED_CLARIFICATION);
+      ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.NEED_CLARIFICATION);
     }
 
     const endTime = Date.now();
