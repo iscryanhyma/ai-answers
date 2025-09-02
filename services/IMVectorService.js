@@ -87,12 +87,19 @@ class IMVectorService {
       // Map parentEmbeddingId -> interactionId for sentence join later
       const parentToInteraction = new Map(qaDocs.map(d => [d._id.toString(), d.interactionId?.toString()]));
 
-      // Load Interactions to get expertFeedbackId
+      // Load Interactions to get expertFeedbackId and answer.citation
       const interactionIds = [...new Set(qaDocs.map(d => d.interactionId?.toString()).filter(Boolean))];
       const interactions = await Interaction.find({ _id: { $in: interactionIds } })
-        .select('_id expertFeedback')
+        .select('_id expertFeedback answer')
+        .populate({ path: 'answer', populate: { path: 'citation', model: 'Citation' } })
         .lean();
       const interactionToEF = new Map(interactions.map(i => [i._id.toString(), i.expertFeedback ? i.expertFeedback.toString() : null]));
+      const interactionToCitation = new Map(interactions.map(i => [i._id.toString(), i.answer && i.answer.citation ? {
+        providedCitationUrl: i.answer.citation.providedCitationUrl || null,
+        aiCitationUrl: i.answer.citation.aiCitationUrl || null,
+        citationHead: i.answer.citation.citationHead || null,
+        confidenceRating: i.answer.citation.confidenceRating || null
+      } : null]));
 
       // Filter out QA docs without expertFeedback
       const qaDocsWithEF = qaDocs.filter(doc => {
@@ -117,6 +124,7 @@ class IMVectorService {
         this.qaMeta.set(id, {
           interactionId: doc.interactionId?.toString() || null,
           expertFeedbackId: interactionToEF.get(doc.interactionId?.toString() || '') || null,
+          citation: interactionToCitation.get(doc.interactionId?.toString() || '') || null,
         });
       }
 
@@ -129,6 +137,7 @@ class IMVectorService {
           this.qaMeta.set(qid, {
             interactionId: doc.interactionId?.toString() || null,
             expertFeedbackId: interactionToEF.get(doc.interactionId?.toString() || '') || null,
+            citation: interactionToCitation.get(doc.interactionId?.toString() || '') || null,
           });
         }
       }
@@ -161,6 +170,7 @@ class IMVectorService {
           interactionId,
           sentenceIndex: row.sentenceIndex,
           expertFeedbackId,
+          citation: interactionToCitation.get(interactionId) || null,
         });
       }
 
@@ -338,6 +348,7 @@ class IMVectorService {
           interactionId: meta.interactionId || null,
           expertFeedbackId: meta.expertFeedbackId || null,
           similarity: sim,
+          citation: meta.citation || null,
         });
       } else {
         out.push({
@@ -346,6 +357,7 @@ class IMVectorService {
           sentenceIndex: meta.sentenceIndex,
           expertFeedbackId: meta.expertFeedbackId || null,
           similarity: sim,
+          citation: meta.citation || null,
         });
       }
 
@@ -398,6 +410,12 @@ class IMVectorService {
         const expertFeedbackId = meta.expertFeedbackId || null;
         mapped.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
         if (mapped.length >= k * 2) break;
+      }
+
+      // Attach citation from prepopulated qaMeta (populated during initialize)
+      for (const m of mapped) {
+        const meta = this.qaMeta.get(m.id) || {};
+        m.citation = meta.citation || null;
       }
 
       // Promote the first expert-feedback-backed item, preserving the remaining order

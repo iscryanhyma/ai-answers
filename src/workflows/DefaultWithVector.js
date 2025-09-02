@@ -38,17 +38,19 @@ export class DefaultWithVector {
           const answerText = similarJson.answer;
           return {
             answer: {
-              answerType: 'external',
+              answerType: 'normal',
               content: answerText,
               paragraphs: [answerText],
               sentences: [answerText],
               // expose metadata for potential UI display
               providedByInteractionId: similarJson.interactionId || null,
               similarity: similarJson.similarity || null
+              ,
+              citationHead: (similarJson.citation && similarJson.citation.citationHead) || null
             },
             context: null,
             question: userMessage,
-            citationUrl: null,
+            citationUrl: (similarJson.citation && (similarJson.citation.providedCitationUrl || similarJson.citation.aiCitationUrl)) || null,
             confidenceRating: similarJson.similarity || null
           };
         }

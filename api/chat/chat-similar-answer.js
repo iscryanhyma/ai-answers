@@ -61,7 +61,15 @@ export default async function handler(req, res) {
         }
 
         ServerLoggingService.info('Returning chat similarity result (re-ranked)', 'chat-similar-answer', { interactionId: formatted.interactionId, sourceSimilarity: chosen.match?.similarity });
-        return res.json({ answer: formatted.text, interactionId: formatted.interactionId, reRanked: true, rankerTop: { index: topIndex, checks: topChecks } });
+
+        return res.json({
+            answer: formatted.text,
+            interactionId: formatted.interactionId,
+            reRanked: true,
+            similarity: chosen.match?.similarity ?? null,
+            citation: formatted.citation || null,
+            rankerTop: { index: topIndex, checks: topChecks }
+        });
     } catch (err) {
         ServerLoggingService.error('Error in chat-similar-answer', 'chat-similar-answer', err);
         return res.status(500).json({ error: 'internal error' });
@@ -91,7 +99,11 @@ export default async function handler(req, res) {
         await dbConnect();
         const Interaction = mongoose.model('Interaction');
         const ids = Array.from(new Set(matches.map(m => m.interactionId).filter(Boolean)));
-        const interactions = await Interaction.find({ _id: { $in: ids } }).populate('answer').populate('question').lean();
+        // Populate the answer and its nested citation so callers can access citation URLs
+        const interactions = await Interaction.find({ _id: { $in: ids } })
+            .populate({ path: 'answer', populate: { path: 'citation', model: 'Citation' } })
+            .populate('question')
+            .lean();
         const interactionById = interactions.reduce((acc, it) => { acc[it._id.toString()] = it; return acc; }, {});
         return { interactions, interactionById };
     }
@@ -122,7 +134,14 @@ export default async function handler(req, res) {
             const interactionId = c.interaction._id || c.interaction._id?.toString?.() || c.interactionId;
             if (!interactionId) return { candidate: c, questionFlow: null };
 
-            const chat = await Chat.findOne({ interactions: interactionId }).populate({ path: 'interactions', populate: ['question', 'answer'] }).lean();
+            // Ensure the populated interaction answers include the nested citation documents
+            const chat = await Chat.findOne({ interactions: interactionId }).populate({
+                path: 'interactions',
+                populate: [
+                    { path: 'question' },
+                    { path: 'answer', populate: { path: 'citation', model: 'Citation' } }
+                ]
+            }).lean();
             if (!chat || !Array.isArray(chat.interactions) || chat.interactions.length === 0) return { candidate: c, questionFlow: null };
 
             const idx = chat.interactions.findIndex(i => String(i._id) === String(interactionId));
@@ -216,7 +235,17 @@ export default async function handler(req, res) {
         if (!selected || !selected.answer) return null;
         const ans = selected.answer;
         const text = (Array.isArray(ans.paragraphs) && ans.paragraphs.length) ? ans.paragraphs.join('\n\n') : (ans.content || ans.englishAnswer || '');
-        return { text, interactionId: selected._id, chosen: chosenEntry };
+
+        // Extract citation fields if populated (answer.citation may be a populated doc)
+        const citationDoc = ans.citation || null;
+        const citation = citationDoc ? {
+            providedCitationUrl: citationDoc.providedCitationUrl || null,
+            aiCitationUrl: citationDoc.aiCitationUrl || null,
+            citationHead: citationDoc.citationHead || null,
+            confidenceRating: citationDoc.confidenceRating || null,
+        } : null;
+
+        return { text, interactionId: selected._id, citation, chosen: chosenEntry };
     }
 
 

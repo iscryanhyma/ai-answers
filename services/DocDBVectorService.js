@@ -310,9 +310,14 @@ class DocDBVectorService {
         { $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: k * 2, efSearch: 200 } } },
         { $limit: k * 2 },
         ...(this.filterQuery && Object.keys(this.filterQuery).length ? [{ $match: this.filterQuery }] : []),
-        { $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } },
-        { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
-        { $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1 } },
+  // Lookup interaction to access expertFeedback and the linked answer
+  { $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } },
+  { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
+  // Lookup the answer doc for the interaction to extract citation fields
+  { $lookup: { from: 'answers', localField: 'inter.answer', foreignField: '_id', as: 'answer' } },
+  { $unwind: { path: '$answer', preserveNullAndEmptyArrays: true } },
+  // Project citation URLs from the joined answer.citation (may be missing)
+  { $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead' } },
       ];
 
       let docs = [];
@@ -338,6 +343,11 @@ class DocDBVectorService {
           expertFeedbackId,
           expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null,
           similarity: null,
+          citation: {
+            providedCitationUrl: r.providedCitationUrl || null,
+            aiCitationUrl: r.aiCitationUrl || null,
+            citationHead: r.citationHead || null,
+          }
         };
       });
 
