@@ -5,7 +5,8 @@ import mongoose from 'mongoose';
 import EmbeddingService from '../../services/EmbeddingService.js';
 import { AgentOrchestratorService } from '../../agents/AgentOrchestratorService.js';
 import { rankerStrategy } from '../../agents/strategies/rankerStrategy.js';
-import { createRankerAgent } from '../../agents/AgentFactory.js';
+import { translationStrategy } from '../../agents/strategies/translationStrategy.js';
+import { createRankerAgent, createTranslationAgent } from '../../agents/AgentFactory.js';
 
 // --- Main handler (composed of the helpers above) ---
 export default async function handler(req, res) {
@@ -59,6 +60,9 @@ export default async function handler(req, res) {
             ServerLoggingService.info('No final chosen interaction', 'chat-similar-answer');
             return res.json({});
         }
+
+        // Translate the final answer if needed (moved to helper for cleanliness)
+        await translateFinalAnswerIfNeeded(formatted, language, selectedAI);
 
         ServerLoggingService.info('Returning chat similarity result (re-ranked)', 'chat-similar-answer', { interactionId: formatted.interactionId, sourceSimilarity: chosen.match?.similarity });
 
@@ -224,6 +228,30 @@ export default async function handler(req, res) {
         } : null;
 
         return { text, englishAnswer, interactionId: selected._id, citation, chosen: chosenEntry };
+    }
+
+    // Helper: translate the final answer when requested language is not English/French
+    async function translateFinalAnswerIfNeeded(formatted, languageStr, agentType) {
+        if (!formatted || !formatted.text) return;
+        const lang = (languageStr || '').toLowerCase().trim();
+        if (!lang) return;
+
+        // Accept common variants like 'en', 'eng', 'english', 'fr', 'fra', 'french'
+        const isEnglish = /^(en|eng|english)$/i.test(lang) || lang.includes('en');
+        const isFrench = /^(fr|fra|french)$/i.test(lang) || lang.includes('fr');
+        if (isEnglish || isFrench) return; // no translation needed
+
+        try {
+            const createTransAgent = async (atype, chatId) => await createTranslationAgent(atype, chatId);
+            const translationRequest = { text: formatted.text, desired_language: languageStr };
+            const transResp = await AgentOrchestratorService.invokeWithStrategy({ chatId: 'translate-final-answer', agentType: agentType, request: translationRequest, createAgentFn: createTransAgent, strategy: translationStrategy });
+            const translated = transResp?.result?.translated_text || transResp?.result?.text || (typeof transResp?.result === 'string' ? transResp.result : null) || (typeof transResp?.raw === 'string' ? transResp.raw : null);
+            if (translated && typeof translated === 'string' && translated.trim()) {
+                formatted.text = translated.trim();
+            }
+        } catch (err) {
+            ServerLoggingService.warn('Translation of final answer failed; returning original', 'chat-similar-answer', err);
+        }
     }
 
 
