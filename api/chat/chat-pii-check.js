@@ -12,14 +12,15 @@ export default async function handler(req, res) {
     ServerLoggingService.info('PII check request received.', chatId, { agentType });
 
     const piiResult = await invokePIIAgent(agentType, { chatId, question: message });
-    const pii = (piiResult && Object.prototype.hasOwnProperty.call(piiResult, 'pii')) ? piiResult.pii : null;
+    
+    if (piiResult.pii !== null) {
+      ServerLoggingService.info('PII detected:', chatId);
+    }
+    if (piiResult.blocked === true) {
+      ServerLoggingService.info('Blocked:', chatId);
+    }
 
-    ServerLoggingService.info('PII check completed.', chatId, { hasPII: !!(pii && String(pii).trim() && String(pii).toLowerCase() !== 'null') });
-
-    return res.json({
-      ...piiResult,
-      pii,
-    });
+    return res.json(piiResult);
   } catch (error) {
     ServerLoggingService.error('Error processing PII check.', req?.body?.chatId || 'system', error);
     return res.status(500).json({ error: 'Internal Server Error' });

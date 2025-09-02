@@ -21,23 +21,7 @@ export default async function handler(req, res) {
         try {
             // First: detect PII and language
             const piiResult = await invokePIIAgent(agentType, { chatId, question: message });
-
-            // If PII present, short-circuit and return empty search results with PII metadata
-            const isEmptyPIIValue = (v) => {
-                if (v === null || v === undefined) return true;
-                if (typeof v === 'string') {
-                    const s = v.trim().toLowerCase();
-                    return s === '' || s === 'null';
-                }
-                if (Array.isArray(v)) return v.length === 0;
-                if (typeof v === 'object') return Object.keys(v).length === 0;
-                return false;
-            };
-
-            const piiPresent = piiResult && ('pii' in piiResult) && !isEmptyPIIValue(piiResult.pii);
-
-            if (piiPresent) {
-                ServerLoggingService.info('PII present; skipping external search and returning PII result with empty search results.', chatId, { piiResult });
+            if ((piiResult.blocked === true) || (piiResult.pii !== null)) {
                 const emptySearchResults = { results: [], items: [], total: 0, searchResults: [] };
                 res.json({
                     ...emptySearchResults,
@@ -46,7 +30,7 @@ export default async function handler(req, res) {
                 return;
             }
             
-            // No PII: perform query rewrite (translation + search query)
+            // No blocked content: perform query rewrite (translation + search query)
             const rewriteResult = await invokeQueryRewriteAgent(agentType, { chatId, question: message, referringUrl });
             const searchQuery = rewriteResult.query;
             const originalLang = (rewriteResult.originalLang || '').toString();
@@ -60,8 +44,8 @@ export default async function handler(req, res) {
             res.json({
                 ...searchResults,
                 ...rewriteResult,
+                ...piiResult,
                 originalLang,
-                pii: null
             });
         } catch (error) {
             ServerLoggingService.error('Error processing search:', chatId, error);

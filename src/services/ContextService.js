@@ -138,12 +138,14 @@ const ContextService = {
         "Context Service: Agent Search completed:",searchResults
       );
       // Extract agent values from searchResults
-      const { query: searchQuery, translatedQuestion, originalLang, pii = null } = searchResults;
+      const { query: searchQuery, translatedQuestion, originalLang, pii = null, blocked = false } = searchResults;
 
-      // If the search agent returned PII (redacted question in <pii>), throw RedactionError to stop processing
-      if (pii && String(pii).toLowerCase() !== 'null' && String(pii).trim() !== '') {
-        await LoggingService.info(chatId, 'Context Service: PII detected, throwing RedactionError', { pii });
-        // Per request: use the pii (redacted question with XXX) as redactedText and leave redactedItems as null
+      // If the search agent returned blocked content, throw RedactionError to stop processing
+      if (blocked) {
+        await LoggingService.info(chatId, 'Context Service: Blocked content detected, throwing RedactionError');
+        throw new RedactionError('Blocked content detected in user message', "#############", null);
+      } else if (pii !== null) {
+        await LoggingService.info(chatId, 'Context Service: PII detected, redacting...');
         throw new RedactionError('PII detected in user message', pii, null);
       }
       const parsedContext = ContextService.parseContext(
