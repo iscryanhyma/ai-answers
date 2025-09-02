@@ -52,8 +52,8 @@ export default async function handler(req, res) {
         const topChecks = (topRankerItem && typeof topRankerItem === 'object' && topRankerItem.checks) ? topRankerItem.checks : null;
 
         const targetTurnIndex = Math.max(0, (questions?.length || 1) - 1);
-        const rankedIndices = getRankedIndices(rankResult, orderedEntries.length);
-        const chosen = selectChosenByTurn(orderedEntries, finalCandidates, rankedIndices, topIndex, targetTurnIndex);
+        // Choose the top-ranked entry from the ranker results. fall back to the first ordered entry or finalCandidates[0]
+        const chosen = orderedEntries[topIndex];
         const formatted = formatAnswerFromChosen(chosen, targetTurnIndex);
         if (!formatted) {
             ServerLoggingService.info('No final chosen interaction', 'chat-similar-answer');
@@ -64,7 +64,6 @@ export default async function handler(req, res) {
 
         return res.json({
             answer: formatted.text,
-            englishAnswer: formatted.englishAnswer || null,
             interactionId: formatted.interactionId,
             reRanked: true,
             similarity: chosen.match?.similarity ?? null,
@@ -196,33 +195,7 @@ export default async function handler(req, res) {
         }
         return topIndex;
     }
-    function getRankedIndices(rankResult, maxLen) {
-        const out = [];
-        const allPass = (checks) => checks && Object.values(checks).every(v => String(v).toLowerCase() === 'pass');
-        if (rankResult && Array.isArray(rankResult.results)) {
-            for (const r of rankResult.results) {
-                if (r && typeof r === 'object' && typeof r.index === 'number' && allPass(r.checks)) {
-                    out.push(r.index);
-                }
-            }
-        }
-        // Ensure indices are within range and unique in order
-        const seen = new Set();
-        const filtered = out.filter(i => Number.isInteger(i) && i >= 0 && i < maxLen && !seen.has(i) && seen.add(i));
-        return filtered;
-    }
-
-    function selectChosenByTurn(orderedEntries, finalCandidates, rankedIndices, topIndex, targetTurnIndex) {
-        // Prefer the highest-ranked entry that has at least targetTurnIndex+1 turns
-        for (const idx of rankedIndices) {
-            const entry = orderedEntries[idx];
-            if (entry && Array.isArray(entry.flowInteractions) && entry.flowInteractions.length > targetTurnIndex) {
-                return entry;
-            }
-        }
-        const safeIndex = (typeof topIndex === 'number' && topIndex >= 0 && topIndex < orderedEntries.length) ? topIndex : 0;
-        return orderedEntries[safeIndex] || orderedEntries[0] || finalCandidates[0];
-    }
+    // Note: selection simplified to use topIndex directly; previous re-ranking helpers removed.
 
     function formatAnswerFromChosen(chosenEntry, targetTurnIndex) {
         if (!chosenEntry) return null;
@@ -234,13 +207,13 @@ export default async function handler(req, res) {
         }
         if (!selected) selected = chosenEntry.candidate?.interaction;
         if (!selected || !selected.answer) return null;
-    const ans = selected.answer;
-    // Prefer englishAnswer when present; fall back to paragraphs or content
-    const englishAnswer = ans?.englishAnswer || null;
-    const text = englishAnswer || ((Array.isArray(ans.paragraphs) && ans.paragraphs.length) ? ans.paragraphs.join('\n\n') : (ans.content || ''));
+        const ans = selected.answer;
+        // Prefer englishAnswer when present; fall back to paragraphs or content
+        const englishAnswer = ans?.englishAnswer || null;
+        const text = englishAnswer || ((Array.isArray(ans.paragraphs) && ans.paragraphs.length) ? ans.paragraphs.join('\n\n') : (ans.content || ''));
 
-    // Extract citation fields if populated (answer.citation may be a populated doc)
-    const citationDoc = ans?.citation || null;
+        // Extract citation fields if populated (answer.citation may be a populated doc)
+        const citationDoc = ans?.citation || null;
         const citation = citationDoc ? {
             providedCitationUrl: citationDoc.providedCitationUrl || null,
             aiCitationUrl: citationDoc.aiCitationUrl || null,
@@ -248,7 +221,7 @@ export default async function handler(req, res) {
             confidenceRating: citationDoc.confidenceRating || null,
         } : null;
 
-    return { text, englishAnswer, interactionId: selected._id, citation, chosen: chosenEntry };
+        return { text, englishAnswer, interactionId: selected._id, citation, chosen: chosenEntry };
     }
 
 
