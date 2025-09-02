@@ -24,6 +24,7 @@ import openAIContextAgentHandler from '../api/openai/openai-context.js';
 import dbChatSessionHandler from '../api/db/db-chat-session.js';
 import chatSimilarAnswerHandler from '../api/chat/chat-similar-answer.js';
 import chatPIICheckHandler from '../api/chat/chat-pii-check.js';
+import chatDetectLanguageHandler from '../api/chat/chat-detect-language.js';
 import dbVerifyChatSessionHandler from '../api/db/db-verify-chat-session.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import dbPersistInteraction from '../api/db/db-persist-interaction.js';
@@ -140,6 +141,7 @@ app.post("/api/azure/azure-context", azureContextHandler);
 app.post('/api/search/search-context', contextSearchHandler);
 app.post('/api/chat/chat-similar-answer', chatSimilarAnswerHandler);
 app.post('/api/chat/chat-pii-check', chatPIICheckHandler);
+app.post('/api/chat/chat-detect-language', chatDetectLanguageHandler);
 
 
 const PORT = process.env.PORT || 3001;
