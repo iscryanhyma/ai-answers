@@ -14,8 +14,26 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate(); 
 
   useEffect(() => {
-    // Load user from localStorage on initial render
+    // Load user from localStorage on initial render and validate token
     const user = AuthService.getUser();
+    if (user && AuthService.isTokenExpired()) {
+      // Token is expired: perform logout to clear storage and redirect
+      AuthService.logout();
+      setCurrentUser(null);
+      setLoading(false);
+      try {
+        let prefix = '/en';
+        if (typeof window !== 'undefined') {
+          const path = window.location.pathname;
+          if (path.startsWith('/fr')) prefix = '/fr';
+        }
+        navigate(`${prefix}/signin`);
+      } catch (e) {
+        // ignore navigation errors
+      }
+      return;
+    }
+
     setCurrentUser(user);
     setLoading(false);
 
@@ -69,6 +87,17 @@ export const AuthProvider = ({ children }) => {
     AuthService.logout();
     setCurrentUser(null);
     setLoading(false);
+    // Redirect to signin preserving language prefix
+    try {
+      let prefix = '/en';
+      if (typeof window !== 'undefined') {
+        const path = window.location.pathname;
+        if (path.startsWith('/fr')) prefix = '/fr';
+      }
+      navigate(`${prefix}/signin`);
+    } catch (e) {
+      // ignore navigation errors
+    }
   };
   
   // Helper methods for role checking
