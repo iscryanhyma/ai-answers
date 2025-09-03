@@ -5,6 +5,8 @@
 **Organization**: Canadian Digital Service (CDS)  
 **Contact**: Peter Smith at cds.ca  
 
+**Français** : [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)
+
 ## Executive Summary
 
 AI Answers is a specialized AI assistant designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with privacy, accessibility, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and logging views.
