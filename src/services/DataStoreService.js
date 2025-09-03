@@ -162,7 +162,7 @@ class DataStoreService {
 
   static async deleteChat(chatId) {
     try {
-      const response = await AuthService.fetchWithAuth(getApiUrl(`db-delete-chat?chatId=${chatId}`), {
+  const response = await AuthService.fetchWithAuth(getApiUrl(`chat-delete?chatId=${chatId}`), {
         method: 'DELETE'
       });
       
