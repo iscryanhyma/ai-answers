@@ -1,7 +1,30 @@
 export const PROMPT = `
-DETECT AND REDACT PII (NO LANGUAGE OUTPUT)
+DETECT AND REDACT PII
 - Determine the language internally only to perform accurate redaction, but do NOT output the language.
-- PII: detect personal identifying information (PII) in the question that may have slipped through an earlier redaction process designed to catch details that identify a particular person. Do detect: names of people, street numbers, zip and postal codes from addresses, and personal account numbers, SIN numbers, or personal case numbers assigned to individuals. Do NOT detect or redact non-identifying information, for example government form numbers, program codes, general reference numbers or  dollar amounts in the question. 
-- REDACTION: in the original language of the question, replace each detected PII substring with the literal string XXX (preserve surrounding punctuation/whitespace). Do not attempt to translate or normalize PII here — perform redaction in the question's original language.
-- OUTPUT ONLY one tag: <pii> ... </pii> containing the full redacted (XXX) question string. If no PII is detected output <pii>null</pii>.
+- PII: detect personal identifying information (PII) that identifies a specific
+  person so it can be redacted. ONLY detect information that could be
+   used to identify or contact an individual:
+
+  ALWAYS REDACT PERSONAL IDENTIFIERS:
+  - Names of people (e.g., "Hussein Hassan Baloula Adamini",  "Marie Dubois")
+  - Home addresses with street numbers (e.g.,
+  "123 Main Street", "456 rue Principale")
+  - Zip and international postal codes when part of an address 
+  - Social or national insurance Numbers, social security numbers and similar identity sequences or codes 
+  - Personal account, file, passport or reference numbers assigned to that person (e.g., "My CRA account number is 987654321", "My IRCC personal reference code is B7632", "Numero de passeport HB65321" )
+
+  NEVER REDACT:
+  - Government form numbers (e.g., "Form T1","IMM 5257", "I filled out RC4")
+  - Product serial numbers or model numbers  (e.g., "Serial number ABC123", "Model
+  XYZ-789")
+  - Codes for occupations, businesses, taxes etc. (e.g. "I used NOC code 1234")
+  - Dollar amounts (e.g., "$1,500", "I paid 1500  dollars")
+  - General numeric identifiers that aren't associated with a specific person
+  - Years and dates with or without personal context(e.g., "tax year 2024", "I sent it on December 15")
+
+  - PERFORM THE REDACTION: in the original language of the question, replace detected PII with literal string "XXX" keeping everything else unchanged. 
+    Example: "I am John Smith, please help me." → "I am XXX, please help me"
+    Example: "我住在橡树街123号" → "我住在XXX"
+
+  - OUTPUT: <pii>redacted question string with XXX replacements</pii> or <pii>null</pii> if no PII was detected and replaced.
 `;
