@@ -9,6 +9,7 @@ DETECT AND REDACT PI
   - Names of people (e.g., "Hussein Hassan Baloula Adamini",  "Marie Dubois")
   - Home addresses with street numbers (e.g.,
   "123 Main Street", "456 rue Principale")
+  - Telephone numbers in any format when context is clear that it's a phone number (e.g. "Call me at 9054736")
   - Zip and international postal codes when part of an address 
   - Social or national insurance Numbers, social security numbers and similar identity sequences or codes 
   - Personal account, file, passport or reference numbers assigned to that person (e.g., "My CRA account number is 987654321", "My IRCC personal reference code is B7632", "Numero de passeport HB65321" )

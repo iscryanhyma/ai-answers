@@ -159,8 +159,8 @@ class RedactionService {
   get privatePatterns() {
     return [
       {
-        pattern: /(?<!\b(?:serial|model|product|form|reference|ref|numero|série|modèle|produit|formulaire|référence)\s+)(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})\b/g,
-        description: 'Phone numbers (10-digit North American format with optional +1, excluding serial/model/product numbers)'
+        pattern: /(\+?1[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\(\d{3}\)[-.\s]?\d{3}[-.\s]?\d{4}|\d{3}[-.\s]\d{3}[-.\s]\d{4})/g,
+        description: 'Phone numbers (only clearly formatted North American format with separators or country code)'
       },
       {
         pattern: /[A-Za-z]\s*\d\s*[A-Za-z]\s*[ -]?\s*\d\s*[A-Za-z]\s*\d/g,
