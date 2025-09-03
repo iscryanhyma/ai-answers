@@ -159,8 +159,8 @@ class RedactionService {
   get privatePatterns() {
     return [
       {
-        pattern: /((\+\d{1,2}\s?)?1?[-.]?\s?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}|(?:(?:\+?1\s*(?:[.-]\s*)?)?(?:\(\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\s*\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\s*(?:[.-]\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\s*(?:[.-]\s*)?([0-9]{4})(?:\s*(?:#|x\.?|ext\.?|extension)\s*(\d+))?)/g,
-        description: 'Phone numbers (including international formats and extensions)'
+        pattern: /(\+?1[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\(\d{3}\)[-.\s]?\d{3}[-.\s]?\d{4}|\d{3}[-.\s]\d{3}[-.\s]\d{4})/g,
+        description: 'Phone numbers (only clearly formatted North American format with separators or country code)'
       },
       {
         pattern: /[A-Za-z]\s*\d\s*[A-Za-z]\s*[ -]?\s*\d\s*[A-Za-z]\s*\d/g,
@@ -172,11 +172,11 @@ class RedactionService {
       },
       // {
       //   pattern: /\b([A-Za-z]{2}\s*\d{6})\b/g,
-      //   description: 'Passport Numbers'
+      //   description: 'REMOVED Passport Numbers - same pattern as many form numbers'
       // },
       // {
       //   pattern: /\b(?=[A-Z0-9-]*[0-9])(?=[A-Z0-9-]*[A-Z])(?!(?:GST\d{3}|RC\d{3}\b|RC\d+[A-Z-]*)\b)[A-Z0-9-]{6,}\b/gi,
-      //   description: 'Alphanumeric sequences of 6+ chars that contain both letters and numbers (excluding CRA GST and RC forms)'REMOVED because it was catching too many FORM numbers that are entered in a variety of ways eg IMM1294f or imm 1294f or PPTC326 and pptc 326 etc. 
+      //   description: 'REMOVED Alphanumeric sequences of 6+ chars that contain both letters and numbers (excluding CRA GST and RC forms)'REMOVED because it was catching too many FORM numbers that are entered in a variety of ways eg IMM1294f or imm 1294f or PPTC326 and pptc 326 etc. 
       // },
       // {
       //   pattern: /\b(?<!\$)\d{6,}\b/g,
@@ -202,10 +202,6 @@ class RedactionService {
         pattern: /(\d{1,3}(\.\d{1,3}){3}|[0-9A-F]{4}(:[0-9A-F]{4}){5}(::|(:0000)+))/gi,
         description: 'IP addresses'
       },
-      // {
-      //   pattern: /([^\s:/?#]+):\/\/([^/?#\s]*)([^?#\s]*)(\?([^#\s]*))?(#([^\s]*))?/g,
-      //   description: 'URLs'
-      // },
       {
         pattern: /\b\d{3}[-\s]?\d{3}[-\s]?\d{3}\b/g,
         description: 'Canadian SIN (Social Insurance Number)'

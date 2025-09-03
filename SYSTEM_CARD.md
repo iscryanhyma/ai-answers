@@ -5,6 +5,8 @@
 **Organization**: Canadian Digital Service (CDS)  
 **Contact**: Peter Smith at cds.ca  
 
+**Français** : [SYSTEM_CARD_FR.md](SYSTEM_CARD_FR.md)
+
 ## Executive Summary
 
 AI Answers is a specialized AI assistant designed for Government of Canada websites. It provides accurate, brief answers to user questions about government services, programs, and information, with a single appropriate citation. AI Answers is model-independent, with an innovative evaluation system that uses detailed human expert evaluations to fuel automated AI evaluations and accurate answers. The system is built with privacy, accessibility, and accuracy as core principles. An extensive Admin interface supports evaluation, metrics, user management, and logging views.
@@ -65,15 +67,16 @@ AI Answers is a specialized AI assistant designed for Government of Canada websi
 
 ### Data Flow
 1. User submits question through chat interface
-2. Content filtering and PI redaction applied
-3. Context service determines relevant department
-4. Search tools gather relevant government content
-5. **AI agentic behavior**: AI can use specialized tools including:
+2. **Stage 1**: RedactionService applies pattern-based filtering for profanity, threats, and common PI
+3. **Stage 2**: PI Agent performs AI-powered detection of any personal information that slipped through
+4. Context service determines relevant department
+5. Search tools gather relevant government content
+6. **AI agentic behavior**: AI can use specialized tools including:
 - **downloadWebPage tool**: Downloads and reads web pages to verify current information, especially for new/updated URLs or time-sensitive content
 - **URL validation tool**: Checks if citation URLs are active and accessible
 - **Context generation tool**: Generates new context for follow-up questions
-6. Answer service generates response with citations
-7. Response logged to database with user feedback
+7. Answer service generates response with citations
+8. Response logged to database with user feedback
 
 ## Risk Assessment and Safety Measures
 
@@ -100,7 +103,10 @@ AI Answers is a specialized AI assistant designed for Government of Canada websi
 - Unauthorized access to user conversations
 
 **Mitigation strategies:**
-- **PI detection and blocking**: Automatic blocking of personal information (SIN, emails, phone numbers, addresses, most names) - some names may slip through, improved name redaction is planned
+- **2-stage PI detection and blocking**: 
+  - **Stage 1**: Pattern-based detection blocks known PI formats (SIN, emails, phone numbers, addresses)
+  - **Stage 2**: AI-powered PI Agent catches personal information that slipped through, especially names and personal identifiers
+  - Government form numbers, product serial numbers, and public reference codes are explicitly preserved
 - **User notification**: Users are warned when PI is detected and asked to rephrase
 - **Data minimization**: Only conversation data that is sent to the AI service is stored
 - **Access controls**: Database access restricted to authorized personnel with role-based permissions
