@@ -33,6 +33,8 @@ import feedbackPersistPublicHandler from '../api/feedback/feedback-persist-publi
 import dbLogHandler from '../api/db/db-log.js';
 import signupHandler from '../api/db/db-auth-signup.js';
 import loginHandler from '../api/db/db-auth-login.js';
+import logoutHandler from '../api/db/db-auth-logout.js';
+import userLogoutHandler from '../api/user/user-auth-logout.js';
 import dbConnect from '../api/db/db-connect.js';
 import dbUsersHandler from '../api/db/db-users.js';
 import deleteChatHandler from '../api/db/db-delete-chat.js';
@@ -119,6 +121,8 @@ app.get('/api/db/db-chat-logs', dbChatLogsHandler);
 app.post('/api/db/db-delete-expert-eval', dbDeleteExpertEvalHandler);
 app.post('/api/db/db-auth-signup', signupHandler);
 app.post('/api/db/db-auth-login', loginHandler);
+app.post('/api/db/db-auth-logout', logoutHandler);
+app.post('/api/user/user-auth-logout', userLogoutHandler);
 app.all('/api/db/db-users', dbUsersHandler);
 app.delete('/api/db/db-delete-chat', deleteChatHandler);
 app.post('/api/db/db-generate-embeddings', generateEmbeddingsHandler);

@@ -38,12 +38,82 @@ class AuthService {
   }
 
   static removeToken() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
+    } catch (e) {
+      // ignore storage errors
+      console.warn('removeToken error', e);
+    }
   }
 
   static logout() {
+    // Remove known auth keys
     this.removeToken();
+
+    // Attempt to notify server to clear HttpOnly cookies (fire-and-forget)
+    try {
+      // Use configured API URL helper so the endpoint resolution is consistent
+      const logoutUrl = getApiUrl('user-auth-logout');
+      // Fire-and-forget, don't await; ignore errors
+      fetch(logoutUrl, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } })
+        .catch(() => {});
+    } catch (e) {
+      // ignore
+    }
+
+    // Clear all client-side storage and cookies (non-HttpOnly)
+    this.clearClientStorage();
+  }
+
+  // Clear localStorage, sessionStorage and non-HttpOnly cookies.
+  // Note: HttpOnly cookies cannot be cleared via JavaScript; they must be cleared by the server.
+  static clearClientStorage() {
+    try {
+      if (typeof window === 'undefined') return;
+
+      // Clear storages
+      try {
+        if (window.localStorage) window.localStorage.clear();
+      } catch (e) {
+        console.warn('localStorage.clear() failed', e);
+      }
+      try {
+        if (window.sessionStorage) window.sessionStorage.clear();
+      } catch (e) {
+        console.warn('sessionStorage.clear() failed', e);
+      }
+
+      // Clear non-HttpOnly cookies by expiring them
+      if (typeof document !== 'undefined' && document.cookie) {
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+          const eqPos = cookie.indexOf('=');
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          // Set cookie with past expiry for all paths and current domain
+          try {
+            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+            // Also attempt to clear cookie for current domain/host variations
+            try {
+              const hostParts = window.location.hostname.split('.');
+              // progressively try domain variations
+              for (let i = 0; i <= hostParts.length - 1; i++) {
+                const domain = hostParts.slice(i).join('.');
+                document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=' + domain;
+              }
+            } catch (domErr) {
+              // ignore domain clear errors
+            }
+          } catch (e) {
+            // ignore per-cookie errors
+          }
+        }
+      }
+    } catch (e) {
+      console.error('clearClientStorage error', e);
+    }
   }
 
   static isAuthenticated() {
