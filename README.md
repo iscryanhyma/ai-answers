@@ -50,10 +50,12 @@ For comprehensive system information, see:
 - **Department-aligned**: Departments can provide prompt scenarios to address specific communications needs
 - Since GC pages are added and updated frequently, the AI agent uses the downloadWebPage tool to read the page if it identifies a new, updated or unfamiliar url
 
-### Privacy Protection & Content Filtering
-- PI is redacted programmatically in the code, most PI is not sent to the AI service or logged into the database (some names may slip through)
-- When PI is detected in the user question, the user is alerted that the question will not be sent to the AI service to protect their privacy
-- Threats, manipulation and obscenity redaction is also in place with similar user alerts
+### 2-Stage Privacy Protection & Content Filtering
+- **Stage 1 - Initial Redaction**: RedactionService filters profanity, threats, manipulation attempts, and common PI patterns (phone numbers, emails, addresses, SIN numbers)
+- **Stage 2 - AI PI Detection**: Specialized PI Agent performs intelligent detection of any personal information that slipped through, particularly names and personal identifiers
+- When PI is detected at either stage, users are alerted and the question is blocked to protect privacy
+- Most personal information never reaches AI services or gets logged to the database
+- Government form numbers, product serial numbers, and public reference codes are explicitly preserved
 - Usability testing of this feature showed users were successful at understanding the instructions and asking the question without specific threat words
 
 ### Official Languages Support
@@ -170,7 +172,8 @@ flowchart TB
     end
 
     subgraph PreProcessing
-        Redaction["**Redaction Service**<br>- PI Detection & Redaction<br>- Threat/Manipulation Filtering<br>- Content Moderation"]
+        Redaction["**Stage 1: Redaction Service**<br>- Pattern-based PI Detection<br>- Threat/Manipulation Filtering<br>- Content Moderation"]
+        PIAgent["**Stage 2: PI Agent**<br>- AI-powered PI Detection<br>- Intelligent Name Recognition<br>- Final Privacy Check"]
         PipelineService["**Chat Pipeline Service**<br>- Orchestrates Flow<br>- Status Management<br>- Error Handling"]
     end
 
@@ -217,8 +220,9 @@ flowchart TB
 
     User -->|Question| ChatInterface
     ChatInterface -->|User Input| PipelineService
-    PipelineService -->|Sanitized Input| Redaction
-    Redaction -->|Validated Question| SearchAPI
+    PipelineService -->|User Input| Redaction
+    Redaction -->|Stage 1 Filtered| PIAgent
+    PIAgent -->|Stage 2 Validated| SearchAPI
 
     SearchAPI -->|Search Request| CanadaSearch
     SearchAPI -->|Search Request| GoogleSearch

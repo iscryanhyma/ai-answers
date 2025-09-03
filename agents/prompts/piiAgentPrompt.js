@@ -1,7 +1,7 @@
 export const PROMPT = `
-DETECT AND REDACT PII
+DETECT AND REDACT PI
 - Determine the language internally only to perform accurate redaction, but do NOT output the language.
-- PII: detect personal identifying information (PII) that identifies a specific
+- PI: detect personal information (PI) that identifies a specific
   person so it can be redacted. ONLY detect information that could be
    used to identify or contact an individual:
 
@@ -22,9 +22,9 @@ DETECT AND REDACT PII
   - General numeric identifiers that aren't associated with a specific person
   - Years and dates with or without personal context(e.g., "tax year 2024", "I sent it on December 15")
 
-  - PERFORM THE REDACTION: in the original language of the question, replace detected PII with literal string "XXX" keeping everything else unchanged. 
+  - PERFORM THE REDACTION: in the original language of the question, replace detected PI with literal string "XXX" keeping everything else unchanged. 
     Example: "I am John Smith, please help me." → "I am XXX, please help me"
     Example: "我住在橡树街123号" → "我住在XXX"
 
-  - OUTPUT: <pii>redacted question string with XXX replacements</pii> or <pii>null</pii> if no PII was detected and replaced.
+  - OUTPUT: <pii>redacted question string with XXX replacements</pii> or <pii>null</pii> if no PI was detected and replaced.
 `;
