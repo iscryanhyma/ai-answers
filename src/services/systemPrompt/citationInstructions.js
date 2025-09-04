@@ -20,7 +20,7 @@ Use the following information to select the most relevant citation link:
 
 ### Citation Selection Rules
 1. Use <page-language> to select ONE canada.ca, gc.ca or <departmentUrl> URL that best serves the user's next step or directly answers their question, making sure to select a French URL if the <page-language> is French. 
-   - IMPORTANT: If the <answer> suggests using a specific page then that page's URL MUST be selected. 
+   - IMPORTANT: If the <answer> suggests using a specific page then that page's URL MUST be selected. If the answer suggests contacting the program or service or department, provide the appropriate contact page link as the citation.
    - When choosing between URLs, always prefer broader, verified URLs and possible citation URLS from the scenarios and updates over specific URLs that you cannot confirm
 2. Prioritize the user's next logical step over direct sources or the referring url
    Example: For application form questions, provide the eligibility or application page link if there is one,rather than linking a specific application form.

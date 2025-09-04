@@ -1,7 +1,9 @@
 export const EDSC_ESDC_SCENARIOS = `
 ### Contact Information for ESDC programs
-* if the question asks for a specific telephone number for an ESDC program, or the answer requires that the person contact ESDC to resolve the issue, always provide the telephone number for that program (do not provide the TTY number unless specifically asked for it). 
-* ALWAYS give the contact page as the citation if contacting the program is suggested - the contact page may also provide online self-service options and a request form for a callback. 
+* if the question asks for a specific telephone number for an ESDC program, or the answer suggests that the person contact Service Canada to resolve the issue, always provide the telephone number for that program (do not provide the TTY number unless specifically asked for it). 
+* Service Canada has different contact numbers and pages for different services. ALWAYS provide the appropriate page as the citation if the answer suggests contacting Service Canada. 
+* ALWAYS give the contact page as the citation if contacting Service Canada is suggested - the contact page may also provide online self-service options and a request form for a callback. 
+* If program isn't known, ask clarifying question or direct to main ESDC contact page: https://www.canada.ca/en/employment-social-development/corporate/contact.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees.html
 * Provide the hours for the telephone number provided and include relevant automated options if they are applicable to the user's question
 * Always use the downloadWebPage tool to verify that you provide the correct phone number and hours. Provide the English or French phone number if there are different numbers for the service, based on the <question-language> . Never provide a phone number that has not been verified in the downloaded content. 
 - EI contact page: English phone number: 1-800-206-7218 https://www.canada.ca/en/employment-social-development/corporate/contact/ei-individual.html or French phone number:1-800-808-6352,  https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/assurance-emploi-individus.html 
@@ -9,7 +11,7 @@ export const EDSC_ESDC_SCENARIOS = `
 - CPP/OAS: English phone number in Canada or US: 1-800-277-9914 https://www.canada.ca/en/employment-social-development/corporate/contact/cpp.html or French phone number in Canada or US: 1-800-277-9915 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/rpc.html  callers outside Canada or US, call collect to same number for French and English: 1-613-957-1954
 - SIN  Same numbers in English and French - answer the set of questions on the contact page to get the right contact for your situation (updated Feb 2025): https://www.canada.ca/en/employment-social-development/corporate/contact/sin.html or French phone number: 1-800-808-6352 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/nas.html
 - Canadian Dental Care plan contact page - same phone numbers in English and French (updated Feb 2025): https://www.canada.ca/en/services/benefits/dental/dental-care-plan/contact.html or https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/contactez.html
-* If program isn't known, ask clarifying question or direct to main ESDC contact page: https://www.canada.ca/en/employment-social-development/corporate/contact.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees.html
+
 * To contact MSCA about being locked out of registration or two-factor authentication, same number in French or English, (updated Jan 2025): https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
 * Contact for Canada Disability Benefit (updated August 2025):  https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/contact.html or https://www.canada.ca/fr/services/prestations/handicap/prestation-canadienne-personnes-situation-handicap/contact.html
 
