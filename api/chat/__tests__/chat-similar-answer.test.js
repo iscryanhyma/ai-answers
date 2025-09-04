@@ -101,7 +101,7 @@ describe('chat-similar-answer handler', () => {
   });
 
   it('returns the answer matching the same turn index in the chosen flow', async () => {
-    const req = { method: 'POST', body: { questions: ['How to reset password?'], selectedAI: 'openai' } };
+    const req = { method: 'POST', body: { questions: ['How to reset password?'], selectedAI: 'openai', language: 'en' } };
     const res = { setHeader: vi.fn(), status: vi.fn(() => res), json: vi.fn(() => res), end: vi.fn() };
 
     await handler(req, res);
@@ -123,7 +123,7 @@ describe('chat-similar-answer handler', () => {
 
   it('uses questions array (conversation history) when provided', async () => {
     const questions = ['How do I apply?', 'What documents are required?'];
-    const req = { method: 'POST', body: { questions, selectedAI: 'openai' } };
+    const req = { method: 'POST', body: { questions, selectedAI: 'openai', language: 'en' } };
     const res = { setHeader: vi.fn(), status: vi.fn(() => res), json: vi.fn(() => res), end: vi.fn() };
 
     await handler(req, res);
@@ -134,11 +134,13 @@ describe('chat-similar-answer handler', () => {
     expect(Array.isArray(firstArgList)).toBe(true);
     expect(firstArgList).toEqual(questions);
 
-    // Ensure orchestrator receives formatted userQuestions array
+    // Ensure orchestrator receives formatted userQuestions string (EmbeddingService formats and labels)
     expect(mockInvokeWithStrategy).toHaveBeenCalled();
     const orchestratorArg = mockInvokeWithStrategy.mock.calls[0][0];
-    expect(Array.isArray(orchestratorArg.request.userQuestions)).toBe(true);
-    expect(orchestratorArg.request.userQuestions).toEqual(questions);
+    expect(typeof orchestratorArg.request.userQuestions).toBe('string');
+    expect(orchestratorArg.request.userQuestions).toContain('FORMATTED:');
+    expect(orchestratorArg.request.userQuestions).toContain('How do I apply?');
+    expect(orchestratorArg.request.userQuestions).toContain('What documents are required?');
 
     // Should still return a response body
     expect(res.json).toHaveBeenCalled();
@@ -147,12 +149,15 @@ describe('chat-similar-answer handler', () => {
   it('returns the second-turn answer when user is at the second turn', async () => {
     // Ensure ranker returns an ordering that includes both candidates,
     // so the selector can pick the one with enough turns (index 1)
-    mockInvokeWithStrategy.mockResolvedValueOnce({ results: [
-      { index: 0, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } },
+    mockInvokeWithStrategy.mockReset();
+    mockInvokeWithStrategy.mockResolvedValue({ results: [
+      // First result fails a check, so interpretRankResult skips it
+      { index: 0, checks: { numbers: 'fail', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } },
+      // Second result passes, so index 1 is selected
       { index: 1, checks: { numbers: 'pass', dates_times: 'pass', negation: 'pass', entities: 'pass', quantifiers: 'pass', conditionals: 'pass', connectives: 'pass', modifiers: 'pass' } }
     ] });
 
-    const req = { method: 'POST', body: { questions: ['What is SCIS?', 'Where are the forms?'], selectedAI: 'openai' } };
+    const req = { method: 'POST', body: { questions: ['What is SCIS?', 'Where are the forms?'], selectedAI: 'openai', language: 'en' } };
     const res = { setHeader: vi.fn(), status: vi.fn(() => res), json: vi.fn(() => res), end: vi.fn() };
 
     await handler(req, res);
@@ -169,7 +174,7 @@ describe('chat-similar-answer handler', () => {
     // Force ranker to return no results so interpretRankResult -> -1
     mockInvokeWithStrategy.mockResolvedValueOnce({ results: [] });
 
-    const req = { method: 'POST', body: { questions: ['What is SCIS?'], selectedAI: 'openai' } };
+    const req = { method: 'POST', body: { questions: ['What is SCIS?'], selectedAI: 'openai', language: 'en' } };
     const res = { setHeader: vi.fn(), status: vi.fn(() => res), json: vi.fn(() => res), end: vi.fn() };
 
     await handler(req, res);
