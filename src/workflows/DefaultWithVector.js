@@ -5,7 +5,7 @@ import LoggingService from '../services/ClientLoggingService.js';
 import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from '../services/AuthService.js';
 
-import ChatWorkflowService, { WorkflowStatus } from '../services/ChatWorkflowService.js';
+import { ChatWorkflowService, WorkflowStatus } from '../services/ChatWorkflowService.js';
 
 export class DefaultWithVector {
   constructor() { }
