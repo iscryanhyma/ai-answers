@@ -9,7 +9,7 @@ import BatchService from '../../services/BatchService.js';
 
 DataTable.use(DT);
 
-const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang, processingBatches = [], unmarkProcessing = () => {} }) => {
+const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang, processingBatches = [] }) => {
   const [batches, setBatches] = useState([]);
   const [searchText] = useState('');
   // refreshKey forces the DataTable to remount when batches or language change

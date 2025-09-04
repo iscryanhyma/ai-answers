@@ -1,14 +1,13 @@
 import React from 'react';
 import { GcdsText } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 
 
 // --- Reverse lookup for public feedback reason keys ---
 // These should match the ids used in PublicFeedbackComponent.js
-const YES_REASON_KEYS = ['noCall', 'noVisit', 'savedTime', 'other'];
-const NO_REASON_KEYS = ['irrelevant', 'confusing', 'notDetailed', 'notWanted', 'other'];
+// Removed unused YES_REASON_KEYS and NO_REASON_KEYS
 
 // English and French translations for each key (from en.json and fr.json)
 const YES_REASON_LABELS = {
@@ -194,7 +193,7 @@ const EndUserFeedbackSection = ({ t, metrics }) => {
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
                 <Pie
-                  data={yesPieData.map(({ label, count }, idx) => ({ name: label, value: count }))}
+                  data={yesPieData.map(({ label, count }) => ({ name: label, value: count }))}
                   dataKey="value"
                   nameKey="name"
                   cx="50%"

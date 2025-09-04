@@ -13,7 +13,7 @@ class FakeStorage {
     this.removed = [];
     this.cleared = false;
   }
-  getItem(k) { return this.store.hasOwnProperty(k) ? this.store[k] : null; }
+  getItem(k) { return Object.prototype.hasOwnProperty.call(this.store, k) ? this.store[k] : null; }
   setItem(k, v) { this.store[k] = v; }
   removeItem(k) { delete this.store[k]; this.removed.push(k); }
   clear() { this.store = {}; this.cleared = true; }

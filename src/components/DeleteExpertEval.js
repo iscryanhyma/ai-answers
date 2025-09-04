@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { GcdsButton } from '@cdssnc/gcds-components-react';
 import EvaluationService from '../services/EvaluationService.js';
 
-const DeleteExpertEval = ({ lang = 'en' }) => {
+const DeleteExpertEval = () => {
   const [chatId, setChatId] = useState('');
   const [loading, setLoading] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);

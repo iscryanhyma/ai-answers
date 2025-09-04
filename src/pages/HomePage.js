@@ -60,7 +60,7 @@ const HomePage = ({ lang = "en" }) => {
   });
   const [chatId, setChatId] = useState(reviewChatId || null);
   const [initialMessages, setInitialMessages] = useState([]);
-  const [isLoadingSiteStatus, setIsLoadingSiteStatus] = useState(true);
+  // Removed unused isLoadingSiteStatus state
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
 
   useEffect(() => {
@@ -74,14 +74,14 @@ const HomePage = ({ lang = "en" }) => {
             message: t("homepage.errors.serviceUnavailable"),
           });
         }
-        setIsLoadingSiteStatus(false);
+        // removed unused loading state update
       })
       .catch(() => {
         setServiceStatus({
           isAvailable: false,
           message: t("homepage.errors.serviceUnavailable"),
         });
-        setIsLoadingSiteStatus(false);
+        // removed unused loading state update
       });
   }, [t]);
 
@@ -120,7 +120,7 @@ const HomePage = ({ lang = "en" }) => {
             return;
           }
           const msgs = [];
-          chat.interactions.forEach((inter, idx) => {
+          chat.interactions.forEach((inter) => {
             if (inter && inter.question) {
               msgs.push({
                 id: inter.interactionId,

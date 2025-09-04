@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsLink } from '@cdssnc/gcds-components-react';
 import BatchUpload from '../components/batch/BatchUpload.js';
 import BatchList from '../components/batch/BatchList.js';
 import { useTranslations } from '../hooks/useTranslations.js';
@@ -53,12 +53,11 @@ const BatchPage = ({ lang = 'en' }) => {
 
     try {
       const persisted = await BatchService.retrieveBatch(batchId);
-      const items = persisted?.items || [];
-      console.log(`[batch] onProcess: batchId=${batchId} items.length=${items.length}`, items);
-      const entries = items;
+      const entries = persisted?.items || [];
+      console.log(`[batch] onProcess: batchId=${batchId} items.length=${entries.length}`, entries);
 
       try {
-        const { _id, items, ...batchDataWithoutId } = persisted;
+        const { _id, ...batchDataWithoutId } = persisted;
         await BatchService.persistBatch({
           _id, // ensure server updates this document
           ...batchDataWithoutId,
@@ -81,7 +80,7 @@ const BatchPage = ({ lang = 'en' }) => {
       }).then(async () => {
         try {
           // Preserve batch metadata when updating final status, exclude items and _id
-          const { _id, items, ...batchDataWithoutId } = persisted;
+          const { _id, ...batchDataWithoutId } = persisted;
           await BatchService.persistBatch({
             _id, // ensure server updates this document
             ...batchDataWithoutId,

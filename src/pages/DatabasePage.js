@@ -156,7 +156,7 @@ const DatabasePage = ({ lang }) => {
 
     setIsImporting(true);
     setMessage('Starting import...');
-    let lineBuffer = '';
+    // lineBuffer is managed inside the try block per chunk
     let accumulatedStats = { inserted: 0, failed: 0 };
 
     try {

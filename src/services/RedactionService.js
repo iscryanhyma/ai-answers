@@ -285,7 +285,7 @@ class RedactionService {
     // Filter out patterns with null RegExp (in case initialization failed)
     const validPatterns = this.redactionPatterns.filter(({ pattern }) => pattern !== null);
 
-    validPatterns.forEach(({ pattern, type }, index) => {
+    validPatterns.forEach(({ pattern, type }) => {
       redactedText = redactedText.replace(pattern, (match) => {
         // console.log(`Pattern ${index} matched: "${match}"`);
         redactedItems.push({ value: match, type });

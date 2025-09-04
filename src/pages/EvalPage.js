@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { getApiUrl } from '../utils/apiToUrl.js';
 import { GcdsContainer, GcdsText, GcdsButton, GcdsDetails, GcdsLink } from '@cdssnc/gcds-components-react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
-import DataStoreService from '../services/DataStoreService.js';
+// Removed unused imports
 import EvaluationService from '../services/EvaluationService.js';
 
 const EvalPage = () => {
@@ -11,7 +10,7 @@ const EvalPage = () => {
   const { language } = usePageContext();
   const [evalProgress, setEvalProgress] = useState(null);
   const [isAutoProcessingEvals, setIsAutoProcessingEvals] = useState(false);
-  const [isRegeneratingAll, setIsRegeneratingAll] = useState(false);
+  const [isRegeneratingAll] = useState(false);
   const [isEvalRequestInProgress, setIsEvalRequestInProgress] = useState(false);
   const [expertFeedbackCount, setExpertFeedbackCount] = useState(null);
   const [nonEmptyEvalCount, setNonEmptyEvalCount] = useState(null);
