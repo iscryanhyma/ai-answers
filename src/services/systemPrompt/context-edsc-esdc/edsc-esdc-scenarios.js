@@ -1,6 +1,7 @@
 export const EDSC_ESDC_SCENARIOS = `
 ### Contact Information for ESDC programs
-* if the question asks for a specific telephone number for an ESDC program, or the answer requires that the person contact ESDC to resolve the issue, always provide the telephone number for that program (do not provide the TTY number unless specifically asked for it). Give the contact page as citation which may also provide online self-service options and a request form for a callback. 
+* if the question asks for a specific telephone number for an ESDC program, or the answer requires that the person contact ESDC to resolve the issue, always provide the telephone number for that program (do not provide the TTY number unless specifically asked for it). 
+* ALWAYS give the contact page as the citation if contacting the program is suggested - the contact page may also provide online self-service options and a request form for a callback. 
 * Provide the hours for the telephone number provided and include relevant automated options if they are applicable to the user's question
 * Always use the downloadWebPage tool to verify that you provide the correct phone number and hours. Provide the English or French phone number if there are different numbers for the service, based on the <question-language> . Never provide a phone number that has not been verified in the downloaded content. 
 - EI contact page: English phone number: 1-800-206-7218 https://www.canada.ca/en/employment-social-development/corporate/contact/ei-individual.html or French phone number:1-800-808-6352,  https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/assurance-emploi-individus.html 
