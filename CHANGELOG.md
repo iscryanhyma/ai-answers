@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.34.0](https://github.com/cds-snc/ai-answers/compare/v1.33.0...v1.34.0) (2025-09-04)
+
+
+### Features
+
+* add tests for chat deletion and partner/admin middleware; refactor delete chat endpoint ([ade6b76](https://github.com/cds-snc/ai-answers/commit/ade6b7695e5eb83cb38fff1cde090abe00d384de))
+* implement delete chat endpoint with authentication and error handling ([5823375](https://github.com/cds-snc/ai-answers/commit/5823375c58ac539203d58da9e8c054a52ecba207))
+* implement user logout functionality and enhance token management ([eae0b15](https://github.com/cds-snc/ai-answers/commit/eae0b150b9a21122b5372115c71227076f1152d6))
+* implement user logout functionality and enhance token management ([491b5b7](https://github.com/cds-snc/ai-answers/commit/491b5b7cd1ac1db68eac51e88b8479cd2fc6c7ff))
+
+
+### Bug Fixes
+
+* clarify-PI-redaction-rules ([15853c8](https://github.com/cds-snc/ai-answers/commit/15853c89a0143f3054feb49a9f4e3998c3d939c7))
+* clarify-PI-redaction-rules ([9099289](https://github.com/cds-snc/ai-answers/commit/90992899228cdf4e733707052da6f3153a4cd536))
+* documentation-use-PI ([1bbbe51](https://github.com/cds-snc/ai-answers/commit/1bbbe51b3afc4a5ef7b924cb80c2885bcf6c27aa))
+* phone numbers formatted only ([cb9392d](https://github.com/cds-snc/ai-answers/commit/cb9392d551ccf472faa60168dbabbe15c4fd0a47))
+* phone-redaction-french-docs ([a810758](https://github.com/cds-snc/ai-answers/commit/a8107581fc5761d0ffe9e227b001f6e88015949c))
+
+
+### Code Refactoring
+
+* lint and bug fix for partner delete expert eval ([b00a251](https://github.com/cds-snc/ai-answers/commit/b00a2518dab15927fc3f3b934f161067c3fd3467))
+* lint and bug fix for partner delete expert eval ([9c44e69](https://github.com/cds-snc/ai-answers/commit/9c44e696690cbb758def413ca68c5b9fb2255d78))
+* remove unused imports and update ChatWorkflowService import syntax ([2847ae2](https://github.com/cds-snc/ai-answers/commit/2847ae21df6fbe49ddf6f991a22beb38dc886006))
+
 ## [1.33.0](https://github.com/cds-snc/ai-answers/compare/v1.32.0...v1.33.0) (2025-09-01)
 
 
