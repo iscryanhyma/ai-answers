@@ -1,8 +1,8 @@
 export const EDSC_ESDC_SCENARIOS = `
 ### Contact Information for ESDC programs
-* if the question asks for a specific telephone number for an ESDC program, always provide the telephone number for that program (do not provide the TTY number unless specifically asked for it), Give the contact page as citation which may also provide online self-service options and a request form for a callback. 
-* Provide the hours for the telephone number provided and include any automated options that may be available
-* Always use the downloadWebPage tool to verify that you provide the correct phone number and hours. Never provide a phone number that has not been verified. 
+* if the question asks for a specific telephone number for an ESDC program, or the answer requires that the person contact ESDC to resolve the issue, always provide the telephone number for that program (do not provide the TTY number unless specifically asked for it). Give the contact page as citation which may also provide online self-service options and a request form for a callback. 
+* Provide the hours for the telephone number provided and include relevant automated options if they are applicable to the user's question
+* Always use the downloadWebPage tool to verify that you provide the correct phone number and hours. Provide the English or French phone number if there are different numbers for the service, based on the <question-language> . Never provide a phone number that has not been verified in the downloaded content. 
 - EI contact page: English phone number: 1-800-206-7218 https://www.canada.ca/en/employment-social-development/corporate/contact/ei-individual.html or French phone number:1-800-808-6352,  https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/assurance-emploi-individus.html 
 - Employer contact centre (ROE, GCOS, TFWP etc) same phone number for English and French on (updated Feb 2025): https://www.canada.ca/en/employment-social-development/corporate/contact/employer-contact-center.html or https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/centre-services-employeurs.html 
 - CPP/OAS: English phone number in Canada or US: 1-800-277-9914 https://www.canada.ca/en/employment-social-development/corporate/contact/cpp.html or French phone number in Canada or US: 1-800-277-9915 https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees/rpc.html  callers outside Canada or US, call collect to same number for French and English: 1-613-957-1954
@@ -10,6 +10,7 @@ export const EDSC_ESDC_SCENARIOS = `
 - Canadian Dental Care plan contact page - same phone numbers in English and French (updated Feb 2025): https://www.canada.ca/en/services/benefits/dental/dental-care-plan/contact.html or https://www.canada.ca/fr/services/prestations/dentaire/regime-soins-dentaires/contactez.html
 * If program isn't known, ask clarifying question or direct to main ESDC contact page: https://www.canada.ca/en/employment-social-development/corporate/contact.html https://www.canada.ca/fr/emploi-developpement-social/ministere/coordonnees.html
 * To contact MSCA about being locked out of registration or two-factor authentication, same number in French or English, (updated Jan 2025): https://www.canada.ca/en/employment-social-development/services/my-account/multi-factor-authentication.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/authentification-multifacteur.html
+* Contact for Canada Disability Benefit (updated August 2025):  https://www.canada.ca/en/services/benefits/disability/canada-disability-benefit/contact.html or https://www.canada.ca/fr/services/prestations/handicap/prestation-canadienne-personnes-situation-handicap/contact.html
 
 ### CHANGING PERSONAL INFO NOT AVAILABLE IN MSCA: it's NOT currently possible to change mailing address, or phone or bank/direct deposit info in MSCA. Do NOT tell people to sign in to change that info or direct them to specific forms. Provide the phone number for the program with the citation link to the appropriate contact page for that program, as listed above.
  
@@ -52,4 +53,10 @@ export const EDSC_ESDC_SCENARIOS = `
 * retirement income calculator updated May 2025: https://www.canada.ca/en/services/benefits/publicpensions/cpp/retirement-income-calculator.html
 * Applying for CPP from outside Canada - Don't attempt to provide a form - the process and forms differ by country. Provide the citation to the apply page for people who lived or are living outside Canada - suggest they select the country they are applying from: https://www.canada.ca/en/services/benefits/publicpensions/cpp/cpp-international/apply.html https://www.canada.ca/fr/services/prestations/pensionspubliques/rpc/rpc-internationales/demande.html 
 * Do not advise people that they should apply for CPP a year in advance - that is just a general guideline and could frighten people who aren't within that time frame. 
+<example>
+   <english-question> How do I apply for EI? </english-question>
+   <english-answer><s-1>Before applying for Employment Insurance (EI), check if you're eligible and gather the documents you'll need to apply.</s-1> <s-2>You can use the EI estimator to find the type and amount of EI benefits you may be eligible for.</s-2><s-3>Don't wait to apply - you can send additionalrequired documents like your record of employment after you apply. </s-3> <s-4> The online application process (no account required) takes about an hour to complete.</s-4> </english-answer>
+    <citation-head>Check your answer and take the next step:</citation-head> 
+    <citation-url>https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html</citation-url> 
+</example>
 `;
