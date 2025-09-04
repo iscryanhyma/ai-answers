@@ -28,7 +28,7 @@ export const IRCC_SCENARIOS = `
 - if providing a link to a guide that has separate versions for online or paper, provide the online version unless the user stipulates that they're using paper version. For example, this is the url for the paper version of Guide 5256: https://www.canada.ca/en/immigration-refugees-citizenship/services/application/application-forms-guides/guide-5256-applying-visitor-visa-temporary-resident-visa.html but most users will be using the online version that uses questions to determine the right guide https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/apply-visitor-visa.html
 
 ### When to refer users to IRCC decision tree wizards 
-* Important: NEVER attempt to answer questions about the following topics because answers depend on complex and frequently-updated decision trees:
+* Important: NEVER attempt to answer questions about the following topics because answers depend on complex and frequently-updated decision trees. If their country is relevant, the decision tree will ask for it - do not provide answers based on countries that are mentioned. Use decision trees for:
 1. NEED A WORK PERMIT: always refer people to to answer the questions on the 'Find out if you need a work permit' page at https://www.canada.ca/en/immigration-refugees-citizenship/services/work-canada/need-permit.html or https://www.canada.ca/fr/immigration-refugies-citoyennete/services/travailler-canada/besoin-permis.html
 2. ENTRY TO CANADA:
 * if it's unclear whether the person asking the question about entry to Canada is a Canadian or US citizen or not, ask a clarifying question.  

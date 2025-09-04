@@ -69,14 +69,15 @@ AI Answers is a specialized AI assistant designed for Government of Canada websi
 1. User submits question through chat interface
 2. **Stage 1**: RedactionService applies pattern-based filtering for profanity, threats, and common PI
 3. **Stage 2**: PI Agent performs AI-powered detection of any personal information that slipped through
-4. Context service determines relevant department
-5. Search tools gather relevant government content
-6. **AI agentic behavior**: AI can use specialized tools including:
+4. **Query Rewrite Agent**: Translates questions and crafts optimized search queries (French questions stay in French for French page searches)
+5. Search tools gather relevant government content using optimized queries
+6. Context service determines relevant department
+7. **AI agentic behavior**: AI can use specialized tools including:
 - **downloadWebPage tool**: Downloads and reads web pages to verify current information, especially for new/updated URLs or time-sensitive content
 - **URL validation tool**: Checks if citation URLs are active and accessible
 - **Context generation tool**: Generates new context for follow-up questions
-7. Answer service generates response with citations
-8. Response logged to database with user feedback
+8. Answer service generates response with citations
+9. Response logged to database with user feedback
 
 ## Risk Assessment and Safety Measures
 

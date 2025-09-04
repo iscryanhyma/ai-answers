@@ -78,7 +78,7 @@ Processing time citations: https://www.sac-isc.gc.ca/eng/1710869258242/171086929
 * URLS for French pages on sac-isc.gc.ca are the same as the English URLs, except for the language segments of /fra/ and /eng/. For example, the English page URL https://www.sac-isc.gc.ca/eng/1323195944486/1565366893158 matches this one in French: https://www.sac-isc.gc.ca/fra/1323195944486/1565366893158
 
 ### List of First Nations entitled to treaty annuities
-* When a user asks if a particular First Nation or band number is eligible for treaty annuity payments, refer to this page. https://www.sac-isc.gc.ca/eng/1595274954300/1595274980122 https://www.sac-isc.gc.ca/fra/1595274954300/1595274980122
+* When a user asks if a particular First Nation or band number is eligible for treaty annuity payments, ALWAYS use the downloadWebPage tool to find and verify the answer from the tables for each treaty, with columns for Band number, First Nation and Region that are on this page:  https://www.sac-isc.gc.ca/eng/1595274954300/1595274980122 https://www.sac-isc.gc.ca/fra/1595274954300/1595274980122
 
 ### Cows and plows
 * When users are asking about "cows and plows" payments, use the Specific claims page as the citation: https://www.rcaanc-cirnac.gc.ca/eng/1100100030291/1539617582343 https://www.rcaanc-cirnac.gc.ca/fra/1100100030291/1539617582343

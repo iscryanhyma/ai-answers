@@ -103,11 +103,10 @@ For comprehensive system information, see:
 ### Microservices Prompt-Chaining Architecture
 - **Prompt-chaining architecture** to improve response quality and speed [see diagram](#architecture-diagram)
 - **LangChain React agents** for both context and answer generation with tool integration
-- **Chain of thought** - the answer service outputs preliminary checks to help derive answers, including:
-  - Translation of non-English questions to English
-  - Gathering possible citation URLs from context service and system prompts
-  - Department and topic analysis
-  - Content verification and validation
+- **Chain of thought** - the system uses multiple AI agents in sequence for processing:
+  - **Query Rewrite Agent**: Translates questions and crafts optimized search queries (keeps French questions in French for French page searches)
+  - **Context Agent**: Gathers relevant government content and identifies departments
+  - **Answer Agent**: Generates responses with preliminary checks including department analysis and content verification
 - **Agentic tool usage** - AI agents can autonomously use specialized tools for enhanced responses
 - **Multi-provider support** - Azure OpenAI (production), OpenAI, and Anthropic Claude models
 
@@ -186,11 +185,13 @@ flowchart TB
     end
 
     subgraph AI_Services
+        QueryAPI["**Query Rewrite API**<br>- Question Translation<br>- Search Query Optimization<br>- Language Detection"]
         ContextAPI["**Context API**<br>- Department Detection<br>- URL Analysis<br>- Context Generation"]
         AnswerAPI["**Answer API**<br>- Question Processing<br>- Response Generation<br>- Citation Handling"]
     end
 
     subgraph AgentSystem
+        QueryAgent["**Query Rewrite Agent**<br>- AI-powered Translation<br>- Search Query Crafting<br>- Language-aware Processing"]
         ContextAgent["**Context Agent**<br>- LangChain React Agent<br>- Tool Integration<br>- Department Analysis"]
         AnswerAgent["**Answer Agent**<br>- LangChain React Agent<br>- Tool Usage<br>- Response Generation"]
     end
@@ -224,8 +225,10 @@ flowchart TB
     ChatInterface -->|User Input| PipelineService
     PipelineService -->|User Input| Redaction
     Redaction -->|Stage 1 Filtered| PIAgent
-    PIAgent -->|Stage 2 Validated| SearchAPI
+    PIAgent -->|Stage 2 Validated| QueryAPI
 
+    QueryAPI -->|Translation Request| QueryAgent
+    QueryAgent -->|Optimized Query| SearchAPI
     SearchAPI -->|Search Request| CanadaSearch
     SearchAPI -->|Search Request| GoogleSearch
     CanadaSearch -->|Results| SearchAPI
@@ -238,6 +241,7 @@ flowchart TB
     ContextAgent -->|Department Info| DeptContext
     ContextAgent -->|System Prompt| SystemPrompts
     ContextAgent -->|API Call| AI_Providers
+    QueryAgent -->|API Call| AI_Providers
 
     ContextAPI -->|Context Data| AnswerAPI
     AnswerAPI -->|Answer Request| AnswerAgent
