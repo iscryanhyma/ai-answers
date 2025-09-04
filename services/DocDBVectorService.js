@@ -7,6 +7,16 @@ import ServerLoggingService from './ServerLoggingService.js';
 import { Embedding } from '../models/embedding.js';
 import cosineSimilarity from 'compute-cosine-similarity';
 
+function isFrenchLanguage(lang) {
+  if (!lang) return false;
+  const v = String(lang).trim().toLowerCase();
+  return v === 'fr' || v === 'fra' || v === 'french';
+}
+
+function desiredPageLang(lang) {
+  return isFrenchLanguage(lang) ? 'fr' : 'en';
+}
+
 function toCleanVector(vec) {
   if (!Array.isArray(vec)) throw new Error('Query vector must be an array');
   return vec.map((v, i) => {
@@ -122,13 +132,13 @@ class DocDBVectorService {
       // Ensure vector indexes (HNSW + cosine to match client-side cosine)
       const qaOptions = { type: 'hnsw', similarity: 'cosine', dimensions: qaDim, m: 16, efConstruction: 64 };
       const sentOptions = { type: 'hnsw', similarity: 'cosine', dimensions: sentenceDim, m: 16, efConstruction: 64 };
-  try { await this._ensureVectorIndex('embeddings', { questionsAnswerEmbedding: 'vector' }, qaOptions, 'qa_vector_index'); } catch {}
-  // Ensure a dedicated vector index for questions-only embeddings so
-  // matchQuestions can search against questionsEmbedding separately.
-  try { await this._ensureVectorIndex('embeddings', { questionsEmbedding: 'vector' }, qaOptions, 'questions_vector_index'); } catch {}
-      try { await this._ensureVectorIndex('sentence_embeddings', { embedding: 'vector' }, sentOptions, 'sentence_vector_index'); } catch {}
+      try { await this._ensureVectorIndex('embeddings', { questionsAnswerEmbedding: 'vector' }, qaOptions, 'qa_vector_index'); } catch { }
+      // Ensure a dedicated vector index for questions-only embeddings so
+      // matchQuestions can search against questionsEmbedding separately.
+      try { await this._ensureVectorIndex('embeddings', { questionsEmbedding: 'vector' }, qaOptions, 'questions_vector_index'); } catch { }
+      try { await this._ensureVectorIndex('sentence_embeddings', { embedding: 'vector' }, sentOptions, 'sentence_vector_index'); } catch { }
 
-     
+
       this.stats.lastInitTime = new Date();
       this.isInitialized = true;
       this.initializingPromise = null;
@@ -249,7 +259,7 @@ class DocDBVectorService {
    * @param {{threshold?: number, efSearch?: number, candidateMultiplier?: number}} opts
    */
   async search(vector, k, indexType = 'qa', opts = {}) {
-  ServerLoggingService.debug('search() called', 'DocDBVectorService', { k, indexType, opts });
+    ServerLoggingService.debug('search() called', 'DocDBVectorService', { k, indexType, opts });
     if (!this.isInitialized) {
       ServerLoggingService.debug('Not initialized, calling initialize()', 'DocDBVectorService');
       await this.initialize();
@@ -282,7 +292,7 @@ class DocDBVectorService {
    * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100 } = opts;
+  const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100, language = null } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Lazy init DB/collections
@@ -291,29 +301,43 @@ class DocDBVectorService {
     // Use EmbeddingService to format and embed the questions
     const EmbeddingService = (await import('./EmbeddingService.js')).default;
     const formatted = EmbeddingService.formatQuestionsForEmbedding(questions);
-    if (!formatted.length) return [];
+    if (!formatted || !formatted.length) return [];
 
     // Create embeddings for each formatted question
     const embeddingClient = EmbeddingService.createEmbeddingClient(provider, modelName);
     if (!embeddingClient) throw new Error('Failed to create embedding client');
 
-    const embeddings = await embeddingClient.embedDocuments(formatted);
+    const embeddings = await embeddingClient.embedDocuments([formatted]);
 
-    // For each question embedding, run a vectorSearch pipeline similar to _searchQA
+    // For each flow embedding, run a vectorSearch pipeline similar to _searchQA
     const resultsPerQuestion = [];
     const db = mongoose.connection.db;
+    const pageLang = desiredPageLang(language);
     for (const emb of embeddings) {
       // pipeline mirrors _searchQA but uses provided vector directly
       // Search against question-only embeddings (questionsEmbedding) instead
-      // of the QA-level combined embedding.
-      const pipeline = [
-        { $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: k * 2, efSearch: 200 } } },
-        { $limit: k * 2 },
-        ...(this.filterQuery && Object.keys(this.filterQuery).length ? [{ $match: this.filterQuery }] : []),
-        { $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } },
-        { $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } },
-        { $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1 } },
-      ];
+      // of the QA-level combined embedding. We also join through interaction
+      // -> chat and optionally filter by chat.pageLanguage based on the
+      // requested language.
+      const pipeline = [];
+      pipeline.push({ $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: k * 2, efSearch: 200 } } });
+      pipeline.push({ $limit: k * 2 });
+      if (this.filterQuery && Object.keys(this.filterQuery).length) pipeline.push({ $match: this.filterQuery });
+
+      // Lookup interaction to access expertFeedback and the linked answer
+      pipeline.push({ $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } });
+      pipeline.push({ $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } });
+      // Lookup the answer doc for the interaction to extract citation fields
+      pipeline.push({ $lookup: { from: 'answers', localField: 'inter.answer', foreignField: '_id', as: 'answer' } });
+      pipeline.push({ $unwind: { path: '$answer', preserveNullAndEmptyArrays: true } });
+
+      // Lookup chat(s) that reference this interaction and optionally filter by pageLanguage
+      pipeline.push({ $lookup: { from: 'chats', localField: 'inter._id', foreignField: 'interactions', as: 'chat' } });
+      pipeline.push({ $unwind: { path: '$chat', preserveNullAndEmptyArrays: true } });
+      if (pageLang) pipeline.push({ $match: { 'chat.pageLanguage': pageLang } });
+
+      // Project citation URLs from the joined answer.citation (may be missing)
+      pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead' } });
 
       let docs = [];
       try {
@@ -324,27 +348,34 @@ class DocDBVectorService {
         continue;
       }
 
-      // compute cosine similarity client-side to preserve threshold logic
-      const scored = [];
-      for (const r of docs) {
-        let sim = 0;
-  try { sim = cosineSimilarity(emb, r.questionsEmbedding) ?? 0; } catch (e) { ServerLoggingService.error('cosine error', 'DocDBVectorService', e); }
-        if (threshold === null || sim >= threshold) {
-          // mark an expertFeedbackRating of 100 when expertFeedback exists
-          const expertFeedbackId = r.expertFeedbackId || null;
-          scored.push({ id: r._id.toString(), interactionId: r.interactionId?.toString?.() || r.interactionId, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
-        }
-      }
-      scored.sort((a, b) => b.similarity - a.similarity);
-      // If any scored item has expertFeedback, promote the highest-similarity
-      // item with expertFeedback to the front of the list so callers receive
-      // a top result backed by expert feedback. Otherwise return top-k by similarity.
-      const withEF = scored.find(s => s.expertFeedbackId);
+      // We no longer compute cosine similarity or apply a client-side threshold here.
+      // The aggregation $search with vectorSearch already returns nearest neighbors.
+      // Take the top-k documents in the returned order and map them to the
+      // simplified result shape. If any item has expert feedback, promote the
+      // first such item to the front while preserving the remaining order.
+      const topDocs = Array.isArray(docs) ? docs.slice(0, k) : [];
+      const mapped = topDocs.map(r => {
+        const expertFeedbackId = r.expertFeedbackId || null;
+        return {
+          id: r._id?.toString?.() || null,
+          interactionId: r.interactionId?.toString?.() || r.interactionId,
+          expertFeedbackId,
+          expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null,
+          similarity: null,
+          citation: {
+            providedCitationUrl: r.providedCitationUrl || null,
+            aiCitationUrl: r.aiCitationUrl || null,
+            citationHead: r.citationHead || null,
+          }
+        };
+      });
+
+      const withEF = mapped.find(s => s.expertFeedbackId);
       if (withEF) {
-        const rest = scored.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
+        const rest = mapped.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
         resultsPerQuestion.push([withEF, ...rest]);
       } else {
-        resultsPerQuestion.push(scored.slice(0, k));
+        resultsPerQuestion.push(mapped.slice(0, k));
       }
     }
 
@@ -375,16 +406,16 @@ class DocDBVectorService {
     });
 
     const { searches, qaSearches, sentenceSearches, totalSearchTime, lastInitTime } = this.stats;
-      ServerLoggingService.debug('getStats result', 'DocDBVectorService', {
-        isInitialized: this.isInitialized,
-        embeddings,
-        sentences,
-        searches,
-        qaSearches,
-        sentenceSearches,
-        averageSearchTimeMs: searches ? totalSearchTime / searches : 0,
-        uptimeSeconds: lastInitTime ? (Date.now() - lastInitTime) / 1000 : 0,
-      });
+    ServerLoggingService.debug('getStats result', 'DocDBVectorService', {
+      isInitialized: this.isInitialized,
+      embeddings,
+      sentences,
+      searches,
+      qaSearches,
+      sentenceSearches,
+      averageSearchTimeMs: searches ? totalSearchTime / searches : 0,
+      uptimeSeconds: lastInitTime ? (Date.now() - lastInitTime) / 1000 : 0,
+    });
     return {
       isInitialized: this.isInitialized,
       embeddings,

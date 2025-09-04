@@ -22,6 +22,16 @@ function toPlainNumberArray(vec) {
   });
 }
 
+function isFrenchLanguage(lang) {
+  if (!lang) return false;
+  const v = String(lang).trim().toLowerCase();
+  return v === 'fr' || v === 'fra' || v === 'french';
+}
+
+function desiredPageLang(lang) {
+  return isFrenchLanguage(lang) ? 'fr' : 'en';
+}
+
 class IMVectorService {
   /**
    * @param {{filterQuery?: object, preCheck?: boolean}} opts
@@ -30,7 +40,7 @@ class IMVectorService {
    */
   constructor({ filterQuery = {}, preCheck = false } = {}) {
     this.qaDB = new VectorDB();
-  this.questionsDB = new VectorDB();
+    this.questionsDB = new VectorDB();
     this.sentenceDB = new VectorDB();
     this.isInitialized = false;
     this.initializingPromise = null;
@@ -48,9 +58,9 @@ class IMVectorService {
       sentenceSearches: 0,
       totalSearchTime: 0,
       lastInitTime: null,
-  embeddings: 0,
-  questions: 0,
-  sentences: 0,
+      embeddings: 0,
+      questions: 0,
+      sentences: 0,
       vectorMemoryUsage: {},
       initDurationMs: 0,
     };
@@ -87,12 +97,19 @@ class IMVectorService {
       // Map parentEmbeddingId -> interactionId for sentence join later
       const parentToInteraction = new Map(qaDocs.map(d => [d._id.toString(), d.interactionId?.toString()]));
 
-      // Load Interactions to get expertFeedbackId
+      // Load Interactions to get expertFeedbackId and answer.citation
       const interactionIds = [...new Set(qaDocs.map(d => d.interactionId?.toString()).filter(Boolean))];
       const interactions = await Interaction.find({ _id: { $in: interactionIds } })
-        .select('_id expertFeedback')
+        .select('_id expertFeedback answer')
+        .populate({ path: 'answer', populate: { path: 'citation', model: 'Citation' } })
         .lean();
       const interactionToEF = new Map(interactions.map(i => [i._id.toString(), i.expertFeedback ? i.expertFeedback.toString() : null]));
+      const interactionToCitation = new Map(interactions.map(i => [i._id.toString(), i.answer && i.answer.citation ? {
+        providedCitationUrl: i.answer.citation.providedCitationUrl || null,
+        aiCitationUrl: i.answer.citation.aiCitationUrl || null,
+        citationHead: i.answer.citation.citationHead || null,
+        confidenceRating: i.answer.citation.confidenceRating || null
+      } : null]));
 
       // Filter out QA docs without expertFeedback
       const qaDocsWithEF = qaDocs.filter(doc => {
@@ -117,6 +134,7 @@ class IMVectorService {
         this.qaMeta.set(id, {
           interactionId: doc.interactionId?.toString() || null,
           expertFeedbackId: interactionToEF.get(doc.interactionId?.toString() || '') || null,
+          citation: interactionToCitation.get(doc.interactionId?.toString() || '') || null,
         });
       }
 
@@ -129,6 +147,7 @@ class IMVectorService {
           this.qaMeta.set(qid, {
             interactionId: doc.interactionId?.toString() || null,
             expertFeedbackId: interactionToEF.get(doc.interactionId?.toString() || '') || null,
+            citation: interactionToCitation.get(doc.interactionId?.toString() || '') || null,
           });
         }
       }
@@ -161,14 +180,15 @@ class IMVectorService {
           interactionId,
           sentenceIndex: row.sentenceIndex,
           expertFeedbackId,
+          citation: interactionToCitation.get(interactionId) || null,
         });
       }
 
       // stats
-  // counts reflect what was loaded into the in-memory indexes
-  this.stats.embeddings = qaDocsWithEF.length;
-  this.stats.questions = qaDocsWithEF.filter(d => Array.isArray(d.questionsEmbedding) && d.questionsEmbedding.length).length;
-  this.stats.sentences = sentenceDocs.length;
+      // counts reflect what was loaded into the in-memory indexes
+      this.stats.embeddings = qaDocsWithEF.length;
+      this.stats.questions = qaDocsWithEF.filter(d => Array.isArray(d.questionsEmbedding) && d.questionsEmbedding.length).length;
+      this.stats.sentences = sentenceDocs.length;
       this.stats.lastInitTime = new Date();
       this.stats.initDurationMs = Date.now() - t0;
 
@@ -191,15 +211,15 @@ class IMVectorService {
   }
 
   _calculateVectorMemoryUsage(qaDim, sentDim) {
-  // qaDim: dimension of QA (questionsAnswerEmbedding)
-  // questionDim: dimension of questions-only embeddings
-  // sentDim: dimension of sentence embeddings
-  const questionDim = arguments.length >= 2 ? arguments[1] : 0;
-  const sentDimArg = arguments.length >= 3 ? arguments[2] : sentDim;
+    // qaDim: dimension of QA (questionsAnswerEmbedding)
+    // questionDim: dimension of questions-only embeddings
+    // sentDim: dimension of sentence embeddings
+    const questionDim = arguments.length >= 2 ? arguments[1] : 0;
+    const sentDimArg = arguments.length >= 3 ? arguments[2] : sentDim;
 
-  const qaVectorMemory = this.stats.embeddings * qaDim * 8;     // 8 bytes/float
-  const questionVectorMemory = (this.stats.questions || 0) * questionDim * 8;
-  const sentenceVectorMemory = this.stats.sentences * sentDimArg * 8;
+    const qaVectorMemory = this.stats.embeddings * qaDim * 8;     // 8 bytes/float
+    const questionVectorMemory = (this.stats.questions || 0) * questionDim * 8;
+    const sentenceVectorMemory = this.stats.sentences * sentDimArg * 8;
     const metadataMemory =
       [...this.qaMeta.values(), ...this.sentMeta.values()]
         .reduce((sum, v) => sum + Buffer.byteLength(JSON.stringify(v), 'utf8'), 0);
@@ -249,7 +269,7 @@ class IMVectorService {
   /**
    * Optional: allow appending vectors at runtime (kept for compatibility)
    */
-  addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, createdAt, questionsAnswerEmbedding, questionsEmbedding, sentenceEmbeddings }) {
+  addExpertFeedbackEmbedding({ interactionId, expertFeedbackId, questionsAnswerEmbedding, questionsEmbedding, sentenceEmbeddings }) {
     // Add QA (questions+answer) embedding
     if (questionsAnswerEmbedding && expertFeedbackId) {
       const qaId = `${interactionId || this.stats.embeddings}:${Date.now()}`; // unique-enough
@@ -338,6 +358,7 @@ class IMVectorService {
           interactionId: meta.interactionId || null,
           expertFeedbackId: meta.expertFeedbackId || null,
           similarity: sim,
+          citation: meta.citation || null,
         });
       } else {
         out.push({
@@ -346,6 +367,7 @@ class IMVectorService {
           sentenceIndex: meta.sentenceIndex,
           expertFeedbackId: meta.expertFeedbackId || null,
           similarity: sim,
+          citation: meta.citation || null,
         });
       }
 
@@ -363,7 +385,7 @@ class IMVectorService {
    * @param {{provider?:string, modelName?:string, k?:number, threshold?:number}} opts
    */
   async matchQuestions(questions = [], opts = {}) {
-    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100 } = opts;
+    const { provider = 'openai', modelName = null, k = 5, threshold = null, expertFeedbackRating = 100, language = null } = opts;
     if (!Array.isArray(questions) || questions.length === 0) return [];
 
     // Ensure vectors are loaded
@@ -372,36 +394,76 @@ class IMVectorService {
     // Use EmbeddingService to format and embed
     const EmbeddingService = (await import('./EmbeddingService.js')).default;
     const formatted = EmbeddingService.formatQuestionsForEmbedding(questions);
-    if (!formatted.length) return [];
+    if (!formatted || !formatted.length) return [];
 
     const client = EmbeddingService.createEmbeddingClient(provider, modelName);
     if (!client) throw new Error('Failed to create embedding client');
 
-    const embeddings = await client.embedDocuments(formatted);
+    const embeddings = await client.embedDocuments([formatted]);
 
-    const resultsPerQuestion = [];
+  const resultsPerQuestion = [];
     for (const emb of embeddings) {
-  // Prefer questionsDB (questions-only embeddings) if populated, else fall back to qaDB
-  const searchDb = (this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0) ? this.questionsDB : this.qaDB;
-  let results = await searchDb.query(emb, k * 2);
+      // Prefer questionsDB (questions-only embeddings) if populated, else fall back to qaDB
+      const searchDb = (this.questionsDB && this.questionsDB.size && this.questionsDB.size() > 0) ? this.questionsDB : this.qaDB;
+      let results = await searchDb.query(emb, k * 2);
       results = results.sort((a, b) => b.similarity - a.similarity);
-      const out = [];
+
+      // Map the top results to the simplified shape but do NOT apply a client-side
+      // similarity threshold. We trust the underlying index to return nearest
+      // neighbors in order. Keep up to k*2 items so we can promote expert-backed
+      // items and then slice down to k.
+      const mapped = [];
       for (const r of results) {
         const id = r.document.id;
         const meta = this.qaMeta.get(id) || {};
         const sim = r.similarity;
-        if (threshold !== null && sim < threshold) break;
-  const expertFeedbackId = meta.expertFeedbackId || null;
-  out.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
-        if (out.length >= k * 2) break; // we've already limited earlier, keep enough for promotion
+        const expertFeedbackId = meta.expertFeedbackId || null;
+        mapped.push({ id, interactionId: meta.interactionId || null, expertFeedbackId, expertFeedbackRating: expertFeedbackId ? expertFeedbackRating : null, similarity: sim });
+        if (mapped.length >= k * 2) break;
       }
-      // Promote top expert-feedback-backed result if present
-      const withEF = out.find(s => s.expertFeedbackId);
+
+      // Attach citation from prepopulated qaMeta (populated during initialize)
+      for (const m of mapped) {
+        const meta = this.qaMeta.get(m.id) || {};
+        m.citation = meta.citation || null;
+      }
+      // Language filtering: if a language was provided, resolve chats for
+      // the candidate interactionIds and filter mapped results to only those
+      // whose chat.pageLanguage matches the desired one. If no language was
+      // provided, keep existing behavior.
+      let filtered = mapped;
+      if (language) {
+        const pageLang = desiredPageLang(language);
+        const interactionIds = Array.from(new Set(mapped.map(m => m.interactionId).filter(Boolean)));
+        if (interactionIds.length) {
+          // Find chats that contain these interactions and map interactionId -> pageLanguage
+          const Chat = mongoose.model('Chat');
+          const chats = await Chat.find({ interactions: { $in: interactionIds } }).select('interactions pageLanguage').lean();
+          const interactionToLang = {};
+          for (const c of chats) {
+            const lang = c.pageLanguage || '';
+            for (const iid of (c.interactions || [])) {
+              interactionToLang[iid.toString?.() || iid] = lang;
+            }
+          }
+
+          filtered = mapped.filter(m => {
+            const lang = interactionToLang[m.interactionId?.toString?.() || m.interactionId] || '';
+            return lang === pageLang;
+          });
+        } else {
+          // no interaction ids -> no matches
+          filtered = [];
+        }
+      }
+
+      // Promote the first expert-feedback-backed item, preserving the remaining order
+      const withEF = filtered.find(s => s.expertFeedbackId);
       if (withEF) {
-        const rest = out.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
+        const rest = filtered.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
         resultsPerQuestion.push([withEF, ...rest]);
       } else {
-        resultsPerQuestion.push(out.slice(0, k));
+        resultsPerQuestion.push(filtered.slice(0, k));
       }
     }
     return resultsPerQuestion;

@@ -76,4 +76,7 @@ InteractionSchema.pre('deleteMany', async function() {
   ]);
 });
 
+// Index expertFeedback for quick lookup of interactions that have expert feedback
+InteractionSchema.index({ expertFeedback: 1 });
+
 export const Interaction = mongoose.models.Interaction || mongoose.model('Interaction', InteractionSchema);

@@ -4,6 +4,7 @@ import { Chat } from '../../models/chat.js';
 import { ExpertFeedback } from '../../models/expertFeedback.js';
 import { VectorService } from '../../services/VectorServiceFactory.js';
 import { Embedding } from '../../models/embedding.js';
+import { SentenceEmbedding } from '../../models/sentenceEmbedding.js';
 import { withUser, withProtection } from '../../middleware/auth.js';
 
 async function feedbackPersistExpertHandler(req, res) {
@@ -36,12 +37,13 @@ async function feedbackPersistExpertHandler(req, res) {
     // Add embedding to VectorService
     const embedding = await Embedding.findOne({ interactionId: existingInteraction._id });
     if (embedding && embedding.questionsAnswerEmbedding && embedding.answerEmbedding) {
+      const sentenceDocs = await SentenceEmbedding.find({ parentEmbeddingId: embedding._id }).select('embedding').lean();
       VectorService.addExpertFeedbackEmbedding({
         interactionId: existingInteraction._id,
         expertFeedbackId: expertFeedbackDoc._id,
-        createdAt: embedding.createdAt,
         questionsAnswerEmbedding: embedding.questionsAnswerEmbedding,
-        answerEmbedding: embedding.answerEmbedding
+        questionsEmbedding: embedding.questionsEmbedding,
+        sentenceEmbeddings: Array.isArray(sentenceDocs) ? sentenceDocs.map(d => d.embedding) : []
       });
     }
     await existingInteraction.save();

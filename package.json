@@ -70,7 +70,8 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "vitest run",
+  "test": "vitest run",
+  "test:services": "vitest run services/__tests__ --reporter verbose",
     "eject": "react-scripts eject",
     "start-server": "node server/server.js",
     "dev": "concurrently \"node test/mem-mongo.js\" \"npm run start-server\" \"npm start\"",

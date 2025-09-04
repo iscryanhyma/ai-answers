@@ -1,5 +1,5 @@
 // api/chatgpt.js
-import { createOpenAIAgent } from '../../agents/AgentService.js';
+import { createOpenAIAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { ToolTrackingHandler } from '../../agents/ToolTrackingHandler.js';
 

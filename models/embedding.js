@@ -46,5 +46,11 @@ const embeddingSchema = new mongoose.Schema(
   }
 );
 
+// Indexes to speed up lookups used by vector/search services
+// - interactionId: used to join embeddings -> interactions and filter by interaction set
+// - chatId: used when resolving/chat-level filters
+embeddingSchema.index({ interactionId: 1 });
+embeddingSchema.index({ chatId: 1 });
+
 export const Embedding =
   mongoose.models.Embedding || mongoose.model('Embedding', embeddingSchema);

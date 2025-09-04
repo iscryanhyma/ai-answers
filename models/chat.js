@@ -25,3 +25,7 @@ ChatSchema.pre('deleteOne', { document: true, query: false }, async function() {
 });
 
 export const Chat = mongoose.models.Chat || mongoose.model('Chat', ChatSchema);
+
+// Indexes to speed up lookups from interaction -> chat and filtering by pageLanguage
+ChatSchema.index({ interactions: 1 });
+ChatSchema.index({ pageLanguage: 1 });
