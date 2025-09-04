@@ -103,11 +103,10 @@ Pour des informations complètes sur le système, voir :
 ### Architecture de microservices avec chaînage d'invites
 - **Architecture de chaînage d'invites** pour améliorer la qualité et la vitesse des réponses [voir diagramme](#diagramme-darchitecture)
 - **Agents LangChain React** pour la génération de contexte et de réponses avec intégration d'outils
-- **Chaîne de pensée** - le service de réponse génère des vérifications préliminaires pour aider à dériver les réponses, incluant :
-  - Traduction de questions non-anglaises vers l'anglais
-  - Collecte d'URLs de citation possibles du service de contexte et des invites système
-  - Analyse de département et de sujet
-  - Vérification et validation du contenu
+- **Chaîne de pensée** - le système utilise plusieurs agents IA en séquence pour le traitement :
+  - **Agent de réécriture de requête** : Traduit les questions et crée des requêtes de recherche optimisées (garde les questions françaises en français pour les recherches de pages françaises)
+  - **Agent de contexte** : Rassemble le contenu gouvernemental pertinent et identifie les départements
+  - **Agent de réponse** : Génère des réponses avec vérifications préliminaires incluant l'analyse de département et la vérification de contenu
 - **Utilisation d'outils agentiques** - Les agents IA peuvent utiliser de manière autonome des outils spécialisés pour améliorer les réponses
 - **Support multi-fournisseur** - Modèles Azure OpenAI (production), OpenAI et Anthropic Claude
 
