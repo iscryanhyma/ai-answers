@@ -1,4 +1,4 @@
-import { getApiUrl, getProviderApiUrl } from '../utils/apiToUrl.js';
+import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
 
 class DataStoreService {

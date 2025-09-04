@@ -4,7 +4,7 @@ import '../../styles/App.css';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+// Removed unused Recharts imports
 import EndUserFeedbackSection from '../metrics/EndUserFeedbackSection.js';
 import FilterPanel from './FilterPanel.js';
 import MetricsService from '../../services/MetricsService.js';

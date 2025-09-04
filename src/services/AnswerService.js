@@ -3,7 +3,7 @@
 import loadSystemPrompt from './systemPrompt.js';
 import { getProviderApiUrl } from '../utils/apiToUrl.js';
 import ClientLoggingService from './ClientLoggingService.js';
-import AuthService from './AuthService.js';
+
 
 const AnswerService = {
   prepareMessage: async (

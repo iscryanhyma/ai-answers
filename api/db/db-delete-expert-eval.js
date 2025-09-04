@@ -2,7 +2,7 @@ import dbConnect from './db-connect.js';
 import EvaluationService from '../../services/EvaluationService.js';
 import {
   authMiddleware,
-  adminMiddleware,
+  partnerOrAdminMiddleware,
   withProtection
 } from '../../middleware/auth.js';
 
@@ -35,6 +35,6 @@ export default function handler(req, res) {
   return withProtection(
     deleteExpertEvalHandler,
     authMiddleware,
-    adminMiddleware
+    partnerOrAdminMiddleware
   )(req, res);
 }

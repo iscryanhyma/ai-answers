@@ -16,14 +16,14 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
   const [loading, setLoading] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
   const [showFilterPanel, setShowFilterPanel] = useState(false);
-  const [progress, setProgress] = useState('0%');
+  const [, _setProgress] = useState('0%');
   const [totalCount, setTotalCount] = useState(0);
 
   const fetchLogs = async (filters = null, append = false) => {
     setLoading(true);
     if (!append) {
       setLogs([]); // Clear previous logs
-      setProgress('0%'); // Reset progress
+      _setProgress('0%'); // Reset progress
       setTotalCount(0); // Reset total count
       setHasLoadedData(false); // Reset loaded state
     }
@@ -38,7 +38,7 @@ const ChatLogsDashboard = ({ lang = 'en' }) => {
         if (data.success) {
           const logsData = data.logs || [];
           setLogs((prevLogs) => append ? [...prevLogs, ...logsData] : [...prevLogs, ...logsData]);
-          setProgress(data.progress || '0%');
+          _setProgress(data.progress || '0%');
           setTotalCount(data.totalCount || 0);
           lastId = data.lastId; // Update lastId for the next iteration
         } else {

@@ -1,7 +1,7 @@
 // src/components/batch/BatchUpload.js
 import React, { useState, useEffect } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import { GcdsContainer, GcdsHeading, GcdsText } from '@cdssnc/gcds-components-react';
+import { GcdsContainer, GcdsText } from '@cdssnc/gcds-components-react';
 import BatchService from '../../services/BatchService.js';
 import '../../styles/App.css';
 import * as XLSX from 'xlsx';
@@ -10,7 +10,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
   const { t } = useTranslations(lang);
   const [file, setFile] = useState(null);
   const [processing, setProcessing] = useState(false);
-  const [results, setResults] = useState(null);
+  // Removed unused results state
   const [error, setError] = useState(null);
   const [selectedAI, setSelectedAI] = useState('azure');
   const [fileUploaded, setFileUploaded] = useState(false);
@@ -114,7 +114,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
           const id = persisted?.batchId || persisted?._id || persisted?.id || null;
           setBatchId(id);
           setBatchStatus('uploaded');
-          setResults({ fileName: file.name, entriesProcessed: entries.length });
+          // no-op: removed unused results state
           setError(null);
           // Notify parent to refresh lists immediately
           try {

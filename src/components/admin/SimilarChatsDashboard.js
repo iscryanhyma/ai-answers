@@ -58,7 +58,7 @@ const SimilarChatsDashboard = ({ lang = 'en' }) => {
               {
                 title: 'Chat ID',
                 data: 'chatId',
-                render: function(data, type, row) {
+                render: function(data) {
                   const url = `/${lang}?chat=${data}&review=1`;
                   return `<a href="${url}" target="_blank" rel="noopener noreferrer">${data}</a>`;
                 }

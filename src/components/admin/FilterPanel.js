@@ -1,5 +1,5 @@
 // FilterPanel.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslations } from '../../hooks/useTranslations.js';
 
 const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
@@ -35,14 +35,14 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
   };
 
   // Default to last 24 hours
-  const getDefaultDates = () => {
+  const getDefaultDates = useCallback(() => {
     const end = new Date();
     const start = new Date(end.getTime() - 24 * 60 * 60 * 1000);
     return {
       startDate: formatDateTimeLocal(start),
       endDate: formatDateTimeLocal(end)
     };
-  };
+  }, []);
 
   const [dateRange, setDateRange] = useState(getDefaultDates());
   const [filterType, setFilterType] = useState('preset');
@@ -61,7 +61,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
   ];
 
   // Preset options
-  const presetOptions = [
+  const presetOptions = useMemo(() => ([
     { 
       value: '1', 
       label: t('admin.chatLogs.last1Day'), 
@@ -92,7 +92,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
       label: t('admin.chatLogs.allLogs'), 
       hours: null 
     }
-  ];
+  ]), [t]);
 
   // Update date range when preset changes
   useEffect(() => {
@@ -116,7 +116,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
       // When switching to custom, clear preset value
       setPresetValue('1');
     }
-  }, [filterType, presetValue]);
+  }, [filterType, presetValue, getDefaultDates, presetOptions]);
 
   const handleApply = () => {
     let filters = {

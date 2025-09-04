@@ -15,7 +15,7 @@ import DatabasePage from './pages/DatabasePage.js';
 import SettingsPage from './pages/SettingsPage.js';
 import VectorPage from './pages/VectorPage.js';
 import { AuthProvider } from './contexts/AuthContext.js';
-import { AdminRoute, RoleProtectedRoute } from './components/RoleProtectedRoute.js';
+import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 
