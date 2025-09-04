@@ -24,10 +24,10 @@ import openAIContextAgentHandler from '../api/openai/openai-context.js';
 import dbChatSessionHandler from '../api/db/db-chat-session.js';
 import chatSimilarAnswerHandler from '../api/chat/chat-similar-answer.js';
 import chatPIICheckHandler from '../api/chat/chat-pii-check.js';
+import chatDetectLanguageHandler from '../api/chat/chat-detect-language.js';
 import dbVerifyChatSessionHandler from '../api/db/db-verify-chat-session.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import dbPersistInteraction from '../api/db/db-persist-interaction.js';
-import dbPersistFeedback from '../api/db/db-persist-feedback.js';
 import feedbackPersistExpertHandler from '../api/feedback/feedback-persist-expert.js';
 import feedbackPersistPublicHandler from '../api/feedback/feedback-persist-public.js';
 import dbLogHandler from '../api/db/db-log.js';
@@ -100,7 +100,6 @@ app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
 app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);
 app.get('/api/db/db-chat', dbChatHandler);
-app.post('/api/db/db-persist-feedback', dbPersistFeedback);
 app.post('/api/feedback/feedback-persist-expert', feedbackPersistExpertHandler);
 app.post('/api/feedback/feedback-persist-public', feedbackPersistPublicHandler);
 app.post('/api/db/db-persist-interaction', dbPersistInteraction);
@@ -146,6 +145,7 @@ app.post("/api/azure/azure-context", azureContextHandler);
 app.post('/api/search/search-context', contextSearchHandler);
 app.post('/api/chat/chat-similar-answer', chatSimilarAnswerHandler);
 app.post('/api/chat/chat-pii-check', chatPIICheckHandler);
+app.post('/api/chat/chat-detect-language', chatDetectLanguageHandler);
 
 
 const PORT = process.env.PORT || 3001;

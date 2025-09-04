@@ -1,4 +1,4 @@
-import { createAzureOpenAIAgent } from '../../agents/AgentService.js';
+import { createAzureOpenAIAgent } from '../../agents/AgentFactory.js';
 import ServerLoggingService from '../../services/ServerLoggingService.js';
 import { ToolTrackingHandler } from '../../agents/ToolTrackingHandler.js';
 
