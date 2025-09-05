@@ -5,6 +5,10 @@ let mongod;
 
 // This will be called before all tests
 export async function setup() {
+  // Allow skipping Mongo setup for fast, isolated tests
+  if (process.env.SKIP_MONGO_SETUP === 'true') {
+    return;
+  }
   // Create an in-memory MongoDB instance
   mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
@@ -15,7 +19,10 @@ export async function setup() {
 
 // This will be called after all tests
 export async function teardown() {
-  // Disconnect Mongoose and stop the MongoDB memory server
+  // Disconnect Mongoose and stop the MongoDB memory server unless skipped
+  if (process.env.SKIP_MONGO_SETUP === 'true') {
+    return;
+  }
   await mongoose.disconnect();
   await mongod.stop();
 }
