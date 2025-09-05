@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.34.1](https://github.com/cds-snc/ai-answers/compare/v1.34.0...v1.34.1) (2025-09-04)
+
+
+### Bug Fixes
+
+* ei-phone-number ([d1ebbfe](https://github.com/cds-snc/ai-answers/commit/d1ebbfedcc0c6272642843dc4adae68381301beb))
+* EI-phone-number ([6634148](https://github.com/cds-snc/ai-answers/commit/6634148a0b1f2c4ee30f0c19fd1b2fe675f72a01))
+* isc-treaties ([588cbc9](https://github.com/cds-snc/ai-answers/commit/588cbc9ffa29fd2b20938b12a7c35a4b5b847f75))
+* prompts-add-HC ([70ca1e7](https://github.com/cds-snc/ai-answers/commit/70ca1e774bd8227387b64536945060492fe2933d))
+* update-docs-for-pipeline-changes ([66a07cc](https://github.com/cds-snc/ai-answers/commit/66a07ccc8c644421a00bd362b6ca8eb68109792d))
+
 ## [1.34.0](https://github.com/cds-snc/ai-answers/compare/v1.33.0...v1.34.0) (2025-09-04)
 
 
