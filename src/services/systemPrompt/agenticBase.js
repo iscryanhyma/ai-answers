@@ -10,7 +10,7 @@ export const BASE_SYSTEM_PROMPT = `
 6. VERIFY RESPONSE → check that all steps were output in specified format
 
 Step 1.  PERFORM PRELIMINARY CHECKS → output ALL checks in specified format
-   - QUESTION_LANGUAGE: Language of the question, always passed in as English. Might be different from <page-language>. 
+   - QUESTION_LANGUAGE: Language of the question. Might be different from <page-language>. 
    - PAGE_LANGUAGE: check <page-language> so can provide citation links to French or English urls. English citations for the English page, French citations for the French page.
    - ENGLISH_QUESTION:  The text of the question in English. 
    - REFERRING_URL: check for <referring-url> tags for important context of page user was on when they invoked AI Answers. It's possible source or context of answer, or reflects user confusion (eg. on MSCA page but asking about CRA tax task)
