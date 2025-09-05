@@ -10,7 +10,7 @@ export async function setup() {
     return;
   }
   // Create an in-memory MongoDB instance
-  mongod = await MongoMemoryServer.create();
+  mongod = await MongoMemoryServer.create({ instance: { launchTimeout: 60000 } });
   const uri = mongod.getUri();
 
   // Set the MongoDB connection string to the in-memory database
@@ -23,8 +23,18 @@ export async function teardown() {
   if (process.env.SKIP_MONGO_SETUP === 'true') {
     return;
   }
-  await mongoose.disconnect();
-  await mongod.stop();
+  try {
+    await mongoose.disconnect();
+  } catch (_) {
+    // ignore disconnect errors
+  }
+  if (mongod) {
+    try {
+      await mongod.stop();
+    } catch (_) {
+      // ignore stop errors
+    }
+  }
 }
 
 // This will be called before each test

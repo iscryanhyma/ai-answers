@@ -2,9 +2,9 @@ import { PROMPT } from '../prompts/queryRewriteAgentPrompt.js';
 import { describe, it, expect } from 'vitest';
 
 describe('queryRewriteAgentPrompt', () => {
-  it('mentions translatedText and originalLanguage and <query> output', () => {
-    expect(PROMPT).toContain('translatedQuestion');
-    expect(PROMPT).toContain('originalLang');
-    expect(PROMPT).toContain('<query>');
+  it('mentions translatedText and pageLanguage and JSON "query" output', () => {
+    expect(PROMPT).toContain('translatedText');
+    expect(PROMPT).toContain('pageLanguage');
+    expect(PROMPT).toContain('"query"');
   });
 });
