@@ -39,9 +39,9 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const storageKey = (k) => `aiAnswers.${k}`;
   const [selectedAI, setSelectedAI] = useState(() => {
     try {
-      return localStorage.getItem(storageKey('selectedAI')) || 'openai';
+      return localStorage.getItem(storageKey('selectedAI')) || 'azure';
     } catch (e) {
-      return 'openai';
+      return 'azure';
     }
   }); // comment to cause change
   const [selectedSearch, setSelectedSearch] = useState(() => {
