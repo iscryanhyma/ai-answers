@@ -34,6 +34,11 @@ const ContextService = {
       chatId,
     };
   },
+ 
+  determineOutputLang: (pageLang, translationData) => {
+    const originalLang = translationData && translationData.originalLanguage ? translationData.originalLanguage : 'eng';
+    return pageLang === 'fr' ? 'fra' : originalLang;
+  },
 
   sendMessage: async (
     aiProvider,
@@ -163,7 +168,9 @@ const ContextService = {
         ...parsedContext,
         query,
         translatedQuestion,
-        lang
+        lang,
+        outputLang : ContextService.determineOutputLang(lang, translationData), 
+        originalLang: translationData.originalLanguage
       };
     } catch (error) {
       await LoggingService.error(chatId, 'Error deriving context:', error);

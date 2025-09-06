@@ -104,6 +104,8 @@ export const ChatWorkflowService = {
       searchProvider
     );
   },
+  
+  
   checkPIIOnNoContextOrThrow: async (chatId, userMessage, selectedAI) => {
     try {
       const url = getApiUrl('chat-pii-check');

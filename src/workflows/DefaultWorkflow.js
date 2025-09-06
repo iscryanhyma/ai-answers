@@ -40,6 +40,7 @@ export class DefaultWorkflow {
     const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI);
 
 
+    // move this to the context service
     let context = null;
     conversationHistory = conversationHistory.filter((message) => !message.error);
     conversationHistory = conversationHistory.filter((message) => message.sender === 'ai');
@@ -51,6 +52,9 @@ export class DefaultWorkflow {
     if (usedExistingContext) {
       const lastMessage = conversationHistory[conversationHistory.length - 1];
       context = lastMessage.interaction.context;
+      context.translatedQuestion = translationData.translatedText;
+      context.originalLang = translationData.originalLanguage;
+      context.outputLang = ContextService.determineOutputLang(lang, translationData);
     } else {
       context = await ContextService.deriveContext(
         selectedAI,
@@ -65,16 +69,14 @@ export class DefaultWorkflow {
       );
     }
     await LoggingService.info(chatId, 'Derived context:', { context });
-
+    
     this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
 
     const answer = await AnswerService.sendMessage(
       selectedAI,
-      userMessage,
       conversationHistory,
       lang,
       context,
-      false,
       referringUrl,
       chatId
     );

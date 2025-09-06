@@ -8,31 +8,28 @@ import ClientLoggingService from './ClientLoggingService.js';
 const AnswerService = {
   prepareMessage: async (
     provider,
-    message,
     conversationHistory = [],
     lang = 'en',
     context,
-    evaluation = false,
     referringUrl,
     chatId
   ) => {
     ClientLoggingService.info(chatId, `Processing message in ${lang.toUpperCase()}`);
 
     const SYSTEM_PROMPT = await loadSystemPrompt(lang, context, chatId);
-    if (evaluation) {
-      message = '<evaluation>' + message + '</evaluation>';
-    }
-    const finalHistory = message.includes('<evaluation>') ? [] : conversationHistory;
-    const messageWithReferrer = `${message}${referringUrl.trim() ? `\n<referring-url>${referringUrl.trim()}</referring-url>` : ''}`;
+    const { translatedQuestion, outputLang } = context;
+    const header = `\n<output-lang>${outputLang || ''}</output-lang>`;
+    let message = `${translatedQuestion}${header}`;
+    message = `${message}${referringUrl.trim() ? `\n<referring-url>${referringUrl.trim()}</referring-url>` : ''}`;
     ClientLoggingService.debug(chatId, 'Sending to ' + provider + ' API:', {
-      messageWithReferrer,
-      conversationHistory: finalHistory,
+      message,
+      conversationHistory: conversationHistory,
       systemPromptLength: SYSTEM_PROMPT.length,
     });
 
     return {
-      message: messageWithReferrer,
-      conversationHistory: finalHistory,
+      message: message,
+      conversationHistory: conversationHistory,
       systemPrompt: SYSTEM_PROMPT,
       chatId: chatId,
     };
@@ -40,22 +37,18 @@ const AnswerService = {
 
   sendMessage: async (
     provider,
-    message,
     conversationHistory = [],
     lang = 'en',
     context,
-    evaluation,
     referringUrl,
     chatId
   ) => {
     try {
       const messagePayload = await AnswerService.prepareMessage(
         provider,
-        message,
         conversationHistory,
         lang,
         context,
-        evaluation,
         referringUrl,
         chatId
       );
@@ -78,6 +71,8 @@ const AnswerService = {
       ClientLoggingService.debug(chatId, provider + ' API response:', data);
       const parsedResponse = AnswerService.parseResponse(data.content);
       const mergedResponse = { ...data, ...parsedResponse };
+      mergedResponse.questionLanguage = context.originalLang;
+      mergedResponse.englishQuestion = context.translatedQuestion;
       return mergedResponse;
     } catch (error) {
       ClientLoggingService.error(chatId, 'Error calling ' + provider + ' API:', error);
@@ -117,21 +112,13 @@ const AnswerService = {
     let citationHead = null;
     let citationUrl = null;
     let confidenceRating = null;
-    let englishQuestion = '';
 
-    // Extract preliminary checks - this regex needs to capture multiline content
-    let questionLanguage = '';
+
     const preliminaryMatch = /<preliminary-checks>([\s\S]*?)<\/preliminary-checks>/s.exec(text);
     if (preliminaryMatch) {
       preliminaryChecks = preliminaryMatch[1].trim();
       content = content.replace(/<preliminary-checks>[\s\S]*?<\/preliminary-checks>/s, '').trim();
-      questionLanguage = /<question-language>(.*?)<\/question-language>/s
-        .exec(preliminaryChecks)[1]
-        .trim();
-      const englishQuestionMatch = /<english-question>(.*?)<\/english-question>/s.exec(
-        preliminaryChecks
-      );
-      englishQuestion = englishQuestionMatch ? englishQuestionMatch[1].trim() : '';
+
     }
 
     // Extract citation information before processing answers
@@ -145,58 +132,58 @@ const AnswerService = {
       citationUrl = citationUrlMatch[1].trim();
     }
 
-        // Extract English answer first
-        const englishMatch = /<english-answer>([\s\S]*?)<\/english-answer>/s.exec(content);
+    // Extract English answer first
+    const englishMatch = /<english-answer>([\s\S]*?)<\/english-answer>/s.exec(content);
+    if (englishMatch) {
+      englishAnswer = englishMatch[1].trim();
+      content = englishAnswer;  // Use English answer as content for English questions
+    }
+
+    // Extract main answer if it exists
+    const answerMatch = /<answer>([\s\S]*?)<\/answer>/s.exec(text);
+    if (answerMatch) {
+      content = answerMatch[1].trim();
+    }
+    content = content.replace(/<citation-head>[\s\S]*?<\/citation-head>/s, '').trim();
+    content = content.replace(/<citation-url>[\s\S]*?<\/citation-url>/s, '').trim();
+    content = content.replace(/<confidence>(.*?)<\/confidence>/s, '').trim();
+
+    // Check for special tags in either english-answer or answer content
+    // These can appear in any order and don't need to wrap the entire content
+    const specialTags = {
+      'not-gc': /<not-gc>([\s\S]*?)<\/not-gc>/,
+      'pt-muni': /<pt-muni>([\s\S]*?)<\/pt-muni>/,
+      'clarifying-question': /<clarifying-question>([\s\S]*?)<\/clarifying-question>/
+    };
+
+    // Check each special tag type and extract their content
+    for (const [type, regex] of Object.entries(specialTags)) {
+      // Check both englishAnswer and content for the tag
+      const englishMatch = englishAnswer && regex.exec(englishAnswer);
+      const contentMatch = content && regex.exec(content);
+
+      if (englishMatch || contentMatch) {
+        answerType = type;
+        // Preserve the content inside the tags
         if (englishMatch) {
-            englishAnswer = englishMatch[1].trim();
-            content = englishAnswer;  // Use English answer as content for English questions
+          englishAnswer = englishMatch[1].trim();
         }
-
-        // Extract main answer if it exists
-        const answerMatch = /<answer>([\s\S]*?)<\/answer>/s.exec(text);
-        if (answerMatch) {
-            content = answerMatch[1].trim();
+        if (contentMatch) {
+          content = contentMatch[1].trim();
         }
-        content = content.replace(/<citation-head>[\s\S]*?<\/citation-head>/s, '').trim();
-        content = content.replace(/<citation-url>[\s\S]*?<\/citation-url>/s, '').trim();
-        content = content.replace(/<confidence>(.*?)<\/confidence>/s, '').trim();
+        break; // First matching tag type wins
+      }
+    }
 
-        // Check for special tags in either english-answer or answer content
-        // These can appear in any order and don't need to wrap the entire content
-        const specialTags = {
-            'not-gc': /<not-gc>([\s\S]*?)<\/not-gc>/,
-            'pt-muni': /<pt-muni>([\s\S]*?)<\/pt-muni>/,
-            'clarifying-question': /<clarifying-question>([\s\S]*?)<\/clarifying-question>/
-        };
-
-        // Check each special tag type and extract their content
-        for (const [type, regex] of Object.entries(specialTags)) {
-            // Check both englishAnswer and content for the tag
-            const englishMatch = englishAnswer && regex.exec(englishAnswer);
-            const contentMatch = content && regex.exec(content);
-            
-            if (englishMatch || contentMatch) {
-                answerType = type;
-                // Preserve the content inside the tags
-                if (englishMatch) {
-                    englishAnswer = englishMatch[1].trim();
-                }
-                if (contentMatch) {
-                    content = contentMatch[1].trim();
-                }
-                break; // First matching tag type wins
-            }
-        }
-
-        const confidenceRatingRegex = /<confidence>(.*?)<\/confidence>/s;
-        const confidenceMatch = text.match(confidenceRatingRegex);
+    const confidenceRatingRegex = /<confidence>(.*?)<\/confidence>/s;
+    const confidenceMatch = text.match(confidenceRatingRegex);
 
     if (confidenceMatch) {
       confidenceRating = confidenceMatch[1].trim();
     }
 
-        const paragraphs = content.split(/\n+/).map(paragraph => paragraph.trim()).filter(paragraph => paragraph !== '');
-        const sentences = AnswerService.parseSentences(content);
+    const paragraphs = content.split(/\n+/).map(paragraph => paragraph.trim()).filter(paragraph => paragraph !== '');
+    const sentences = AnswerService.parseSentences(content);
 
     return {
       answerType,
@@ -208,12 +195,10 @@ const AnswerService = {
       paragraphs,
       confidenceRating,
       sentences,
-      questionLanguage,
-      englishQuestion,
     };
   },
 
-  
+
 };
 
 export default AnswerService;
