@@ -13,7 +13,7 @@ export class DefaultWithVector {
   // Query the chat-similar-answer endpoint and return a short-circuit
   // response object if an answer is available. Returns null to continue
   // the normal workflow when no similar answer is found or an error occurs.
-  async checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI, detectedLang = null) {
+  async checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI, pageLang = null, detectedLang = null) {
     try {
       // Build user-only sequence (oldest -> newest) including current user message
       const priorUserTurns = (conversationHistory || [])
@@ -23,7 +23,7 @@ export class DefaultWithVector {
       const similarResp = await fetch(getApiUrl('chat-similar-answer'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chatId, questions, selectedAI, language: detectedLang })
+        body: JSON.stringify({ chatId, questions, selectedAI, pageLanguage: pageLang || null, detectedLanguage: detectedLang || null })
       });
       if (similarResp && similarResp.ok) {
         const similarJson = await similarResp.json();
@@ -65,31 +65,6 @@ export class DefaultWithVector {
     return null;
   }
 
-  // Call server-side detect-language endpoint and return a single language string.
-  // Falls back to `fallbackLang` when detection fails.
-  async detectLanguage(chatId, text, selectedAI = 'openai', fallbackLang = null) {
-    let detected = fallbackLang || null;
-    try {
-      const resp = await fetch(getApiUrl('chat-detect-language'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, selectedAI })
-      });
-      if (resp && resp.ok) {
-        const json = await resp.json();
-        if (json && json.result) {
-          detected = json.result.iso3 || json.result.language || detected;
-        }
-      } else {
-        await LoggingService.info(chatId, 'chat-detect-language call failed or returned no result', { status: resp && resp.status });
-      }
-    } catch (err) {
-      await LoggingService.info(chatId, 'chat-detect-language error, continuing workflow', { error: err && err.message });
-    }
-    return detected;
-  }
-
-
   async processResponse(
     chatId,
     userMessage,
@@ -104,28 +79,27 @@ export class DefaultWithVector {
     searchProvider
   ) {
     const startTime = Date.now();
-    ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.MODERATING_QUESTION);
-
-    ChatWorkflowService.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
-
-    await ChatWorkflowService.processRedaction(userMessage, lang, chatId, selectedAI);
-
-    // Detect language via server endpoint and prefer that for downstream logic
-    const detectedLang = await this.detectLanguage(chatId, userMessage, selectedAI, lang);
-
-    const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI, detectedLang);
-    if (similarShortCircuit) {
-      // Only run PII check when we are short-circuiting without deriving new context
-      await ChatWorkflowService.checkPIIOnNoContextOrThrow(chatId, userMessage, selectedAI);
-      return similarShortCircuit;
-    }
     await LoggingService.info(chatId, 'Starting DefaultWithVector with data:', {
       lang,
-      department,
       referringUrl,
       selectedAI,
+      startTime
     });
+    ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.MODERATING_QUESTION);
+    ChatWorkflowService.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
+    const { redactedText } = await ChatWorkflowService.processRedaction(userMessage, lang, chatId, selectedAI);
+    const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI);
+
+    // run short-circuit similar-answer check using detected/original language from translation
+  const detectedLang = (translationData && translationData.originalLanguage) || lang;
+  const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI, lang, detectedLang);
+    if (similarShortCircuit) {
+      await LoggingService.info(chatId, 'Short-circuited similar-answer check succeeded:', { similarShortCircuit });
+      return similarShortCircuit;
+    }
+
+    // move this to the context service
     let context = null;
     conversationHistory = conversationHistory.filter((message) => !message.error);
     conversationHistory = conversationHistory.filter((message) => message.sender === 'ai');
@@ -137,18 +111,22 @@ export class DefaultWithVector {
     if (usedExistingContext) {
       const lastMessage = conversationHistory[conversationHistory.length - 1];
       context = lastMessage.interaction.context;
+      context.translatedQuestion = translationData.translatedText;
+      context.originalLang = translationData.originalLanguage;
+      context.outputLang = ContextService.determineOutputLang(lang, translationData);
       // Only run PII check when we did NOT derive new context
       await ChatWorkflowService.checkPIIOnNoContextOrThrow(chatId, userMessage, selectedAI);
     } else {
       context = await ContextService.deriveContext(
         selectedAI,
-        userMessage,
+        translationData.translatedText,
         lang,
         department,
         referringUrl,
         searchProvider,
         conversationHistory,
-        chatId
+        chatId,
+        translationData
       );
     }
     await LoggingService.info(chatId, 'Derived context:', { context });
@@ -157,11 +135,9 @@ export class DefaultWithVector {
 
     const answer = await AnswerService.sendMessage(
       selectedAI,
-      userMessage,
       conversationHistory,
       lang,
       context,
-      false,
       referringUrl,
       chatId
     );
