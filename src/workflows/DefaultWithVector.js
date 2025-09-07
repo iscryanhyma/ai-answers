@@ -10,6 +10,58 @@ import { ChatWorkflowService, WorkflowStatus } from '../services/ChatWorkflowSer
 export class DefaultWithVector {
   constructor() { }
 
+  // Build the persistence payload for a short-circuit similar answer.
+  buildShortCircuitPayload({ similarShortCircuit, startTime, endTime, translationData, userMessage, userMessageId, referringUrl, selectedAI, chatId, lang, searchProvider }) {
+    const totalResponseTimeSC = endTime - startTime;
+
+    // Build a minimal safe context object (never null)
+    const scContext = {
+      translatedQuestion: (translationData && translationData.translatedText) || userMessage,
+      originalLang: (translationData && translationData.originalLanguage) || lang,
+      searchProvider: searchProvider || ''
+    };
+
+    const aiCitationUrl = (similarShortCircuit.sourceCitation && similarShortCircuit.sourceCitation.aiCitationUrl)
+      || similarShortCircuit.citationUrl
+      || null;
+    const providedCitationUrl = (similarShortCircuit.sourceCitation && similarShortCircuit.sourceCitation.providedCitationUrl)
+      || similarShortCircuit.citationUrl
+      || null;
+    const citationHead = (similarShortCircuit.answer && similarShortCircuit.answer.citationHead)
+      || (similarShortCircuit.sourceCitation && similarShortCircuit.sourceCitation.citationHead)
+      || null;
+
+    const contentText = (similarShortCircuit.answer && (similarShortCircuit.answer.content || (Array.isArray(similarShortCircuit.answer.paragraphs) ? similarShortCircuit.answer.paragraphs.join('\n\n') : ''))) || '';
+    const parsedSentences = AnswerService.parseSentences(contentText || '');
+
+    const payload = {
+      selectedAI: selectedAI,
+      question: userMessage,
+      userMessageId: userMessageId,
+      referringUrl: referringUrl,
+      answer: {
+        answerType: 'normal',
+        content: similarShortCircuit.answer && similarShortCircuit.answer.content,
+        paragraphs: (similarShortCircuit.answer && similarShortCircuit.answer.paragraphs) || [],
+        sentences: parsedSentences,
+        citationHead: citationHead,
+        questionLanguage: (translationData && translationData.originalLanguage) || lang,
+        englishQuestion: (translationData && translationData.translatedText) || userMessage,
+        tools: [],
+        citationUrl: aiCitationUrl
+      },
+      finalCitationUrl: providedCitationUrl,
+      confidenceRating: similarShortCircuit.confidenceRating || similarShortCircuit.similarity || null,
+      context: scContext,
+      chatId: chatId,
+      pageLanguage: lang,
+      responseTime: totalResponseTimeSC,
+      searchProvider: searchProvider
+    };
+
+    return payload;
+  }
+
   // Query the chat-similar-answer endpoint and return a short-circuit
   // response object if an answer is available. Returns null to continue
   // the normal workflow when no similar answer is found or an error occurs.
@@ -51,7 +103,9 @@ export class DefaultWithVector {
             context: null,
             question: userMessage,
             citationUrl: (similarJson.citation && (similarJson.citation.providedCitationUrl || similarJson.citation.aiCitationUrl)) || null,
-            confidenceRating: similarJson.similarity || null
+            confidenceRating: similarJson.similarity || null,
+            // include full citation info for persistence contract
+            sourceCitation: similarJson.citation || null
           };
         }
       } else {
@@ -92,10 +146,21 @@ export class DefaultWithVector {
     const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI);
 
     // run short-circuit similar-answer check using detected/original language from translation
-  const detectedLang = (translationData && translationData.originalLanguage) || lang;
-  const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI, lang, detectedLang);
+    const detectedLang = (translationData && translationData.originalLanguage) || lang;
+    const similarShortCircuit = await this.checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI, lang, detectedLang);
     if (similarShortCircuit) {
       await LoggingService.info(chatId, 'Short-circuited similar-answer check succeeded:', { similarShortCircuit });
+
+      const endTimeSC = Date.now();
+      const payload = this.buildShortCircuitPayload({ similarShortCircuit, startTime, endTime: endTimeSC, translationData, userMessage, userMessageId, referringUrl, selectedAI, chatId, lang, searchProvider });
+
+      // Persist payload (fire-and-forget) and short-circuit the workflow
+      try {
+        DataStoreService.persistInteraction(payload);
+      } catch (e) {
+        await LoggingService.info(chatId, 'Short-circuit persistence error (non-blocking):', { error: e && e.message });
+      }
+
       return similarShortCircuit;
     }
 
