@@ -245,6 +245,14 @@ export default async function handler(req, res) {
         const pageLang = norm(pageLanguageStr);
         const detectedLang = norm(detectedLanguageStr);
 
+        // Helper to reduce language to 2-letter ISO-like code for comparison (e.g. 'en-US' -> 'en', 'english' -> 'en')
+        const twoChar = (s) => {
+            if (!s) return '';
+            const parts = String(s).split(/[-_\s]/);
+            const first = parts[0] || s;
+            return (first.slice(0, 2) || '').toLowerCase();
+        };
+
         // Prefer an explicit match page language if present (added in buildQuestionFlows)
         let matchLang = norm(formatted?.matchPageLanguage) || null;
         if (!matchLang) {
@@ -257,8 +265,10 @@ export default async function handler(req, res) {
             }
         }
 
-        // If pageLang and detectedLang are identical, no translation needed
-        if (pageLang && detectedLang && pageLang === detectedLang) return;
+        // If pageLang and detectedLang are identical (normalized to 2 chars), no translation needed
+        const pageTwo = twoChar(pageLang);
+        const detectedTwo = twoChar(detectedLang);
+        if (pageTwo && detectedTwo && pageTwo === detectedTwo) return;
 
         // Determine target language according to rules:
         // - If pageLanguage is French -> translate to French
@@ -278,7 +288,10 @@ export default async function handler(req, res) {
 
         if (!targetLang) return; // nothing to do
 
-
+        // Avoid translating when the matched content is already in the target language
+        const matchTwo = twoChar(matchLang);
+        const targetTwo = twoChar(targetLang);
+        if (matchTwo && targetTwo && matchTwo === targetTwo) return;
 
         try {
             const createTransAgent = async (atype, chatId) => await createTranslationAgent(atype, chatId);
