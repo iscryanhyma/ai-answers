@@ -33,10 +33,21 @@ export class DefaultWithVector {
       startTime
     });
     ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.MODERATING_QUESTION);
+    // Log that validation is about to run
+    await LoggingService.info(chatId, 'Running short-query validation', {
+      conversationHistoryLength: (conversationHistory || []).length,
+      userMessagePreview: typeof userMessage === 'string' ? userMessage.slice(0, 200) : null,
+      lang,
+      department
+    });
     ChatWorkflowService.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
     const { redactedText } = await ChatWorkflowService.processRedaction(userMessage, lang, chatId, selectedAI);
+    await LoggingService.info(chatId, 'Redaction result', {
+      redactedTextPreview: typeof redactedText === 'string' ? redactedText.slice(0, 400) : null
+    });
     const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI);
+    await LoggingService.info(chatId, 'Translation data', { translationData });
 
     // Decide context to use (existing or minimal) prior to short-circuit
     // also get a cleaned conversationHistory (errors removed) so subsequent
@@ -49,6 +60,15 @@ export class DefaultWithVector {
       searchProvider,
       chatId,
       selectedAI
+    });
+    // Log which context was chosen before short-circuit check
+    await LoggingService.info(chatId, 'Pre-short-circuit context decision', {
+      usedExistingContext,
+      preContextPreview: preContext ? {
+        translatedQuestion: preContext.translatedQuestion,
+        originalLang: preContext.originalLang,
+        searchProvider: preContext.searchProvider
+      } : null
     });
 
     // run short-circuit similar-answer check using detected/original language from translation
@@ -68,6 +88,9 @@ export class DefaultWithVector {
       }
 
       // Return structured short-circuit result to UI using the same shape as normal flow
+      await LoggingService.info(chatId, 'Short-circuit total response time:', {
+        totalResponseTime: `${endTimeSC - startTime} ms`,
+      });
       return {
         answer: payload.answer,
         context: payload.context,

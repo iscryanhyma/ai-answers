@@ -34,10 +34,24 @@ export class DefaultWorkflow {
       startTime
     });
     ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.MODERATING_QUESTION);
+    // Log that validation is about to run (avoid dumping entire history; log length instead)
+    await LoggingService.info(chatId, 'Running short-query validation', {
+      conversationHistoryLength: (conversationHistory || []).length,
+      userMessagePreview: typeof userMessage === 'string' ? userMessage.slice(0, 200) : null,
+      lang,
+      department
+    });
     ChatWorkflowService.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
     const { redactedText } = await ChatWorkflowService.processRedaction(userMessage, lang, chatId, selectedAI);
+    // Log redaction outcome (redactedText may be empty or same as input)
+    await LoggingService.info(chatId, 'Redaction result', {
+      redactedTextPreview: typeof redactedText === 'string' ? redactedText.slice(0, 400) : null
+    });
+
     const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI);
+    // Log translation details for diagnostics
+    await LoggingService.info(chatId, 'Translation data', { translationData });
 
 
     // move this to the context service
