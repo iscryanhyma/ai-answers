@@ -88,6 +88,9 @@ export class DefaultWithVector {
       }
 
       // Return structured short-circuit result to UI using the same shape as normal flow
+      await LoggingService.info(chatId, 'Short-circuit total response time:', {
+        totalResponseTime: `${endTimeSC - startTime} ms`,
+      });
       return {
         answer: payload.answer,
         context: payload.context,
