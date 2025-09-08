@@ -1,5 +1,41 @@
 # Changelog
 
+## [1.35.0](https://github.com/cds-snc/ai-answers/compare/v1.34.1...v1.35.0) (2025-09-08)
+
+
+### Features
+
+* add chat translation handler and update ChatWorkflowService for translation support ([0136976](https://github.com/cds-snc/ai-answers/commit/0136976163450a93764852f3dfd061554f36249c))
+* add helper function to normalize language codes and enhance translation logic ([87f266c](https://github.com/cds-snc/ai-answers/commit/87f266ccf75d8e78eebf07a3b4a31cc4b849c2f9))
+* enhance AnswerService and ContextService for improved translation handling and context management ([e1b3321](https://github.com/cds-snc/ai-answers/commit/e1b3321a127a5e0afd97166d380b8e31ae5c914e))
+* enhance buildShortCircuitPayload to include detailed citation and context information for improved response handling ([ae859c1](https://github.com/cds-snc/ai-answers/commit/ae859c1119363702fc5938f5b69469a0c320ba3d))
+* enhance checkSimilarAnswer to normalize conversation history and improve user message handling ([a0de6dc](https://github.com/cds-snc/ai-answers/commit/a0de6dc037b26336f5b09a26243061297d3fb782))
+* enhance logging in DefaultWorkflow and DefaultWithVector for validation, redaction, and translation processes ([680982c](https://github.com/cds-snc/ai-answers/commit/680982c2ea911d0042751551efb527564ab2fc87))
+* implement piiStrategy and queryRewriteStrategy for handling PII and query rewriting ([6bfb24b](https://github.com/cds-snc/ai-answers/commit/6bfb24b285ffc4a682274053a1a24b529a9078da))
+* implement translation and query rewrite strategies in chat and search handlers ([f4674c2](https://github.com/cds-snc/ai-answers/commit/f4674c28c12402e78080df6b32c0fda5c74fdf68))
+* log total response time for short-circuit responses in DefaultWithVector ([5aa3a1f](https://github.com/cds-snc/ai-answers/commit/5aa3a1f1574e905464dd4ad4d5232fee23d7b692))
+* refactor DefaultWithVector to streamline context handling and improve short-circuit response logic ([edaac2f](https://github.com/cds-snc/ai-answers/commit/edaac2fdf9ec0899e36f46a578cf4c93f614d843))
+* update chat-similar-answer and DefaultWithVector to support pageLanguage and detectedLanguage for improved translation handling ([8b8b6f0](https://github.com/cds-snc/ai-answers/commit/8b8b6f0e6963291a3418f422c88e7448760b157e))
+
+
+### Bug Fixes
+
+* phone and isc treaty table issues ([a9299a5](https://github.com/cds-snc/ai-answers/commit/a9299a5aa0075eedebe929ea3a98f8d5ecfad414))
+* phone and isc treaty table issues ([05e05b5](https://github.com/cds-snc/ai-answers/commit/05e05b5c169c6a514d88eeb7cb9727e46288c636))
+* update processRedaction call to include chatId and selectedAI parameters ([61b2155](https://github.com/cds-snc/ai-answers/commit/61b2155eb3b1b6696670eaf14a3de1692ea5a4eb))
+
+
+### Miscellaneous Chores
+
+* update AgentFactory.js with minor adjustments for consistency ([25dcc58](https://github.com/cds-snc/ai-answers/commit/25dcc5843f3fa4cacd4483d363ef0b9ba0e09d7f))
+* update comments for clarity in agenticBase.js ([5692493](https://github.com/cds-snc/ai-answers/commit/56924930a976b32f53004f5adf59d01b83a16f3a))
+
+
+### Code Refactoring
+
+* clean up unused variables and improve code readability in ChatAppContainer ([3d75d2b](https://github.com/cds-snc/ai-answers/commit/3d75d2be082213ff7eeba7d8194a8f4ce8348ff5))
+* update prompts for clarity and consistency in language handling ([4806fb5](https://github.com/cds-snc/ai-answers/commit/4806fb5df2989adfc915ee72b4a5ea4b8debf1e8))
+
 ## [1.34.1](https://github.com/cds-snc/ai-answers/compare/v1.34.0...v1.34.1) (2025-09-04)
 
 
