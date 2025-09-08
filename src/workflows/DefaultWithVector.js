@@ -259,10 +259,21 @@ export class DefaultWithVector {
   // the normal workflow when no similar answer is found or an error occurs.
   async checkSimilarAnswer(chatId, userMessage, conversationHistory, onStatusUpdate, selectedAI, pageLang = null, detectedLang = null) {
     try {
-      // Build user-only sequence (oldest -> newest) including current user message
+      // Build user-only sequence (oldest -> newest) including current user message.
+      // Conversation history can come in a few shapes depending on the caller:
+      // - UI messages: { sender: 'user', text: '...' }
+      // - AI turns: { sender: 'ai', interaction: { question: '...', answer: {...} } }
+      // - Older shapes: { question: '...' }
+      // Normalize to an array of question strings in chronological order.
       const priorUserTurns = (conversationHistory || [])
-        .filter(m => m && m.sender === 'user' && !m.error && typeof m.text === 'string' && m.text.trim())
-        .map(m => m.text.trim());
+        .filter(m => m && !m.error)
+        .map(m => {
+          if (m.sender === 'user' && typeof m.text === 'string' && m.text.trim()) return m.text.trim();
+          if (m.interaction && typeof m.interaction.question === 'string' && m.interaction.question.trim()) return m.interaction.question.trim();
+          if (typeof m.question === 'string' && m.question.trim()) return m.question.trim();
+          return null;
+        })
+        .filter(q => q);
       const questions = [...priorUserTurns, ...(typeof userMessage === 'string' && userMessage.trim() ? [userMessage.trim()] : [])];
       const similarResp = await fetch(getApiUrl('chat-similar-answer'), {
         method: 'POST',
