@@ -36,7 +36,6 @@ export class DefaultWithVector {
     // Log that validation is about to run
     await LoggingService.info(chatId, 'Running short-query validation', {
       conversationHistoryLength: (conversationHistory || []).length,
-      userMessagePreview: typeof userMessage === 'string' ? userMessage.slice(0, 200) : null,
       lang,
       department
     });

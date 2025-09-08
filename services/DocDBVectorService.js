@@ -6,6 +6,7 @@ import dbConnect from '../api/db/db-connect.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import { Embedding } from '../models/embedding.js';
 import cosineSimilarity from 'compute-cosine-similarity';
+import EmbeddingService from './EmbeddingService.js';
 
 function isFrenchLanguage(lang) {
   if (!lang) return false;
@@ -298,63 +299,45 @@ class DocDBVectorService {
     // Lazy init DB/collections
     if (!this.isInitialized) await this.initialize();
 
-    // Use EmbeddingService to format and embed the questions
-    const EmbeddingService = (await import('./EmbeddingService.js')).default;
+    // Use top-level EmbeddingService import to format and embed the questions
     const formatted = EmbeddingService.formatQuestionsForEmbedding(questions);
     if (!formatted || !formatted.length) return [];
 
-    // Create embeddings for each formatted question
     const embeddingClient = EmbeddingService.createEmbeddingClient(provider, modelName);
     if (!embeddingClient) throw new Error('Failed to create embedding client');
 
     const embeddings = await embeddingClient.embedDocuments([formatted]);
 
-    // For each flow embedding, run a vectorSearch pipeline similar to _searchQA
-    const resultsPerQuestion = [];
-    const db = mongoose.connection.db;
+    // Build aggregation pipelines for each embedding (do not run them yet)
     const pageLang = desiredPageLang(language);
-    for (const emb of embeddings) {
-      // pipeline mirrors _searchQA but uses provided vector directly
-      // Search against question-only embeddings (questionsEmbedding) instead
-      // of the QA-level combined embedding. We also join through interaction
-      // -> chat and optionally filter by chat.pageLanguage based on the
-      // requested language.
+    const pipelines = embeddings.map((emb) => {
       const pipeline = [];
       pipeline.push({ $search: { vectorSearch: { vector: emb, path: 'questionsEmbedding', similarity: 'cosine', k: k * 2, efSearch: 200 } } });
       pipeline.push({ $limit: k * 2 });
       if (this.filterQuery && Object.keys(this.filterQuery).length) pipeline.push({ $match: this.filterQuery });
-
-      // Lookup interaction to access expertFeedback and the linked answer
       pipeline.push({ $lookup: { from: 'interactions', localField: 'interactionId', foreignField: '_id', as: 'inter' } });
       pipeline.push({ $unwind: { path: '$inter', preserveNullAndEmptyArrays: true } });
-      // Lookup the answer doc for the interaction to extract citation fields
       pipeline.push({ $lookup: { from: 'answers', localField: 'inter.answer', foreignField: '_id', as: 'answer' } });
       pipeline.push({ $unwind: { path: '$answer', preserveNullAndEmptyArrays: true } });
-
-      // Lookup chat(s) that reference this interaction and optionally filter by pageLanguage
       pipeline.push({ $lookup: { from: 'chats', localField: 'inter._id', foreignField: 'interactions', as: 'chat' } });
       pipeline.push({ $unwind: { path: '$chat', preserveNullAndEmptyArrays: true } });
       if (pageLang) pipeline.push({ $match: { 'chat.pageLanguage': pageLang } });
-
-      // Project citation URLs from the joined answer.citation (may be missing)
       pipeline.push({ $project: { _id: 1, interactionId: 1, expertFeedbackId: '$inter.expertFeedback', questionsEmbedding: 1, providedCitationUrl: '$answer.citation.providedCitationUrl', aiCitationUrl: '$answer.citation.aiCitationUrl', citationHead: '$answer.citation.citationHead' } });
+      return pipeline;
+    });
 
-      let docs = [];
-      try {
-        docs = await this.collection.aggregate(pipeline).toArray();
-      } catch (err) {
-        ServerLoggingService.error('Error running QA pipeline in matchQuestions', 'DocDBVectorService', err);
-        resultsPerQuestion.push([]);
-        continue;
-      }
+    // Run all aggregations in parallel and handle per-pipeline errors
+    const aggPromises = pipelines.map((p) => this.collection.aggregate(p).toArray().catch((err) => {
+      ServerLoggingService.error('Error running QA pipeline in matchQuestions', 'DocDBVectorService', err);
+      return [];
+    }));
 
-      // We no longer compute cosine similarity or apply a client-side threshold here.
-      // The aggregation $search with vectorSearch already returns nearest neighbors.
-      // Take the top-k documents in the returned order and map them to the
-      // simplified result shape. If any item has expert feedback, promote the
-      // first such item to the front while preserving the remaining order.
+    const allDocs = await Promise.all(aggPromises);
+
+    // Map each pipeline result to the simplified output shape
+    const resultsPerQuestion = allDocs.map((docs) => {
       const topDocs = Array.isArray(docs) ? docs.slice(0, k) : [];
-      const mapped = topDocs.map(r => {
+      const mapped = topDocs.map((r) => {
         const expertFeedbackId = r.expertFeedbackId || null;
         return {
           id: r._id?.toString?.() || null,
@@ -366,18 +349,18 @@ class DocDBVectorService {
             providedCitationUrl: r.providedCitationUrl || null,
             aiCitationUrl: r.aiCitationUrl || null,
             citationHead: r.citationHead || null,
-          }
+          },
         };
       });
 
-      const withEF = mapped.find(s => s.expertFeedbackId);
+      const withEF = mapped.find((s) => s.expertFeedbackId);
       if (withEF) {
-        const rest = mapped.filter(s => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
-        resultsPerQuestion.push([withEF, ...rest]);
-      } else {
-        resultsPerQuestion.push(mapped.slice(0, k));
+        const rest = mapped.filter((s) => s.id !== withEF.id).slice(0, Math.max(0, k - 1));
+        return [withEF, ...rest];
       }
-    }
+
+      return mapped.slice(0, k);
+    });
 
     return resultsPerQuestion;
   }
