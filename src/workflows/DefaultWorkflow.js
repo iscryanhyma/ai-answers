@@ -27,18 +27,20 @@ export class DefaultWorkflow {
     searchProvider
   ) {
     const startTime = Date.now();
-    ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.MODERATING_QUESTION);
-
-    ChatWorkflowService.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
-
-    await ChatWorkflowService.processRedaction(userMessage, lang);
     await LoggingService.info(chatId, 'Starting DefaultWorkflow with data:', {
       lang,
-      department,
       referringUrl,
       selectedAI,
+      startTime
     });
+    ChatWorkflowService.sendStatusUpdate(onStatusUpdate, WorkflowStatus.MODERATING_QUESTION);
+    ChatWorkflowService.validateShortQueryOrThrow(conversationHistory, userMessage, lang, department, translationF);
 
+    const { redactedText } = await ChatWorkflowService.processRedaction(userMessage, lang, chatId, selectedAI);
+    const translationData = await ChatWorkflowService.translateQuestion(redactedText, lang, selectedAI);
+
+
+    // move this to the context service
     let context = null;
     conversationHistory = conversationHistory.filter((message) => !message.error);
     conversationHistory = conversationHistory.filter((message) => message.sender === 'ai');
@@ -50,31 +52,31 @@ export class DefaultWorkflow {
     if (usedExistingContext) {
       const lastMessage = conversationHistory[conversationHistory.length - 1];
       context = lastMessage.interaction.context;
-      // Only run PII check when we did NOT derive new context
-      await ChatWorkflowService.checkPIIOnNoContextOrThrow(chatId, userMessage, selectedAI);
+      context.translatedQuestion = translationData.translatedText;
+      context.originalLang = translationData.originalLanguage;
+      context.outputLang = ContextService.determineOutputLang(lang, translationData);
     } else {
       context = await ContextService.deriveContext(
         selectedAI,
-        userMessage,
+        translationData.translatedText,
         lang,
         department,
         referringUrl,
         searchProvider,
         conversationHistory,
-        chatId
+        chatId,
+        translationData
       );
     }
     await LoggingService.info(chatId, 'Derived context:', { context });
-
+    
     this.sendStatusUpdate(onStatusUpdate, WorkflowStatus.GENERATING_ANSWER);
 
     const answer = await AnswerService.sendMessage(
       selectedAI,
-      userMessage,
       conversationHistory,
       lang,
       context,
-      false,
       referringUrl,
       chatId
     );

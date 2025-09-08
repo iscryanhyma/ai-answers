@@ -16,11 +16,12 @@ export default async function handler(req, res) {
         return res.status(validated.error.code).end(validated.error.message);
     }
 
-    const { chatId, questions, selectedAI, recencyDays, requestedRating, language } = validated;
+    const { chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage } = validated;
 
     try {
 
-        const matches = await retrieveMatches(questions, selectedAI, requestedRating, 10, language);
+        // Use pageLanguage for vector matching (matches should be in the page language)
+        const matches = await retrieveMatches(questions, selectedAI, requestedRating, 10, pageLanguage);
         if (!matches || matches.length === 0) {
             ServerLoggingService.info('No similar chat matches found', 'chat-similar-answer');
             return res.json({});
@@ -61,8 +62,8 @@ export default async function handler(req, res) {
             return res.json({});
         }
 
-        // Translate the final answer if needed (moved to helper for cleanliness)
-        await translateFinalAnswerIfNeeded(formatted, language, selectedAI);
+        // Translate the final answer if needed into the user's detected language
+        await translateFinalAnswerIfNeeded(formatted, pageLanguage, detectedLanguage, selectedAI);
 
         ServerLoggingService.info('Returning chat similarity result (re-ranked)', 'chat-similar-answer', { interactionId: formatted.interactionId, sourceSimilarity: chosen.match?.similarity });
 
@@ -87,9 +88,11 @@ export default async function handler(req, res) {
         const selectedAI = req.body?.selectedAI || 'openai';
         const recencyDays = typeof req.body?.recencyDays === 'number' ? req.body.recencyDays : 7;
         const requestedRating = typeof req.body?.expertFeedbackRating === 'number' ? req.body.expertFeedbackRating : 100;
-        const language = typeof req.body?.language === 'string' && req.body.language.trim() ? req.body.language.trim() : null;
-        if (!language) return { error: { code: 400, message: 'Missing language' } };
-        return { chatId, questions, selectedAI, recencyDays, requestedRating, language };
+        // Accept new shape: pageLanguage + detectedLanguage. Fall back to legacy `language` if provided.
+        const pageLanguage = typeof req.body?.pageLanguage === 'string' && req.body.pageLanguage.trim() ? req.body.pageLanguage.trim() : (typeof req.body?.language === 'string' && req.body.language.trim() ? req.body.language.trim() : null);
+        const detectedLanguage = typeof req.body?.detectedLanguage === 'string' && req.body.detectedLanguage.trim() ? req.body.detectedLanguage.trim() : null;
+        if (!pageLanguage) return { error: { code: 400, message: 'Missing pageLanguage' } };
+        return { chatId, questions, selectedAI, recencyDays, requestedRating, pageLanguage, detectedLanguage };
     }
 
 
@@ -161,7 +164,7 @@ export default async function handler(req, res) {
             }).filter(Boolean);
 
             const questionFlow = flowQuestions.length ? flowQuestions.join('\n\n') : null;
-            return { candidate: c, questionFlow, flowInteractions };
+            return { candidate: c, questionFlow, flowInteractions, pageLanguage: chat.pageLanguage || null };
         }));
 
         const validEntries = entries.filter(e => e.questionFlow);
@@ -227,23 +230,72 @@ export default async function handler(req, res) {
             confidenceRating: citationDoc.confidenceRating || null,
         } : null;
 
-        return { text, englishAnswer, interactionId: selected._id, citation, chosen: chosenEntry };
+        return { text, englishAnswer, interactionId: selected._id, citation, chosen: chosenEntry, matchPageLanguage: chosenEntry.pageLanguage || null };
     }
 
     // Helper: translate the final answer when requested language is not English/French
-    async function translateFinalAnswerIfNeeded(formatted, languageStr, agentType) {
+    async function translateFinalAnswerIfNeeded(formatted, pageLanguageStr, detectedLanguageStr, agentType) {
         if (!formatted || !formatted.text) return;
-        const lang = (languageStr || '').toLowerCase().trim();
-        if (!lang) return;
 
-        // Accept common variants like 'en', 'eng', 'english', 'fr', 'fra', 'french'
-        const isEnglish = /^(en|eng|english)$/i.test(lang) || lang.includes('en');
-        const isFrench = /^(fr|fra|french)$/i.test(lang) || lang.includes('fr');
-        if (isEnglish || isFrench) return; // no translation needed
+        // Normalize helpers
+        const norm = (s) => (s || '').toLowerCase().trim();
+        const isFrench = (s) => /^(fr|fra|french)$/i.test(s) || (s || '').toLowerCase().includes('fr');
+        const isEnglish = (s) => /^(en|eng|english)$/i.test(s) || (s || '').toLowerCase().includes('en');
+
+        const pageLang = norm(pageLanguageStr);
+        const detectedLang = norm(detectedLanguageStr);
+
+        // Helper to reduce language to 2-letter ISO-like code for comparison (e.g. 'en-US' -> 'en', 'english' -> 'en')
+        const twoChar = (s) => {
+            if (!s) return '';
+            const parts = String(s).split(/[-_\s]/);
+            const first = parts[0] || s;
+            return (first.slice(0, 2) || '').toLowerCase();
+        };
+
+        // Prefer an explicit match page language if present (added in buildQuestionFlows)
+        let matchLang = norm(formatted?.matchPageLanguage) || null;
+        if (!matchLang) {
+            try {
+                const chosen = formatted?.chosen || null;
+                // Try common paths where match language might be present
+                matchLang = norm((chosen?.candidate?.match?.language) || (chosen?.candidate?.match?.lang) || (chosen?.match?.language) || (chosen?.match?.lang) || (chosen?.candidate?.interaction?.question?.language) || (formatted?.englishAnswer ? 'en' : null));
+            } catch (e) {
+                matchLang = null;
+            }
+        }
+
+        // If pageLang and detectedLang are identical (normalized to 2 chars), no translation needed
+        const pageTwo = twoChar(pageLang);
+        const detectedTwo = twoChar(detectedLang);
+        if (pageTwo && detectedTwo && pageTwo === detectedTwo) return;
+
+        // Determine target language according to rules:
+        // - If pageLanguage is French -> translate to French
+        // - Else if pageLanguage is English -> translate to detectedLanguage (if present)
+        // - Else (other page languages): translate if matchLang != detectedLang
+        let targetLang = null;
+        if (isFrench(pageLang)) {
+            targetLang = 'fr';
+        } else if (isEnglish(pageLang)) {
+            targetLang = detectedLang || null;
+        } else {
+            // If we have a detected language and it's different from the match language, target it
+            if (detectedLang && matchLang && detectedLang !== matchLang) {
+                targetLang = detectedLang;
+            }
+        }
+
+        if (!targetLang) return; // nothing to do
+
+        // Avoid translating when the matched content is already in the target language
+        const matchTwo = twoChar(matchLang);
+        const targetTwo = twoChar(targetLang);
+        if (matchTwo && targetTwo && matchTwo === targetTwo) return;
 
         try {
             const createTransAgent = async (atype, chatId) => await createTranslationAgent(atype, chatId);
-            const translationRequest = { text: formatted.text, desired_language: languageStr };
+            const translationRequest = { text: formatted.text, desired_language: targetLang };
             const transResp = await AgentOrchestratorService.invokeWithStrategy({ chatId: 'translate-final-answer', agentType: agentType, request: translationRequest, createAgentFn: createTransAgent, strategy: translationStrategy });
             const translated = transResp?.result?.translated_text || transResp?.result?.text || (typeof transResp?.result === 'string' ? transResp.result : null) || (typeof transResp?.raw === 'string' ? transResp.raw : null);
             if (translated && typeof translated === 'string' && translated.trim()) {
@@ -252,7 +304,7 @@ export default async function handler(req, res) {
         } catch (err) {
             ServerLoggingService.warn('Translation of final answer failed; returning original', 'chat-similar-answer', err);
         }
-    }
 
+    }
 
 }
