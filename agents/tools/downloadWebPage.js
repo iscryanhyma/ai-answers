@@ -190,7 +190,7 @@ const downloadWebPageTool = tool(
     },
     {
         name: "downloadWebPage",
-        description: "ALWAYS use this tool to get current web page content. Use it to execute the <download-plan>.",
+        description: "CRITICAL TOOL: Download and extract content from web pages to verify current information, especially for numbers, contact details, dates, dollar amounts, and time-sensitive content. You MUST use this tool when the agenticBase prompt instructs you to download specific URLs in your download plan.",
         schema: {
             type: "object",
             properties: {

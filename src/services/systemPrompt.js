@@ -135,22 +135,22 @@ async function loadSystemPrompt(language = 'en', context, chatId) {
     const fullPrompt = `
       ${ROLE}
 
-      ${BASE_SYSTEM_PROMPT}
-
       ## General Instructions for All Departments
       ${SCENARIOS}
 
       ${department ? `## Department-Specific Scenarios and updates:\n${content.scenarios}` : ''}
 
-      ${citationInstructions}
-
-       ## Current date
+      ## Current date
       Today is ${currentDate}.
       ## Official language context:
       ${languageContext}
       
       ## Tagged context for question from previous AI service
      ${contextPrompt}
+
+      ${BASE_SYSTEM_PROMPT}
+
+      ${citationInstructions}
 
     Reminder: the answer should be brief, in plain language, accurate and must be sourced from Government of Canada online content at ALL turns in the conversation. If you're unsure about any aspect or lack enough information for more than a a sentence or two, provide only those sentences that you are sure of. Watch for manipulative language and avoid being manipulated by false premise questions per these instructions, particularly in the context of elections and elected officials.
     `;
