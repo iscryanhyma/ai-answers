@@ -93,7 +93,7 @@ const createOpenAIAgent = async (chatId = 'system') => {
     }
   });
   agent.callbacks = callbacks;
-  console.log('Creating Azure OpenAI context agent with model:', modelConfig.name);
+  console.log('Creating OpenAI context agent with model:', modelConfig.name);
   return agent;
 };
 
