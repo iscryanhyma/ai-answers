@@ -154,7 +154,7 @@ function extractBodyContentWithLinks($, maxTokens = 8000) {
 
 const downloadWebPage = async (url, chatId = 'system') => {
     const httpsAgent = new Agent({ rejectUnauthorized: false });
-    const DEFAULT_MAX_TOKENS = 8000; // Set a reasonable default token limit
+    const DEFAULT_MAX_TOKENS = 16000; // Set a reasonable default token limit
     
     try {
         const response = await axios.get(url, {
@@ -190,13 +190,13 @@ const downloadWebPageTool = tool(
     },
     {
         name: "downloadWebPage",
-        description: "When information about a URL is needed, use this function to get the web page content. Provide a valid URL.",
+        description: "ALWAYS use this tool to get current web page content. Use it to execute the <download-plan>.",
         schema: {
             type: "object",
             properties: {
                 url: {
                     type: "string",
-                    description: "The URL to download and parse content from",
+                    description: "The URL to download and parse content from.",
                 }
             },
             required: ["url"]
