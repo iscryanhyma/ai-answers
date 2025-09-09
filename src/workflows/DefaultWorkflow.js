@@ -37,7 +37,6 @@ export class DefaultWorkflow {
     // Log that validation is about to run (avoid dumping entire history; log length instead)
     await LoggingService.info(chatId, 'Running short-query validation', {
       conversationHistoryLength: (conversationHistory || []).length,
-      userMessagePreview: typeof userMessage === 'string' ? userMessage.slice(0, 200) : null,
       lang,
       department
     });

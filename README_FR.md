@@ -15,8 +15,8 @@ Pour des informations complètes sur le système, voir :
 
 ### État actuel
 - **Environnement** : Préparation pour le projet pilote public
-- **Production** : https://ai-answers.alpha.canada.ca
-- **Développement** : ai-answers.cdssandbox.xyz
+- **Production** : https://reponses-ia.alpha.canada.ca/fr
+- **Développement** : ai-answers.cdssandbox.xyz/fr
 
 ### Caractéristiques principales
 - **Réponses contextuelles** : Utilise les URL de référence et la détection de département
