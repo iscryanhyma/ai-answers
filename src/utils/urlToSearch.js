@@ -24,16 +24,20 @@ class URLToSearch {
       return url.startsWith('https://www.canada.ca') || url.startsWith('http://www.canada.ca');
     };
 
+    // COMMENTED OUT: Pipeline URL validation disabled to avoid double-checking 
+    // (AI agent already validates URLs during response generation based on citationInstructions.js)
+    // Uncomment if needed for additional validation layer
+    
     let checkResult = { isValid: true };
-    if (isCanadaCaDomain(url)) {
-      try {
-        const apiUrl = getApiUrl(`util-check-url?url=${encodeURIComponent(url)}${chatId ? `&chatId=${encodeURIComponent(chatId)}` : ''}`);
-        const response = await fetch(apiUrl);
-        checkResult = await response.json();
-      } catch (error) {
-        checkResult = { isValid: false };
-      }
-    }
+    // if (isCanadaCaDomain(url)) {
+    //   try {
+    //     const apiUrl = getApiUrl(`util-check-url?url=${encodeURIComponent(url)}${chatId ? `&chatId=${encodeURIComponent(chatId)}` : ''}`);
+    //     const response = await fetch(apiUrl);
+    //     checkResult = await response.json();
+    //   } catch (error) {
+    //     checkResult = { isValid: false };
+    //   }
+    // }
 
     if ((checkResult.isValid && isCanadaCaDomain(url)) || !isCanadaCaDomain(url)) {
       return {
