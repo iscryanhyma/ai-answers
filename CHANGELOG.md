@@ -1,5 +1,28 @@
 # Changelog
 
+## [1.35.1](https://github.com/cds-snc/ai-answers/compare/v1.35.0...v1.35.1) (2025-09-09)
+
+
+### Bug Fixes
+
+* add-FR-link to docs ([78c1ca6](https://github.com/cds-snc/ai-answers/commit/78c1ca61cecb58daeae7294029ac005c6cc059c3))
+* add-FR-link to docs ([2a4b35b](https://github.com/cds-snc/ai-answers/commit/2a4b35b665428e1b8980c4a880d5e8d927245d5e))
+* get-downloads-working-again ([8d0dae5](https://github.com/cds-snc/ai-answers/commit/8d0dae524a0fe4374f62f5ecffa8d35b336382f4))
+* get-downloads-working-again ([9afaec9](https://github.com/cds-snc/ai-answers/commit/9afaec9c292614744ec22e99e59c941e7f615376))
+* increase default max tokens limit in downloadWebPage function ([3e7b10e](https://github.com/cds-snc/ai-answers/commit/3e7b10e38887e59f0d8b4bde27d6a8bc5e510151))
+* update log message for Azure OpenAI context agent and improve downloadWebPage tool description ([a1554aa](https://github.com/cds-snc/ai-answers/commit/a1554aaecb3d33019e5f22286310adaa98b14a21))
+
+
+### Miscellaneous Chores
+
+* clean up AnswerService.js file structure and comments ([c93bc6e](https://github.com/cds-snc/ai-answers/commit/c93bc6e32419acfc9ee4f64f784511e9386e4b45))
+
+
+### Code Refactoring
+
+* remove userMessagePreview from logging in validation for De… ([f59a69f](https://github.com/cds-snc/ai-answers/commit/f59a69fdd0a7169436a643592b8da22c30e30954))
+* remove userMessagePreview from logging in validation for DefaultWorkflow and DefaultWithVector ([7feb96a](https://github.com/cds-snc/ai-answers/commit/7feb96abcc9e061c95d1aa69503187ee7fa1db24))
+
 ## [1.35.0](https://github.com/cds-snc/ai-answers/compare/v1.34.1...v1.35.0) (2025-09-08)
 
 
