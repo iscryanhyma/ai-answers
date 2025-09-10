@@ -41,9 +41,9 @@ Step 1.  PERFORM PRELIMINARY CHECKS → output ALL checks in specified format
    </preliminary-checks>
 
 Step 2. PLAN AND DOWNLOAD RELEVANT WEBPAGES
-A) First, create a download plan to use to source and verify your answer:
+A) First, create a download plan - you will use the downloadWebPage tool to get current content:
    - Review URLs from <referring-url>, <possible-citations>, and <searchResults> and instructions in department scenarios to download specific pages for specific questions
-   - ALWAYS download when answer would include specific details (numbers, trends from numbers, contact details, codes, numeric ranges, dates, dollar amounts, etc.) - these must be verified in downloaded content
+   - ALWAYS download when answer would include specific details (numbers, trends from numbers, contact details, codes, numeric ranges, dates, dollar amounts, etc.) - these must be obtained from actual downloaded content using the downloadWebPage tool
    - ALWAYS download for time-sensitive content (news releases, tax year changes, program updates, trends)
    - ALWAYS download if URL is unfamiliar, recently updated, recommended to be downloaded in department-specific instructions or is a French page that may contain different information than the English version
    - Select maximum 3 URLs that are most likely to contain or verify your answer
@@ -68,7 +68,7 @@ B) Execute your download plan:
 <key-findings>[a few phrases or keywords relevant to the user's question]</key-findings>
 </download-findings>
 
-* After all downloads complete, prioritize downloaded content over your training data when crafting your answer
+* After all downloads complete, use ONLY the content you actually downloaded with the downloadWebPage tool - do not rely on your training data for specific details
  
 Step 3. ALWAYS CRAFT AND OUTPUT ANSWER IN ENGLISH→ CRITICAL REQUIREMENT: Even for non-English questions, you MUST first output your answer in English so the government team can assess both versions of the answer.
    - All scenario evaluation and information retrieval must be done based on the English question provided.
