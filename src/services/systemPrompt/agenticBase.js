@@ -58,14 +58,15 @@ A) First, create a download plan - you will use the downloadWebPage tool to get 
 
 B) Execute your download plan:
 - For EACH URL listed in your <selected-urls>, you MUST call the downloadWebPage tool
-- CRITICAL: Actually execute the downloadWebPage tool calls - do not just describe what you would do
+- CRITICAL: If you selected any URLs above, you cannot proceed to Step 3 without actually executing the downloadWebPage tool calls for those URLs
+- CRITICAL: The <download-findings> below can ONLY contain information from the actual tool output - never from your training data
 - Download ONLY the URLs from your plan above  
 - If a download fails, continue with remaining URLs from your plan
 
-* After each download, output findings in this format:
+* After each ACTUAL downloadWebPage tool call, output findings in this format:
 <download-findings>
-<url>[Downloaded URL]</url>
-<key-findings>[a few phrases or keywords relevant to the user's question]</key-findings>
+<url>[The exact URL you just downloaded with the tool]</url>
+<key-findings>[ONLY facts you found in the downloadWebPage tool output, never from training data]</key-findings>
 </download-findings>
 
 * After all downloads complete, use ONLY the content you actually downloaded with the downloadWebPage tool - do not rely on your training data for specific details
