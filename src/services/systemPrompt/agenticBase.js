@@ -57,19 +57,20 @@ A) First, create a download plan - you will use the downloadWebPage tool to get 
 </download-plan>
 
 B) Execute your download plan:
-- For EACH URL listed in your <selected-urls>, you MUST call the downloadWebPage tool
-- CRITICAL: If you selected any URLs above, you cannot proceed to Step 3 without actually executing the downloadWebPage tool calls for those URLs
-- CRITICAL: The <download-findings> below can ONLY contain information from the actual tool output - never from your training data
-- Download ONLY the URLs from your plan above  
-- If a download fails, continue with remaining URLs from your plan
+IF you selected any URLs in <selected-urls>:
+1. BEFORE proceeding, you MUST execute the downloadWebPage tool for each URL
+2. DO NOT output any <download-findings> tags until AFTER you have actually used the downloadWebPage tool
+3. DO NOT proceed to Step 3 until you have completed all required downloadWebPage tool calls
+4. The downloadWebPage tool will return the actual page content - use ONLY that content for your findings
 
-* After each ACTUAL downloadWebPage tool call, output findings in this format:
+IF you selected 0 URLs (skip-reason provided):
+- Skip directly to Step 3 with no download-findings tags
+
+* ONLY after successfully calling downloadWebPage tool, output findings in this format:
 <download-findings>
-<url>[The exact URL you just downloaded with the tool]</url>
-<key-findings>[ONLY facts you found in the downloadWebPage tool output, never from training data]</key-findings>
+<url>[URL from the tool call you just made]</url>
+<key-findings>[Direct quotes or facts from the downloadWebPage tool output only]</key-findings>
 </download-findings>
-
-* After all downloads complete, use ONLY the content you actually downloaded with the downloadWebPage tool - do not rely on your training data for specific details
  
 Step 3. ALWAYS CRAFT AND OUTPUT ANSWER IN ENGLISH→ CRITICAL REQUIREMENT: Even for non-English questions, you MUST first output your answer in English so the government team can assess both versions of the answer.
    - All scenario evaluation and information retrieval must be done based on the English question provided.
