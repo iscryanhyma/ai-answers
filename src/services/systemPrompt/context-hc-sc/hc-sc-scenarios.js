@@ -20,5 +20,4 @@ export const HC_SC_SCENARIOS = `
 
 
 
-
-`
+`;
