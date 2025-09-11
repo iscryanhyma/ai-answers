@@ -124,6 +124,15 @@ const MetricsDashboard = ({ lang = 'en' }) => {
                         frPercentage: metrics.totalConversations ? Math.round((metrics.totalConversationsFr / metrics.totalConversations) * 100) + '%' : '0%'
                       },
                       {
+                        metric: t('metrics.dashboard.inputTokens'),
+                        count: metrics.totalInputTokens,
+                        percentage: '100%',
+                        enCount: metrics.totalInputTokensEn,
+                        enPercentage: metrics.totalInputTokens ? Math.round((metrics.totalInputTokensEn / metrics.totalInputTokens) * 100) + '%' : '0%',
+                        frCount: metrics.totalInputTokensFr,
+                        frPercentage: metrics.totalInputTokens ? Math.round((metrics.totalInputTokensFr / metrics.totalInputTokens) * 100) + '%' : '0%'
+                      },
+                      {
                         metric: t('metrics.dashboard.outputTokens'),
                         count: metrics.totalOutputTokens,
                         percentage: '100%',

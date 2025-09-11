@@ -30,6 +30,9 @@ class MetricsService {
       totalConversations: 0,
       totalConversationsEn: 0,
       totalConversationsFr: 0,
+      totalInputTokens: 0,
+      totalInputTokensEn: 0,
+      totalInputTokensFr: 0,
       totalOutputTokens: 0,
       totalOutputTokensEn: 0,
       totalOutputTokensFr: 0,
@@ -115,12 +118,20 @@ class MetricsService {
         if (pageLanguage === 'en') metrics.totalQuestionsEn++;
         if (pageLanguage === 'fr') metrics.totalQuestionsFr++;
         
+        // Count input tokens
+        const inputTokens = Number(interaction.context?.inputTokens);
+        if (!isNaN(inputTokens)) {
+          metrics.totalInputTokens += inputTokens;
+          if (pageLanguage === 'en') metrics.totalInputTokensEn += inputTokens;
+          if (pageLanguage === 'fr') metrics.totalInputTokensFr += inputTokens;
+        }
+        
         // Count output tokens
-        const tokens = Number(interaction.context?.outputTokens);
-        if (!isNaN(tokens)) {
-          metrics.totalOutputTokens += tokens;
-          if (pageLanguage === 'en') metrics.totalOutputTokensEn += tokens;
-          if (pageLanguage === 'fr') metrics.totalOutputTokensFr += tokens;
+        const outputTokens = Number(interaction.context?.outputTokens);
+        if (!isNaN(outputTokens)) {
+          metrics.totalOutputTokens += outputTokens;
+          if (pageLanguage === 'en') metrics.totalOutputTokensEn += outputTokens;
+          if (pageLanguage === 'fr') metrics.totalOutputTokensFr += outputTokens;
         }
         
         // Count answer types (per language)
