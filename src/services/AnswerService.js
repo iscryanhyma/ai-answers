@@ -112,10 +112,6 @@ const AnswerService = {
     let citationHead = null;
     let citationUrl = null;
     let confidenceRating = null;
-    let downloadPlan = null;
-    let downloadFindings = null;
-    let downloadFindingsUrls = [];
-    let downloadKeyFindings = null;
 
 
     const preliminaryMatch = /<preliminary-checks>([\s\S]*?)<\/preliminary-checks>/s.exec(text);
