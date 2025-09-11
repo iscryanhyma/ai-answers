@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.36.0](https://github.com/cds-snc/ai-answers/compare/v1.35.3...v1.36.0) (2025-09-11)
+
+
+### Features
+
+* add input tokens to metrics dashboard ([ef29e39](https://github.com/cds-snc/ai-answers/commit/ef29e3998180d716f910bfde802f9f9ed4ded6b9))
+* add input tokens to metrics dashboard ([30e1ec9](https://github.com/cds-snc/ai-answers/commit/30e1ec9f2d16fdfb43b23ca54e23cba5584e7840))
+* enhance role-based access for ChatOptions component ([47795e4](https://github.com/cds-snc/ai-answers/commit/47795e4b937b718ebd3809d44e30a1056ee5d678))
+* enhance role-based access for ChatOptions component ([d252e4a](https://github.com/cds-snc/ai-answers/commit/d252e4ab4d4601cf013d2ad60155c299dfad1fd8))
+
+
+### Bug Fixes
+
+* include all tokens from context and answer ([475f5df](https://github.com/cds-snc/ai-answers/commit/475f5df305108d80ae246928ab3721f7afb9d9e6))
+
 ## [1.35.3](https://github.com/cds-snc/ai-answers/compare/v1.35.2...v1.35.3) (2025-09-11)
 
 
