@@ -225,11 +225,6 @@ const AnswerService = {
       paragraphs,
       confidenceRating,
       sentences,
-      // download-related fields extracted from the LLM output
-      downloadPlan,
-      downloadFindings,
-      downloadFindingsUrls,
-      downloadKeyFindings,
     };
 
    
