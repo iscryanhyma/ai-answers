@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.35.2](https://github.com/cds-snc/ai-answers/compare/v1.35.1...v1.35.2) (2025-09-10)
+
+
+### Bug Fixes
+
+* eslint ([2213a0c](https://github.com/cds-snc/ai-answers/commit/2213a0ca57bee81114e9d949cfecb2db55ddd61a))
+* mrl and download ([0698e31](https://github.com/cds-snc/ai-answers/commit/0698e3183869d8c43f3e2fa683bf3f88c5c5c29e))
+* mrl and download ([7441855](https://github.com/cds-snc/ai-answers/commit/7441855a8928e50d9bbdb4eebf00b1c81e45af55))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump vite from 7.1.3 to 7.1.5 ([7abc3ff](https://github.com/cds-snc/ai-answers/commit/7abc3ff24b0d3c5648ba35f17517d2dc064a8a1b))
+* **deps:** bump vite from 7.1.3 to 7.1.5 ([38547e6](https://github.com/cds-snc/ai-answers/commit/38547e6155f644bec828ab94190e6423a4e1bc9c))
+* update dependencies and improve package.json ([b530ee9](https://github.com/cds-snc/ai-answers/commit/b530ee9b1dd6bec853bc11395bd7e1fdaced14b2))
+
 ## [1.35.1](https://github.com/cds-snc/ai-answers/compare/v1.35.0...v1.35.1) (2025-09-09)
 
 
