@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.35.3](https://github.com/cds-snc/ai-answers/compare/v1.35.2...v1.35.3) (2025-09-11)
+
+
+### Bug Fixes
+
+* clean up all logging of download plans etc ([799d25e](https://github.com/cds-snc/ai-answers/commit/799d25eaefef606fe926fa1c43aa9abb251f5465))
+* refine-checkUrl use comment out pipeline ([74a1162](https://github.com/cds-snc/ai-answers/commit/74a1162b45003fb2bc342c14e554349b74bb382e))
+* remove download plan ([1e7987b](https://github.com/cds-snc/ai-answers/commit/1e7987b858a218a7e0346b1eb3d7c59268757e28))
+* remove logging ([f063a8d](https://github.com/cds-snc/ai-answers/commit/f063a8dabd71514f0f9775a16bc220608a565ccb))
+* remove logging of things that no longer exist ([821fc9c](https://github.com/cds-snc/ai-answers/commit/821fc9c7e8496bc8c6fa5adecb243117516245e5))
+* still-faking-download-plan ([b22e71b](https://github.com/cds-snc/ai-answers/commit/b22e71b355b3f5810d93fa82c3c3821c99d972de))
+
 ## [1.35.2](https://github.com/cds-snc/ai-answers/compare/v1.35.1...v1.35.2) (2025-09-10)
 
 
