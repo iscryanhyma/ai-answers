@@ -118,20 +118,26 @@ class MetricsService {
         if (pageLanguage === 'en') metrics.totalQuestionsEn++;
         if (pageLanguage === 'fr') metrics.totalQuestionsFr++;
         
-        // Count input tokens
-        const inputTokens = Number(interaction.context?.inputTokens);
-        if (!isNaN(inputTokens)) {
-          metrics.totalInputTokens += inputTokens;
-          if (pageLanguage === 'en') metrics.totalInputTokensEn += inputTokens;
-          if (pageLanguage === 'fr') metrics.totalInputTokensFr += inputTokens;
+        // Count input tokens from all sources (context, answer)
+        const contextInputTokens = Number(interaction.context?.inputTokens) || 0;
+        const answerInputTokens = Number(interaction.answer?.inputTokens) || 0;
+        const totalInputTokens = contextInputTokens + answerInputTokens;
+        
+        if (totalInputTokens > 0) {
+          metrics.totalInputTokens += totalInputTokens;
+          if (pageLanguage === 'en') metrics.totalInputTokensEn += totalInputTokens;
+          if (pageLanguage === 'fr') metrics.totalInputTokensFr += totalInputTokens;
         }
         
-        // Count output tokens
-        const outputTokens = Number(interaction.context?.outputTokens);
-        if (!isNaN(outputTokens)) {
-          metrics.totalOutputTokens += outputTokens;
-          if (pageLanguage === 'en') metrics.totalOutputTokensEn += outputTokens;
-          if (pageLanguage === 'fr') metrics.totalOutputTokensFr += outputTokens;
+        // Count output tokens from all sources (context, answer)
+        const contextOutputTokens = Number(interaction.context?.outputTokens) || 0;
+        const answerOutputTokens = Number(interaction.answer?.outputTokens) || 0;
+        const totalOutputTokens = contextOutputTokens + answerOutputTokens;
+        
+        if (totalOutputTokens > 0) {
+          metrics.totalOutputTokens += totalOutputTokens;
+          if (pageLanguage === 'en') metrics.totalOutputTokensEn += totalOutputTokens;
+          if (pageLanguage === 'fr') metrics.totalOutputTokensFr += totalOutputTokens;
         }
         
         // Count answer types (per language)
