@@ -3,6 +3,9 @@ import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
+import ExpertFeedbackPanel from './review/ExpertFeedbackPanel.js';
+import PublicFeedbackPanel from './review/PublicFeedbackPanel.js';
+import EvalPanel from './review/EvalPanel.js';
 import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
@@ -502,6 +505,17 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         chatId={chatId}
         readOnly={readOnly}
       />
+      {/* Simple review panels shown when in readOnly (review) mode. Use the last AI message as the subject. */}
+      {readOnly && (() => {
+        const lastAI = messages.slice().reverse().find(m => m.sender === 'ai');
+        return lastAI ? (
+          <div className="review-panels" style={{ marginTop: '1rem' }}>
+            <ExpertFeedbackPanel message={lastAI} extractSentences={extractSentences} t={t} />
+            <PublicFeedbackPanel message={lastAI} extractSentences={extractSentences} t={t} />
+            <EvalPanel message={lastAI} t={t} />
+          </div>
+        ) : null;
+      })()}
       <div
         aria-live="polite"
         aria-atomic="true"

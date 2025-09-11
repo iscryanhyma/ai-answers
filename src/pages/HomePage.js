@@ -206,39 +206,41 @@ const HomePage = ({ lang = "en" }) => {
           initialMessages={initialMessages}
         />
       </div>
-      <div className="mb-600 container-custom">
-        {/* Feedback survey link - shown/hidden via CSS based on AI responses */}
-        <GcdsText>
-          <a
-            href={t("homepage.feedback.surveyUrl")}
-            className="feedback-survey-link"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t("homepage.feedback.surveyLink")}
-          </a>
-        </GcdsText>
-        <GcdsDetails
-          detailsTitle={t("homepage.about.title")}
-          className="mb-400"
-          tabIndex={0}
-        >
-          <GcdsText>{t("homepage.about.builtBy")}</GcdsText>
-          <GcdsText>{t("homepage.about.aiServices.azure")}</GcdsText>
-          <GcdsText>{t("homepage.about.contact")}</GcdsText>
+      {!reviewMode && (
+        <div className="mb-600 container-custom">
+          {/* Feedback survey link - shown/hidden via CSS based on AI responses */}
           <GcdsText>
-            <GcdsLink
-              href={
-                lang === "fr"
-                  ? "https://numerique.canada.ca/"
-                  : "https://digital.canada.ca/"
-              }
+            <a
+              href={t("homepage.feedback.surveyUrl")}
+              className="feedback-survey-link"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              {t("homepage.about.cdslink")}
-            </GcdsLink>
+              {t("homepage.feedback.surveyLink")}
+            </a>
           </GcdsText>
-        </GcdsDetails>
-      </div>
+          <GcdsDetails
+            detailsTitle={t("homepage.about.title")}
+            className="mb-400"
+            tabIndex={0}
+          >
+            <GcdsText>{t("homepage.about.builtBy")}</GcdsText>
+            <GcdsText>{t("homepage.about.aiServices.azure")}</GcdsText>
+            <GcdsText>{t("homepage.about.contact")}</GcdsText>
+            <GcdsText>
+              <GcdsLink
+                href={
+                  lang === "fr"
+                    ? "https://numerique.canada.ca/"
+                    : "https://digital.canada.ca/"
+                }
+              >
+                {t("homepage.about.cdslink")}
+              </GcdsLink>
+            </GcdsText>
+          </GcdsDetails>
+        </div>
+      )}
     </WrappedErrorBoundary>
   );
 };
