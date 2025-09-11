@@ -182,31 +182,6 @@ const AnswerService = {
       confidenceRating = confidenceMatch[1].trim();
     }
 
-    // Extract download plan if present
-    const downloadPlanMatch = /<download-plan>([\s\S]*?)<\/download-plan>/s.exec(text);
-    if (downloadPlanMatch) {
-      downloadPlan = downloadPlanMatch[1].trim();
-      // remove from content/text to avoid duplication
-      content = content.replace(/<download-plan>[\s\S]*?<\/download-plan>/s, '').trim();
-    }
-
-    // Extract download findings if present (and nested url / key-findings)
-    const downloadFindingsMatch = /<download-findings>([\s\S]*?)<\/download-findings>/s.exec(text);
-    if (downloadFindingsMatch) {
-      downloadFindings = downloadFindingsMatch[1].trim();
-      // extract any <url> tags inside the download-findings block
-      const urlRegex = /<url>([\s\S]*?)<\/url>/g;
-      let urlMatch;
-      while ((urlMatch = urlRegex.exec(downloadFindings)) !== null) {
-        if (urlMatch[1]) downloadFindingsUrls.push(urlMatch[1].trim());
-      }
-      const keyFindingsMatch = /<key-findings>([\s\S]*?)<\/key-findings>/s.exec(downloadFindings);
-      if (keyFindingsMatch) {
-        downloadKeyFindings = keyFindingsMatch[1].trim();
-      }
-      // remove from content/text to avoid duplication
-      content = content.replace(/<download-findings>[\s\S]*?<\/download-findings>/s, '').trim();
-    }
 
     const paragraphs = content.split(/\n+/).map(paragraph => paragraph.trim()).filter(paragraph => paragraph !== '');
     const sentences = AnswerService.parseSentences(content);
