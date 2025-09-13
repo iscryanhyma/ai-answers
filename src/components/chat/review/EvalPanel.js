@@ -1,8 +1,14 @@
 import React from 'react';
 import { GcdsDetails } from '@cdssnc/gcds-components-react';
 
-const EvalPanel = ({ message, t }) => {
+const EvalPanel = ({ message, t, reviewMode }) => {
   if (!message) return null;
+  const display=false;
+  // When in review mode, auto-eval should be hidden temporarily.
+  if (!display) {
+    // Placeholder while auto-eval is disabled in review mode.
+    return null;
+  }
 
   const evalObj = message.interaction?.eval || message.eval || {};
 

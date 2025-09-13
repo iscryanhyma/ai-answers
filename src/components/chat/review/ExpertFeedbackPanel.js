@@ -11,12 +11,20 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
 
     const handleToggle = useCallback(async (e) => {
         try {
-            if (data) return; // already loaded
+            // If we already have data, make sure it matches the message's interaction.expertFeedback
+            const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
+            const currentEfId = message.interaction && message.interaction.expertFeedback ? String(message.interaction.expertFeedback) : null;
+            const cachedEfId = data && data.expertFeedback ? (data.expertFeedback._id || data.expertFeedback.id || null) : null;
+
+            // Debug
+            try { console.debug('[ExpertFeedbackPanel] handleToggle called, interactionId:', interactionId, 'currentEfId:', currentEfId, 'cachedEfId:', cachedEfId); } catch (e) { void e; }
+
+
             setLoading(true);
             setError(null);
-            const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
             const result = await FeedbackService.getExpertFeedback({ interactionId });
             setData(result);
+
         } catch (err) {
             setError(err.message || String(err));
         } finally {
@@ -72,17 +80,17 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
 
     return (
         <GcdsDetails detailsTitle={t('reviewPanels.expertFeedbackTitle') || t('homepage.expertRating.title') || 'Expert feedback'} className="review-details" tabIndex="0" onGcdsClick={(e) => {
-                // e.target should be the gcds-details web component; check its open property
-                try {
-                    // call load when panel is being opened
-                    if (e && e.target && !e.target.open) {
-                        handleToggle(e);
-                    }
-                } catch (err) {
-                    // fallback: call handler anyway
+            // e.target should be the gcds-details web component; check its open property
+            try {
+                // call load when panel is being opened
+                if (e && e.target && !e.target.open) {
                     handleToggle(e);
                 }
-            }}>
+            } catch (err) {
+                // fallback: call handler anyway
+                handleToggle(e);
+            }
+        }}>
             <div className="review-panel expert-feedback-panel">
                 {loading && <div>{t('common.loading') || 'Loading...'}</div>}
                 {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
