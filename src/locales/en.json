@@ -457,6 +457,7 @@
   },
   "common": {
     "backToAdmin": "Back to Admin",
+  "deleting": "Deleting...",
     "yes": "Yes",
     "no": "No"
   },

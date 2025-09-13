@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { GcdsDetails } from '@cdssnc/gcds-components-react';
+import { GcdsDetails, GcdsButton } from '@cdssnc/gcds-components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 import ClientLoggingService from '../../../services/ClientLoggingService.js';
 
@@ -153,9 +153,14 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                     </tbody>
                 </table>
                 <div className="mt-200">
-                    <button className="btn btn-danger" disabled={deleting} onClick={handleDelete}>
+                    <GcdsButton
+                        onClick={handleDelete}
+                        variant="danger"
+                        disabled={deleting}
+                        className="hydrated"
+                    >
                         {deleting ? (t('common.deleting') || 'Deleting...') : (t('reviewPanels.deleteExpertFeedback') || 'Delete Expert Feedback')}
-                    </button>
+                    </GcdsButton>
                 </div>
             </div>
         </GcdsDetails>
