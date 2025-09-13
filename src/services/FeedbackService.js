@@ -93,6 +93,20 @@ class FeedbackService {
     }
     return response.json();
   }
+
+  static async deleteExpertFeedback({ interactionId }) {
+    if (!interactionId) throw new Error('Missing required fields');
+    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-delete-expert'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interactionId })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to delete expert feedback');
+    }
+    return data;
+  }
 }
 
 export default FeedbackService;

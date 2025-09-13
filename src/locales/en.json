@@ -466,6 +466,8 @@
   "feedback": "Feedback",
   "notAvailable": "N/A",
   "expertFeedbackTitle": "Expert feedback",
+  "deleteExpertFeedback": "Delete Expert Feedback",
+  
   "publicFeedbackTitle": "Public feedback",
   "autoEvalTitle": "Auto-eval",
     "explanation": "Explanation",

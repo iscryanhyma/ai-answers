@@ -33,6 +33,7 @@ import feedbackPersistExpertHandler from '../api/feedback/feedback-persist-exper
 import feedbackPersistPublicHandler from '../api/feedback/feedback-persist-public.js';
 import feedbackGetExpertHandler from '../api/feedback/feedback-get-expert.js';
 import feedbackGetPublicHandler from '../api/feedback/feedback-get-public.js';
+import feedbackDeleteExpertHandler from '../api/feedback/feedback-delete-expert.js';
 import dbLogHandler from '../api/db/db-log.js';
 import signupHandler from '../api/db/db-auth-signup.js';
 import loginHandler from '../api/db/db-auth-login.js';
@@ -107,6 +108,7 @@ app.post('/api/feedback/feedback-persist-expert', feedbackPersistExpertHandler);
 app.post('/api/feedback/feedback-persist-public', feedbackPersistPublicHandler);
 app.post('/api/feedback/feedback-get-expert', feedbackGetExpertHandler);
 app.post('/api/feedback/feedback-get-public', feedbackGetPublicHandler);
+app.post('/api/feedback/feedback-delete-expert', feedbackDeleteExpertHandler);
 app.post('/api/db/db-persist-interaction', dbPersistInteraction);
 app.get('/api/db/db-chat-session', dbChatSessionHandler);
 app.get('/api/db/db-verify-chat-session', dbVerifyChatSessionHandler);

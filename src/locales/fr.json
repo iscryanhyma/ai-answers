@@ -466,6 +466,7 @@
     "expertScore": "Note de l'expert",
   "feedback": "Commentaire",
   "expertFeedbackTitle": "Rétroaction d'expert",
+  "deleteExpertFeedback": "Supprimer la rétroaction d'expert",
   "publicFeedbackTitle": "Rétroaction publique",
   "autoEvalTitle": "Évaluation automatique",
     "explanation": "Explication",
