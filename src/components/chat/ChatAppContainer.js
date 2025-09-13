@@ -9,6 +9,7 @@ import EvalPanel from './review/EvalPanel.js';
 import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
+import DataStoreService from '../../services/DataStoreService.js';
 // Utility functions go here, before the component
 const extractSentences = (paragraph) => {
   const sentenceRegex = /<s-?\d+>(.*?)<\/s-?\d+>/g;
@@ -40,11 +41,13 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   const [showFeedback, setShowFeedback] = useState(false);
   // Persisted options (except referringUrl) saved in localStorage so they survive refresh/new chats
   const storageKey = (k) => `aiAnswers.${k}`;
+  // selectedAI: prefer localStorage override; if absent, we'll load the persisted provider
   const [selectedAI, setSelectedAI] = useState(() => {
     try {
-      return localStorage.getItem(storageKey('selectedAI')) || 'azure';
+      const val = localStorage.getItem(storageKey('selectedAI'));
+      return val !== null ? val : null;
     } catch (e) {
-      return 'azure';
+      return null;
     }
   }); // comment to cause change
   const [selectedSearch, setSelectedSearch] = useState(() => {
@@ -190,10 +193,39 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
   // Persist selection changes to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem(storageKey('selectedAI'), selectedAI);
+      // Only persist when we have a concrete value (avoid storing null)
+      if (selectedAI !== null && selectedAI !== undefined) {
+        localStorage.setItem(storageKey('selectedAI'), selectedAI);
+      }
     } catch (e) {
       // ignore storage errors
     }
+  }, [selectedAI]);
+
+  // If there's no localStorage value for selectedAI, load provider from DataStoreService
+  useEffect(() => {
+    let mounted = true;
+    const loadProvider = async () => {
+      if (selectedAI === null) {
+        try {
+          // Use the public setting endpoint so unauthenticated clients can read the provider
+          const provider = await DataStoreService.getPublicSetting('provider', 'openai');
+          if (mounted && provider) {
+            setSelectedAI(provider);
+            try {
+              localStorage.setItem(storageKey('selectedAI'), provider);
+            } catch (e) {
+              // ignore storage errors
+            }
+          }
+        } catch (err) {
+          // fallback to openai if datastore call fails
+          if (mounted) setSelectedAI('openai');
+        }
+      }
+    };
+    loadProvider();
+    return () => { mounted = false; };
   }, [selectedAI]);
 
   useEffect(() => {
@@ -505,17 +537,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         chatId={chatId}
         readOnly={readOnly}
       />
-      {/* Simple review panels shown when in readOnly (review) mode. Use the last AI message as the subject. */}
-      {readOnly && (() => {
-        const lastAI = messages.slice().reverse().find(m => m.sender === 'ai');
-        return lastAI ? (
-          <div className="review-panels" style={{ marginTop: '1rem' }}>
-            <ExpertFeedbackPanel message={lastAI} extractSentences={extractSentences} t={t} />
-            <PublicFeedbackPanel message={lastAI} extractSentences={extractSentences} t={t} />
-            <EvalPanel message={lastAI} t={t} />
-          </div>
-        ) : null;
-      })()}
+  {/* Panels are rendered inline after each AI message in ChatInterface when in readOnly mode. */}
       <div
         aria-live="polite"
         aria-atomic="true"

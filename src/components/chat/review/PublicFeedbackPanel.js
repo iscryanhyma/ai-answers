@@ -9,7 +9,6 @@ const PublicFeedbackPanel = ({ message, extractSentences, t }) => {
 
     const handleToggle = useCallback(async (e) => {
         try {
-            if (!e.target.open) return;
             if (data) return;
             setLoading(true);
             setError(null);
@@ -28,22 +27,19 @@ const PublicFeedbackPanel = ({ message, extractSentences, t }) => {
     const interaction = message.interaction || {};
     const answer = interaction.answer || {};
 
-    let sentences = [];
-    if (Array.isArray(answer.paragraphs) && answer.paragraphs.length > 0) {
-        sentences = answer.paragraphs.flatMap(p => extractSentences(p));
-    } else if (Array.isArray(answer.sentences) && answer.sentences.length > 0) {
-        sentences = answer.sentences;
-    }
-
-    const publicFeedback = interaction.publicFeedback || message.publicFeedback || {};
+    // If we fetched data, API returns { publicFeedback: pf, sentences } — normalize to use pf
+    const fetchedPublicFeedback = data && (data.publicFeedback || data);
+    const publicFeedback = fetchedPublicFeedback || interaction.publicFeedback || message.publicFeedback || {};
 
     return (
         <GcdsDetails detailsTitle={t('reviewPanels.publicFeedbackTitle') || 'Public feedback'} className="review-details" tabIndex="0" onGcdsClick={(e) => {
             try {
+                // Call handleToggle when the details panel is opened (e.target.open === true)
                 if (e && e.target && !e.target.open) {
                     handleToggle(e);
                 }
             } catch (err) {
+                // Fallback: attempt to toggle fetch; handleToggle will early-return if closed
                 handleToggle(e);
             }
         }}>
@@ -51,30 +47,11 @@ const PublicFeedbackPanel = ({ message, extractSentences, t }) => {
                 {loading && <div>{t('common.loading') || 'Loading...'}</div>}
                 {error && <div className="error">{t('common.error') || 'Error'}: {error}</div>}
                 <div className="public-feedback-summary">
-                    <div>{t('reviewPanels.score') || 'Score'}: {(data && typeof data.publicFeedbackScore !== 'undefined' && data.publicFeedbackScore !== null) ? data.publicFeedbackScore : (typeof publicFeedback.publicFeedbackScore !== 'undefined' && publicFeedback.publicFeedbackScore !== null ? publicFeedback.publicFeedbackScore : (t('reviewPanels.notAvailable') || 'N/A'))}</div>
-                    <div>{t('reviewPanels.reason') || 'Reason'}: {(data && data.publicFeedbackReason) || publicFeedback.publicFeedbackReason || ''}</div>
+                    <div>{t('reviewPanels.score') || 'Score'}: {(publicFeedback && typeof publicFeedback.publicFeedbackScore !== 'undefined' && publicFeedback.publicFeedbackScore !== null) ? publicFeedback.publicFeedbackScore : (t('reviewPanels.notAvailable') || 'N/A')}</div>
+                    <div>{t('reviewPanels.reason') || 'Reason'}: {publicFeedback && (publicFeedback.publicFeedbackReason || '')}</div>
+                    <div>{t('reviewPanels.feedback') || 'Feedback'}: {publicFeedback && (publicFeedback.feedback || '')}</div>
                 </div>
-                {sentences.length > 0 && (
-                    <table className="review-table">
-                        <thead>
-                            <tr>
-                                <th>{t('reviewPanels.sentence') || 'Sentence'}</th>
-                                <th>{t('reviewPanels.publicComment') || 'Public comment'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sentences.map((s, i) => {
-                                const row = (data && data.sentences && data.sentences[i]) || {};
-                                return (
-                                    <tr key={i}>
-                                        <td>{s}</td>
-                                        <td>{row.comment || ((publicFeedback && publicFeedback.feedback) || '')}</td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                )}
+                {/* Only show overall public feedback score and reason; sentence-level chart removed */}
             </div>
         </GcdsDetails>
     );

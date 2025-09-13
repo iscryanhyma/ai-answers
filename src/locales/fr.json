@@ -464,6 +464,7 @@
   "reviewPanels": {
     "sentence": "Phrase",
     "expertScore": "Note de l'expert",
+  "feedback": "Commentaire",
   "expertFeedbackTitle": "Rétroaction d'expert",
   "publicFeedbackTitle": "Rétroaction publique",
   "autoEvalTitle": "Évaluation automatique",

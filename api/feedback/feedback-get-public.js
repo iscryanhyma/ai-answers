@@ -8,13 +8,13 @@ async function feedbackGetPublicHandler(req, res) {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
   try {
-  await dbConnect();
-  const { interactionId } = req.body;
-  if (!interactionId) return res.status(400).json({ message: 'Missing required fields' });
-  const interaction = await Interaction.findById(interactionId).lean();
-  if (!interaction) return res.status(404).json({ message: 'Interaction not found' });
-  if (!interaction.publicFeedback) return res.status(200).json({ message: 'No public feedback', sentences: [] });
-  const pf = await PublicFeedback.findById(interaction.publicFeedback).lean();
+    await dbConnect();
+    const { interactionId } = req.body;
+    if (!interactionId) return res.status(400).json({ message: 'Missing required fields' });
+    const interaction = await Interaction.findById(interactionId).lean();
+    if (!interaction) return res.status(404).json({ message: 'Interaction not found' });
+    if (!interaction.publicFeedback) return res.status(200).json({ message: 'No public feedback', sentences: [] });
+    const pf = await PublicFeedback.findById(interaction.publicFeedback).lean();
     if (!pf) return res.status(200).json({ message: 'No public feedback', sentences: [] });
     // If public feedback contained sentence-level comments store them under sentences array, else return feedback as single item
     const sentences = pf.sentences || [];

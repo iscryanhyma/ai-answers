@@ -9,7 +9,6 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
 
     const handleToggle = useCallback(async (e) => {
         try {
-            if (!e.target.open) return;
             if (data) return; // already loaded
             setLoading(true);
             setError(null);
@@ -52,7 +51,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                 // e.target should be the gcds-details web component; check its open property
                 try {
                     // call load when panel is being opened
-                    if (e && e.target && e.target.open) {
+                    if (e && e.target && !e.target.open) {
                         handleToggle(e);
                     }
                 } catch (err) {

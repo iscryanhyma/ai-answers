@@ -463,6 +463,7 @@
   "reviewPanels": {
     "sentence": "Sentence",
     "expertScore": "Expert score",
+  "feedback": "Feedback",
   "notAvailable": "N/A",
   "expertFeedbackTitle": "Expert feedback",
   "publicFeedbackTitle": "Public feedback",
