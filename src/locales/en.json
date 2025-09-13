@@ -444,6 +444,11 @@
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     },
+    "providerLabel": "Provider",
+    "provider": {
+      "openai": "OpenAI",
+      "azure": "Azure OpenAI"
+    },
     "logChatsToDatabaseLabel": "Log chats to database"
   },
   "outage": {
