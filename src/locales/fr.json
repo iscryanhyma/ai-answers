@@ -490,6 +490,7 @@
       "title": "Résultats",
       "usageMetrics": "Métriques d'utilisation",
       "totalSessions": "Total des sessions",
+      "inputTokens": "Jetons d'entrée",
       "outputTokens": "Jetons de sortie",
       "totalQuestions": "Total des questions",
       "sessionsByQuestionCount": {

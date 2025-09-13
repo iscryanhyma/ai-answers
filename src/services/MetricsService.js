@@ -30,6 +30,9 @@ class MetricsService {
       totalConversations: 0,
       totalConversationsEn: 0,
       totalConversationsFr: 0,
+      totalInputTokens: 0,
+      totalInputTokensEn: 0,
+      totalInputTokensFr: 0,
       totalOutputTokens: 0,
       totalOutputTokensEn: 0,
       totalOutputTokensFr: 0,
@@ -115,12 +118,26 @@ class MetricsService {
         if (pageLanguage === 'en') metrics.totalQuestionsEn++;
         if (pageLanguage === 'fr') metrics.totalQuestionsFr++;
         
-        // Count output tokens
-        const tokens = Number(interaction.context?.outputTokens);
-        if (!isNaN(tokens)) {
-          metrics.totalOutputTokens += tokens;
-          if (pageLanguage === 'en') metrics.totalOutputTokensEn += tokens;
-          if (pageLanguage === 'fr') metrics.totalOutputTokensFr += tokens;
+        // Count input tokens from all sources (context, answer)
+        const contextInputTokens = Number(interaction.context?.inputTokens) || 0;
+        const answerInputTokens = Number(interaction.answer?.inputTokens) || 0;
+        const totalInputTokens = contextInputTokens + answerInputTokens;
+        
+        if (totalInputTokens > 0) {
+          metrics.totalInputTokens += totalInputTokens;
+          if (pageLanguage === 'en') metrics.totalInputTokensEn += totalInputTokens;
+          if (pageLanguage === 'fr') metrics.totalInputTokensFr += totalInputTokens;
+        }
+        
+        // Count output tokens from all sources (context, answer)
+        const contextOutputTokens = Number(interaction.context?.outputTokens) || 0;
+        const answerOutputTokens = Number(interaction.answer?.outputTokens) || 0;
+        const totalOutputTokens = contextOutputTokens + answerOutputTokens;
+        
+        if (totalOutputTokens > 0) {
+          metrics.totalOutputTokens += totalOutputTokens;
+          if (pageLanguage === 'en') metrics.totalOutputTokensEn += totalOutputTokens;
+          if (pageLanguage === 'fr') metrics.totalOutputTokensFr += totalOutputTokens;
         }
         
         // Count answer types (per language)
