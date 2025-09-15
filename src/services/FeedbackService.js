@@ -65,6 +65,48 @@ class FeedbackService {
     }
     return await response.json();
   }
+
+  static async getExpertFeedback({ interactionId }) {
+    if (!interactionId) throw new Error('Missing required fields');
+    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-get-expert'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interactionId })
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Failed to fetch expert feedback');
+    }
+    return response.json();
+  }
+
+  static async getPublicFeedback({ interactionId }) {
+    if (!interactionId) throw new Error('Missing required fields');
+    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-get-public'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interactionId })
+    });
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.message || 'Failed to fetch public feedback');
+    }
+    return response.json();
+  }
+
+  static async deleteExpertFeedback({ interactionId }) {
+    if (!interactionId) throw new Error('Missing required fields');
+    const response = await AuthService.fetchWithAuth(getApiUrl('feedback-delete-expert'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ interactionId })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to delete expert feedback');
+    }
+    return data;
+  }
 }
 
 export default FeedbackService;

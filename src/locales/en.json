@@ -444,6 +444,11 @@
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     },
+    "providerLabel": "Provider",
+    "provider": {
+      "openai": "OpenAI",
+      "azure": "Azure OpenAI"
+    },
     "logChatsToDatabaseLabel": "Log chats to database"
   },
   "outage": {
@@ -452,8 +457,39 @@
   },
   "common": {
     "backToAdmin": "Back to Admin",
+  "deleting": "Deleting...",
     "yes": "Yes",
     "no": "No"
+  },
+  "reviewPanels": {
+    "sentence": "Sentence",
+    "expertScore": "Expert score",
+  "feedback": "Feedback",
+  "notAvailable": "N/A",
+  "expertFeedbackTitle": "Expert feedback",
+  "deleteExpertFeedback": "Delete Expert Feedback",
+  
+  "publicFeedbackTitle": "Public feedback",
+  "autoEvalTitle": "Auto-eval",
+    "explanation": "Explanation",
+    "score": "Score",
+    "reason": "Reason",
+    "publicComment": "Public comment",
+    "evaluation": "Evaluation",
+    "processed": "Processed",
+    "hasMatches": "Has matches",
+    "fallback": "Fallback",
+    "none": "none",
+    "sourceSentenceIndex": "Source sentence index",
+    "sourceText": "Source text",
+    "matchedChatId": "Matched chatId",
+    "matchedSentenceIndex": "Matched sentence index",
+    "similarity": "Similarity",
+    "matchedScore": "Matched score",
+    "noSentenceTraces": "No sentence match traces available."
+  ,"citation": "Citation"
+  ,"totalScore": "Total score"
+  ,"suggestedCitation": "Suggested citation URL"
   },
   "metrics": {
     "title": "Metrics dashboard",

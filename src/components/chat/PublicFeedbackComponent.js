@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
-import DataStoreService from '../../services/DataStoreService.js';
+import FeedbackService from '../../services/FeedbackService.js';
 
 const PublicFeedbackComponent = ({
   lang = 'en',
@@ -34,7 +34,7 @@ const PublicFeedbackComponent = ({
     ? t('homepage.publicFeedback.yes.surveyUrl')
     : t('homepage.publicFeedback.no.surveyUrl');
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!selected) return;
 
     const option = options.find((o) => o.id === selected);
@@ -44,7 +44,12 @@ const PublicFeedbackComponent = ({
       publicFeedbackReason: option.label,   // Use the option's label
       publicFeedbackScore: option.score,    // Use the option's score
     };
-    DataStoreService.persistFeedback(feedbackPayload, chatId, userMessageId);
+    try {
+      await FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback: feedbackPayload });
+    } catch (err) {
+      console.error('Failed to persist public feedback', err);
+      // continue to show thank-you even if logging fails
+    }
     setSubmitted(true);
     onSubmit(feedbackPayload);
   };

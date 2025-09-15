@@ -394,6 +394,26 @@ code {
   text-decoration: none;
 }
 
+/* Review panels table styling */
+.review-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #e6e6e6;
+  background: white;
+}
+.review-table th,
+.review-table td {
+  border: 1px solid #f0f0f0;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  font-size: 0.95rem;
+}
+.review-table thead th {
+  background: #fafafa;
+  font-weight: 600;
+}
+
 .error-message {
   color: var(--gcds-color-red-900);
   background-color: var(--gcds-color-red-100);
