@@ -445,6 +445,11 @@
       "imvectordb": "IMVectorDB (local)",
       "documentdb": "DocumentDB (AWS)"
     },
+    "providerLabel": "Fournisseur",
+    "provider": {
+      "openai": "OpenAI",
+      "azure": "Azure OpenAI"
+    },
     "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données"
   },
   "outage": {
@@ -453,8 +458,38 @@
   },
   "common": {
     "backToAdmin": "Retour à l'administration",
+  "deleting": "Suppression en cours...",
     "yes": "Oui",
     "no": "Non"
+  },
+  "reviewPanels": {
+    "sentence": "Phrase",
+    "expertScore": "Note de l'expert",
+  "feedback": "Commentaire",
+  "expertFeedbackTitle": "Rétroaction d'expert",
+  "deleteExpertFeedback": "Supprimer la rétroaction d'expert",
+  "publicFeedbackTitle": "Rétroaction publique",
+  "autoEvalTitle": "Évaluation automatique",
+    "explanation": "Explication",
+    "score": "Score",
+    "reason": "Raison",
+    "publicComment": "Commentaire public",
+  "notAvailable": "N/D",
+    "evaluation": "Évaluation",
+    "processed": "Traité",
+    "hasMatches": "Correspondances trouvées",
+    "fallback": "Repli",
+    "none": "aucun",
+    "sourceSentenceIndex": "Index de la phrase source",
+    "sourceText": "Texte source",
+    "matchedChatId": "ID de chat apparié",
+    "matchedSentenceIndex": "Index de la phrase appariée",
+    "similarity": "Similarité",
+    "matchedScore": "Score apparié",
+  "noSentenceTraces": "Aucune trace de correspondance de phrase disponible.",
+  "citation": "Citation",
+  "totalScore": "Score total",
+  "suggestedCitation": "URL de citation suggérée"
   },
   "metrics": {
     "title": "Tableau de bord des métriques",

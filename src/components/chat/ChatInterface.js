@@ -2,6 +2,9 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import FeedbackComponent from './FeedbackComponent.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import ChatOptions from './ChatOptions.js';
+import ExpertFeedbackPanel from './review/ExpertFeedbackPanel.js';
+import PublicFeedbackPanel from './review/PublicFeedbackPanel.js';
+import EvalPanel from './review/EvalPanel.js';
 
 const MAX_CHARS = 260; //updated from 400 down to 260 after first public trial -96% used 150 chars or less, longer questions were manipulative and unclear
 
@@ -334,7 +337,9 @@ const ChatInterface = ({
                   </>
                 )}
                 
-                {/* Show feedback in review mode for all answers/interactions that do not have expertFeedback */}
+                {/* Panels will be rendered immediately after the FeedbackComponent below so they appear under the "How was this answer?" area */}
+
+                {/* Show feedback component in review mode for all answers/interactions that do not have expertFeedback */}
                 {readOnly &&
                   message.sender === 'ai' &&
                   !message.error &&
@@ -352,6 +357,18 @@ const ChatInterface = ({
                       onSkip={focusTextarea}
                       skipButtonLabel={safeT('homepage.textarea.ariaLabel.skipfo')}
                     />
+                  )}
+
+                {/* Render review panels just under the FeedbackComponent / "How was this answer?" (very close) */}
+                {readOnly &&
+                  message.sender === 'ai' &&
+                  !message.error &&
+                  message.interaction && (
+                    <div className="inline-review-panels" style={{ marginTop: '0.25rem' }}>
+                      <ExpertFeedbackPanel message={message} extractSentences={extractSentences} t={t} />
+                      <PublicFeedbackPanel message={message} extractSentences={extractSentences} t={t} />
+                      <EvalPanel message={message} t={t} />
+                    </div>
                   )}
 
                 {/* Only show feedback for the last message if not in review mode */}

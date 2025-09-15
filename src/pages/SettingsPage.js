@@ -14,6 +14,10 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [vectorServiceType, setVectorServiceType] = useState('imvectordb');
   const [savingVectorType, setSavingVectorType] = useState(false);
 
+  // New state for provider (openai | azure)
+  const [provider, setProvider] = useState('openai');
+  const [savingProvider, setSavingProvider] = useState(false);
+
   // New state for logging chats to database
   const [logChats, setLogChats] = useState('no');
   const [savingLogChats, setSavingLogChats] = useState(false);
@@ -26,6 +30,9 @@ const SettingsPage = ({ lang = 'en' }) => {
       setDeploymentMode(mode);
       const type = await DataStoreService.getSetting('vectorServiceType', 'imvectordb');
       setVectorServiceType(type);
+  // Load provider setting
+  const providerSetting = await DataStoreService.getSetting('provider', 'openai');
+  setProvider(providerSetting);
   // Load logChats setting
   const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
   setLogChats(logChatsSetting);
@@ -41,6 +48,18 @@ const SettingsPage = ({ lang = 'en' }) => {
       await DataStoreService.setSetting('siteStatus', newStatus);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Handler for provider setting
+  const handleProviderChange = async (e) => {
+    const newValue = e.target.value;
+    setProvider(newValue);
+    setSavingProvider(true);
+    try {
+      await DataStoreService.setSetting('provider', newValue);
+    } finally {
+      setSavingProvider(false);
     }
   };
 
@@ -106,6 +125,18 @@ const SettingsPage = ({ lang = 'en' }) => {
       >
         <option value="imvectordb">{t('settings.vectorServiceType.imvectordb', 'IMVectorDB (local)')}</option>
         <option value="documentdb">{t('settings.vectorServiceType.documentdb', 'DocumentDB (AWS)')}</option>
+      </select>
+      <label htmlFor="provider" className="mb-200 display-block mt-400">
+        {t('settings.providerLabel', 'Provider')}
+      </label>
+      <select
+        id="provider"
+        value={provider}
+        onChange={handleProviderChange}
+        disabled={savingProvider}
+      >
+        <option value="openai">{t('settings.provider.openai', 'OpenAI')}</option>
+        <option value="azure">{t('settings.provider.azure', 'Azure')}</option>
       </select>
       <label htmlFor="log-chats-db" className="mb-200 display-block mt-400">
         {t('settings.logChatsToDatabaseLabel', 'Log chats to database')}
