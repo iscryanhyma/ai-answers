@@ -94,8 +94,13 @@ const computeAlternateLangHref = (location) => {
   const prefixes = { 'ai-answers': 'en', 'reponses-ia': 'fr' };
 
   // Detect host-based prefix (subdomain) like ai-answers.alpha.canada.ca
-  const hostname = (location && location.hostname) || '';
-  const hostPrefixMatch = hostname.match(/^(ai-answers|reponses-ia)(?:\.|$)/);
+  // react-router's location object doesn't include `hostname`/`protocol` in the
+  // browser; fall back to `window.location` when available.
+  const runtimeHostname = (location && location.hostname) || (typeof window !== 'undefined' && window.location && window.location.hostname) || '';
+  const runtimeProtocol = (location && location.protocol) || (typeof window !== 'undefined' && window.location && window.location.protocol) || '';
+  // Use host (may include port) for replacement so we can preserve ports like :3000
+  const runtimeHostWithPort = (typeof window !== 'undefined' && window.location && window.location.host) || runtimeHostname;
+  const hostPrefixMatch = runtimeHostname.match(/^(ai-answers|reponses-ia)(?:\.|$)/);
   const hostPrefix = hostPrefixMatch ? hostPrefixMatch[1] : null;
   const hadHostPrefix = !!hostPrefix;
 
@@ -124,17 +129,26 @@ const computeAlternateLangHref = (location) => {
   const alternatePath = getAlternatePath(path, currentLang);
 
   // If the original site uses a host prefix (subdomain), toggle that subdomain
-  // and return an absolute URL; otherwise return a relative path.
+  // and return an absolute URL; otherwise return a relative path. Use the
+  // runtimeProtocol/runtimeHostWithPort computed above and preserve search/hash
+  // by falling back to window.location when react-router's location doesn't
+  // include them.
   const langToPrefix = { en: 'ai-answers', fr: 'reponses-ia' };
   const newLang = currentLang === 'en' ? 'fr' : 'en';
   let alternateLangHref;
   if (hadHostPrefix) {
-    const hostParts = hostname.split('.');
-    hostParts[0] = langToPrefix[newLang];
-    const newHost = hostParts.join('.');
-    alternateLangHref = `${location.protocol}//${newHost}${alternatePath}${location.search || ''}${location.hash || ''}`;
+    // Replace the first label of the hostname while preserving any port.
+    const [hostOnly, port] = runtimeHostWithPort.split(':');
+    const hostLabels = hostOnly.split('.');
+    hostLabels[0] = langToPrefix[newLang];
+    const newHost = hostLabels.join('.') + (port ? ':' + port : '');
+    const search = (location && location.search) || (typeof window !== 'undefined' ? window.location.search : '');
+    const hash = (location && location.hash) || (typeof window !== 'undefined' ? window.location.hash : '');
+    alternateLangHref = `${runtimeProtocol}//${newHost}${alternatePath}${search || ''}${hash || ''}`;
   } else {
-    alternateLangHref = `${alternatePath}${location.search || ''}${location.hash || ''}`;
+    const search = (location && location.search) || (typeof window !== 'undefined' ? window.location.search : '');
+    const hash = (location && location.hash) || (typeof window !== 'undefined' ? window.location.hash : '');
+    alternateLangHref = `${alternatePath}${search || ''}${hash || ''}`;
   }
 
   try {
