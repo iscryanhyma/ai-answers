@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.37.0](https://github.com/cds-snc/ai-answers/compare/v1.36.0...v1.37.0) (2025-09-15)
+
+
+### Features
+
+* add debug logging for language path computation and host prefix detection ([4a34188](https://github.com/cds-snc/ai-answers/commit/4a34188f3caa6b332942fd31bcb20c1af2b24e4f))
+* add debug logging for language path computation and host prefix… ([e08367d](https://github.com/cds-snc/ai-answers/commit/e08367d224a5345c26bff99dc423945b128041ab))
+* add provider options for OpenAI and Azure in settings ([dcf9c71](https://github.com/cds-snc/ai-answers/commit/dcf9c71f25c5a87c621d8d4ac6aed22fa041e3ee))
+* add review mode handling to EvalPanel for improved functionality ([983e791](https://github.com/cds-snc/ai-answers/commit/983e79164867baa6f04b2907d0343d730c05d73f))
+* enhance feedback panels and localization for improved user experience ([0a08f55](https://github.com/cds-snc/ai-answers/commit/0a08f55be2f6a3a914b8a0d7d299c8c40b540459))
+* enhance language path handling and computation for alternate la… ([1af7bdf](https://github.com/cds-snc/ai-answers/commit/1af7bdfb94a2bb86e877117e67a451c9858306af))
+* enhance language path handling and computation for alternate language href ([e39e61c](https://github.com/cds-snc/ai-answers/commit/e39e61c62da43dc44891915ddf6c8d0f188e68dc))
+* implement expert feedback deletion functionality ([132a154](https://github.com/cds-snc/ai-answers/commit/132a1540abe0dfbb14fec1790a9e1b7c5f7bac6e))
+* replace button with GcdsButton for improved UI consistency ([705203b](https://github.com/cds-snc/ai-answers/commit/705203b2d17ee9205a90d9844f65c37bcefda15e))
+
+
+### Bug Fixes
+
+* news-interac-service-name ([e30c6bb](https://github.com/cds-snc/ai-answers/commit/e30c6bbfa0026f98b538bcf75d97316b400fd366))
+* news-interac-service-name ([fbabaf8](https://github.com/cds-snc/ai-answers/commit/fbabaf819dfaf67e4f211739810d3020b891276a))
+* update feedback options for improved clarity ([760af41](https://github.com/cds-snc/ai-answers/commit/760af4138416a1734f59eb75dac4ea84cdd07806))
+
+
+### Miscellaneous Chores
+
+* **deps:** bump axios from 1.11.0 to 1.12.0 ([bceabf4](https://github.com/cds-snc/ai-answers/commit/bceabf44d3b70e7e7ff34f681523edc7b6b415af))
+
 ## [1.36.0](https://github.com/cds-snc/ai-answers/compare/v1.35.3...v1.36.0) (2025-09-11)
 
 
