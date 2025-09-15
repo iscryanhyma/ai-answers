@@ -121,7 +121,7 @@ const computeAlternateLangHref = (location) => {
   }
 
   try {
-    console.debug('[computeAlternateLangHref] hostname:', hostname, 'hostPrefix:', hostPrefix, 'hadHostPrefix:', hadHostPrefix, 'currentLang:', currentLang);
+    console.debug('[computeAlternateLangHref] hostname:', runtimeHostname, 'hostPrefix:', hostPrefix, 'hadHostPrefix:', hadHostPrefix, 'currentLang:', currentLang);
   } catch (e) {
     // ignore
   }
