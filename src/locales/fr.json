@@ -339,7 +339,16 @@
       "title": "Évaluation publique",
       "chatId": "ID de chat",
       "department": "Ministère",
-      "date": "Date"
+      "date": "Date",
+      "sessionsTitle": "Sessions actives",
+      "sessions": {
+        "chatId": "ID de chat",
+        "lastSeen": "Dernière activité",
+        "requests": "Requêtes",
+        "errors": "Erreurs",
+        "lastLatency": "Dernière latence (ms)",
+        "avgLatency": "Latence moyenne (ms)"
+      }
     },
     "deleteChat": {
       "title": "Supprimer une conversation avec des rétroactions incorrectes",

@@ -323,6 +323,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       ]);
       try {
   const aiMessageId = messageIdCounter.current++;
+  const startMs = Date.now();
   const interaction = await ChatWorkflowService.processResponse(
           chatId,
           userMessage,
@@ -337,6 +338,22 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
     updateStatusWithTimer,  // Pass our new status handler
     selectedSearch  // Add this parameter
         );
+        const latencyMs = Date.now() - startMs;
+
+        // Fire-and-forget report to server about latency (and success)
+        (async () => {
+          try {
+            await fetch('/api/chat/chat-report', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chatId, latencyMs, error: false })
+            });
+          } catch (e) {
+            // non-fatal
+            if (console && console.error) console.error('session report failed', e);
+          }
+        })();
+
         clearInput();
         
         // Add the AI response to messages
@@ -353,6 +370,23 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
         setIsLoading(false);
 
       } catch (error) {
+        // attempt to record latency and error
+        try {
+          const errLatency = Date.now() - (typeof startMs !== 'undefined' ? startMs : Date.now());
+          (async () => {
+            try {
+              await fetch('/api/chat/chat-report', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chatId, latencyMs: errLatency, error: true })
+              });
+            } catch (e) {
+              if (console && console.error) console.error('session report failed', e);
+            }
+          })();
+        } catch (e) {
+          // ignore
+        }
         if (error instanceof RedactionError) {
           const userMessageId = messageIdCounter.current++;
           const blockedMessageId = messageIdCounter.current++;
