@@ -5,9 +5,26 @@ import { ExpertFeedback } from '../models/expertFeedback.js';
 import { Embedding } from '../models/embedding.js';
 import { SentenceEmbedding } from '../models/sentenceEmbedding.js';
 import ServerLoggingService from './ServerLoggingService.js';
+import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
+import { createSentenceCompareAgent } from '../agents/AgentFactory.js';
+import { sentenceCompareStrategy } from '../agents/strategies/sentenceCompareStrategy.js';
 import dbConnect from '../api/db/db-connect.js';
 import config from '../config/eval.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
+
+// Helper: resolve chatId for an interaction. Prefer the embedding's chatId when provided
+// to avoid extra Chat lookups. Falls back to querying Chat collection.
+async function getChatIdForInteraction(interactionId, embeddingChatId = null) {
+    if (embeddingChatId) return embeddingChatId;
+    try {
+        const Chat = mongoose.model('Chat');
+        const chatDoc = await Chat.findOne({ interactions: interactionId }, { chatId: 1 }).lean();
+        return chatDoc ? chatDoc.chatId : null;
+    } catch (err) {
+        ServerLoggingService.warn('Error resolving chatId for interaction (worker)', interactionId, err);
+        return null;
+    }
+}
 
 // Fallback: create evaluation using QA match only if any of the top N matches has expert feedback score > 90
 async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbeddings, failedSentenceTraces = []) {
@@ -143,7 +160,7 @@ async function validateInteractionAndCheckExisting(interaction, chatId) {
         ServerLoggingService.warn('Invalid interaction or missing question/answer (worker)', chatId);
         return null;
     }
-    
+
     // Check if the interaction already has an autoEval reference
     const existingInteraction = await Interaction.findById(interaction._id).populate('autoEval');
     if (existingInteraction?.autoEval) {
@@ -152,7 +169,7 @@ async function validateInteractionAndCheckExisting(interaction, chatId) {
         });
         return existingInteraction.autoEval;
     }
-    
+
     ServerLoggingService.debug('Interaction validation successful (worker)', chatId);
     return true;
 }
@@ -177,7 +194,7 @@ async function getEmbeddingForInteraction(interaction) {
             embedding.sentenceEmbeddings = sentenceEmbeddingsDocs.map(doc => doc.embedding);
         }
     }
-    
+
     if (!embedding.sentenceEmbeddings || embedding.sentenceEmbeddings.length === 0) {
         ServerLoggingService.warn('No sentence embeddings found for interaction (worker)', interaction._id.toString());
         return null;
@@ -188,7 +205,7 @@ async function getEmbeddingForInteraction(interaction) {
         hasAnswerEmbedding: !!embedding.answerEmbedding,
         sentenceEmbeddingsCount: embedding.sentenceEmbeddings?.length || 0
     });
-    
+
     return embedding;
 }
 
@@ -197,9 +214,9 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
         threshold: similarityThreshold,
         limit
     });
-    
+
     const startTime = Date.now();
-    
+
     // Ensure the query vector is a plain array of finite numbers
     let queryVector = sourceEmbedding.questionsAnswerEmbedding;
     if (ArrayBuffer.isView(queryVector)) queryVector = Array.from(queryVector);
@@ -217,9 +234,9 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
         'qa',
         { threshold: similarityThreshold }
     );
-    
+
     const similarEmbeddings = [];
-    
+
     // Get the current interaction's createdAt timestamp
     const sourceInteractionCreatedAt = sourceEmbedding.createdAt;
     for (const neighbor of similarNeighbors) {
@@ -240,27 +257,29 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
                 embedding.sentenceEmbeddings = sentenceEmbeddingsDocs.map(doc => doc.embedding);
             }
         }
-        
+
         if (!embedding.sentenceEmbeddings || embedding.sentenceEmbeddings.length === 0) continue;
 
         const expertFeedback = await ExpertFeedback.findById(neighbor.expertFeedbackId).lean();
         if (!expertFeedback) {
             ServerLoggingService.warn('ExpertFeedback not found for embedding in vector store (worker)', neighbor.interactionId.toString(), {
-            expertFeedbackId: neighbor.expertFeedbackId
+                expertFeedbackId: neighbor.expertFeedbackId
             });
             continue;
         }
 
         const neighborInteraction = await Interaction.findById(neighbor.interactionId, { createdAt: 1 }).lean();
         if (!neighborInteraction) continue;
-        
+        // Resolve chatId for neighbor using helper (prefers embedding.chatId, falls back to Chat lookup)
+        const neighborChatId = await getChatIdForInteraction(neighbor.interactionId, embedding.chatId);
         similarEmbeddings.push({
             embedding: {
                 ...embedding,
                 interactionId: {
                     _id: neighbor.interactionId,
                     expertFeedback: expertFeedback,
-                    createdAt: neighborInteraction.createdAt
+                    createdAt: neighborInteraction.createdAt,
+                    chatId: neighborChatId // attach chatId for filtering later
                 }
             },
             similarity: neighbor.similarity
@@ -270,7 +289,7 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
 
     // Sort by similarity (highest first)
     similarEmbeddings.sort((a, b) => b.similarity - a.similarity);
-    
+
     const timeElapsed = (Date.now() - startTime) / 1000;
     ServerLoggingService.info('Completed finding similar embeddings using VectorService (worker)', 'system', {
         candidatesFound: similarNeighbors.length,
@@ -280,15 +299,18 @@ async function findSimilarEmbeddingsWithFeedback(sourceEmbedding, similarityThre
             ? similarEmbeddings.reduce((sum, item) => sum + item.similarity, 0) / similarEmbeddings.length
             : 0
     });
-    
+
     return similarEmbeddings;
 }
 
 
-async function findBestSentenceMatches(sourceEmbedding, topMatches) {
+async function findBestSentenceMatches(sourceEmbedding, topMatches, aiProvider = 'openai') {
     // Get the set of allowed interaction IDs from topMatches
     const allowedInteractionIds = new Set(topMatches.map(m => m.embedding.interactionId._id.toString()));
     let bestSentenceMatches = [];
+
+    // Determine source interaction's chatId so we can exclude matches from the same chat
+    const sourceChatId = await getChatIdForInteraction(sourceEmbedding.interactionId._id || sourceEmbedding.interactionId, sourceEmbedding.chatId || null);
 
     for (let sourceIndex = 0; sourceIndex < sourceEmbedding.sentenceEmbeddings.length; sourceIndex++) {
         let sourceSentenceEmb = sourceEmbedding.sentenceEmbeddings[sourceIndex];
@@ -305,10 +327,107 @@ async function findBestSentenceMatches(sourceEmbedding, topMatches) {
             { threshold: config.thresholds.sentenceSimilarity }
         );
         // Filter to only those whose parent interaction is in the topMatches
-    // Only keep neighbors whose interaction is among top matches (threshold already applied)
-    const filtered = sentenceNeighbors.filter(n => allowedInteractionIds.has(n.interactionId.toString()));
+        // and exclude any neighbor that belongs to the same chat as the source interaction
+        const filtered = sentenceNeighbors.filter(n => {
+            try {
+                const nInteractionIdStr = n.interactionId.toString();
+                if (!allowedInteractionIds.has(nInteractionIdStr)) return false;
+                if (sourceChatId) {
+                    // Attempt to get chatId from topMatches embedding (we attached it earlier)
+                    const match = topMatches.find(m => m.embedding.interactionId._id.toString() === nInteractionIdStr);
+                    const neighborChatId = match?.embedding?.interactionId?.chatId ?? null;
+                    if (neighborChatId && neighborChatId === sourceChatId) {
+                        ServerLoggingService.debug('Excluding sentence neighbor from same chat (worker)', sourceChatId, { sourceInteractionId: sourceEmbedding.interactionId.toString(), neighborInteractionId: nInteractionIdStr, neighborChatId });
+                        return false;
+                    }
+                    // If the neighbor doesn't have an attached chatId, we conservatively do not exclude it
+                    // (we prefer not to false-negative by excluding candidates when chatId is unknown).
+                }
+                return true;
+            } catch (e) {
+                // Keep the neighbor if any error occurs during filtering to avoid false negatives
+                ServerLoggingService.warn('Error while filtering sentence neighbors by chatId (worker)', 'system', e);
+                return allowedInteractionIds.has(n.interactionId.toString());
+            }
+        });
         filtered.sort((a, b) => b.similarity - a.similarity);
         if (filtered.length > 0) {
+            // If multiple filtered candidates exist for this source sentence, try the sentenceCompare agent
+            // Build candidate texts up to 10 entries
+            const candidates = [];
+            for (const f of filtered.slice(0, 10)) {
+                try {
+                    // Attempt to load the target sentence text from DB for more accurate comparison
+                    const emb = await Embedding.findOne({ interactionId: f.interactionId }).lean();
+                    let sentenceText = null;
+                    if (emb && Array.isArray(emb.sentenceEmbeddings) && emb.sentenceEmbeddings.length > 0) {
+                        // If sentence texts are not stored on embedding, we'll fetch the Interaction's answer sentences
+                        const matchInteraction = await Interaction.findById(f.interactionId).populate({ path: 'answer', populate: { path: 'sentences' } });
+                        sentenceText = matchInteraction?.answer?.sentences?.[f.sentenceIndex] || null;
+                    } else {
+                        const matchInteraction = await Interaction.findById(f.interactionId).populate({ path: 'answer', populate: { path: 'sentences' } });
+                        sentenceText = matchInteraction?.answer?.sentences?.[f.sentenceIndex] || null;
+                    }
+                    if (sentenceText && typeof sentenceText === 'string') {
+                        candidates.push({ text: sentenceText, match: f });
+                    }
+                } catch (e) {
+                    ServerLoggingService.warn('Error loading candidate sentence text for compare agent (worker)', 'system', e);
+                }
+            }
+
+            if (candidates.length > 1) {
+                try {
+                    // Prepare request for the sentenceCompare agent: source sentence and array of candidate strings
+                    const sourceInteractionDoc = await Interaction.findById(sourceEmbedding.interactionId).populate({ path: 'answer', populate: { path: 'sentences' } });
+                    const sourceSentenceText = sourceInteractionDoc?.answer?.sentences?.[sourceIndex] || null;
+                    const candidateStrings = candidates.map(c => c.text);
+                    // Use a larger maxTokens for sentence compare agent to allow lengthy contexts
+                    const createAgentFn = async (agentType, localChatId) => await createSentenceCompareAgent(agentType, localChatId, 5000);
+                    const request = { source: sourceSentenceText || '', candidates: candidateStrings };
+                    const t0 = Date.now();
+                    const compareResult = await AgentOrchestratorService.invokeWithStrategy({ chatId: 'sentence-compare', agentType: aiProvider || 'openai', request, createAgentFn, strategy: sentenceCompareStrategy });
+                    const latencyMs = Date.now() - t0;
+                    // parse winner
+                    const winner = compareResult?.parsed?.winner;
+                    if (winner && typeof winner.index === 'number' && winner.index >= 0 && winner.index < candidateStrings.length) {
+                        const chosen = candidates[winner.index].match;
+                        // Build per-sentence trace extras for persistence
+                        const candidateChoices = candidates.map((c) => ({
+                            text: c.text,
+                            matchedInteractionId: c.match?.interactionId ?? null,
+                            matchedSentenceIndex: c.match?.sentenceIndex ?? null,
+                            similarity: typeof c.match?.similarity === 'number' ? c.match.similarity : null,
+                        }));
+                        bestSentenceMatches.push({
+                            sourceIndex,
+                            targetIndex: chosen.sentenceIndex,
+                            similarity: filtered.find(x => x.interactionId.toString() === chosen.interactionId.toString() && x.sentenceIndex === chosen.sentenceIndex)?.similarity || null,
+                            expertFeedback: chosen.expertFeedbackId || null,
+                            matchId: chosen.interactionId,
+                            matchStatus: 'matched',
+                            matchExplanation: 'selected_by_sentence_compare_agent',
+                            candidateChoices,
+                            agentSelectedIndex: winner.index,
+                            agentSelectionExplanation: typeof winner.explanation === 'string' ? winner.explanation : ''
+                        });
+                        // Attach light telemetry on the object for later Eval persistence (top-level)
+                        bestSentenceMatches.__agentTelemetry = {
+                            provider: aiProvider || 'openai',
+                            model: compareResult?.model || '',
+                            inputTokens: compareResult?.inputTokens ?? null,
+                            outputTokens: compareResult?.outputTokens ?? null,
+                            latencyMs
+                        };
+                        continue;
+                    }
+                } catch (e) {
+                    ServerLoggingService.warn('Sentence compare agent failed; falling back to top candidate (worker)', 'system', e);
+                    // fall through to pick top candidate below
+                }
+            }
+
+            // Default: pick the top filtered candidate
             const best = filtered[0];
             bestSentenceMatches.push({
                 sourceIndex,
@@ -408,7 +527,7 @@ async function findBestCitationMatch(interaction, bestAnswerMatches) {
             bestCitationMatch.matchedCitationChatId = chatDoc ? chatDoc.chatId : '';
             break;
         }
-        
+
     }
     ServerLoggingService.debug('Citation matching result (worker):', 'system', {
         sourceUrl,
@@ -444,7 +563,7 @@ function computeTotalScore(feedback, sentenceCount) {
     return Math.round(totalScore * 100) / 100;
 }
 
-async function createEvaluation(interaction, sentenceMatches, chatId, bestCitationMatch) {
+async function createEvaluation(interaction, sentenceMatches, chatId, bestCitationMatch, sentenceCompareTelemetry = null) {
     const sourceInteraction = await Interaction.findById(interaction._id)
         .populate({
             path: 'answer',
@@ -488,14 +607,17 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
             sourceIndex: match.sourceIndex,
             sourceSentenceText: sourceSentenceText,
             matchedInteractionId: match.matchId,
-            matchedChatId: matchedChatId, 
+            matchedChatId: matchedChatId,
             matchedSentenceIndex: match.targetIndex,
             matchedSentenceText: matchedSentenceText,
             matchedExpertFeedbackSentenceScore: match.expertFeedback?.[`sentence${feedbackIdx}Score`] ?? 100,
             matchedExpertFeedbackSentenceExplanation: match.expertFeedback?.[`sentence${feedbackIdx}Explanation`],
             similarity: match.similarity,
             matchStatus: match.matchStatus,
-            matchExplanation: match.matchExplanation
+            matchExplanation: match.matchExplanation,
+            candidateChoices: Array.isArray(match.candidateChoices) ? match.candidateChoices : undefined,
+            agentSelectedIndex: typeof match.agentSelectedIndex === 'number' ? match.agentSelectedIndex : undefined,
+            agentSelectionExplanation: match.agentSelectionExplanation || undefined
         });
         sentenceSimilarities.push(match.similarity);
     }
@@ -515,7 +637,7 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
     // Find matched citation interactionId and chatId for traceability
     const matchedCitationInteractionId = bestCitationMatch.matchedCitationInteractionId || '';
     const matchedCitationChatId = bestCitationMatch.matchedCitationChatId || '';
-    
+
     const newEval = new Eval({
         expertFeedback: savedFeedback._id,
         processed: true,
@@ -526,7 +648,15 @@ async function createEvaluation(interaction, sentenceMatches, chatId, bestCitati
         },
         sentenceMatchTrace: sentenceTrace,
         matchedCitationInteractionId,
-        matchedCitationChatId
+        matchedCitationChatId,
+        sentenceCompareUsed: !!sentenceCompareTelemetry,
+        sentenceCompareMeta: sentenceCompareTelemetry ? {
+            provider: sentenceCompareTelemetry.provider || '',
+            model: sentenceCompareTelemetry.model || '',
+            inputTokens: sentenceCompareTelemetry.inputTokens ?? null,
+            outputTokens: sentenceCompareTelemetry.outputTokens ?? null,
+            latencyMs: sentenceCompareTelemetry.latencyMs ?? null
+        } : undefined
     });
     // Save the evaluation and assign to savedEval
     const savedEval = await newEval.save();
@@ -652,7 +782,7 @@ async function createNoMatchEvaluation(interaction, chatId, reason) {
     return savedEval;
 }
 
-export default async function ({ interactionId, chatId }) {
+export default async function ({ interactionId, chatId, aiProvider = 'openai' }) {
     await dbConnect();
     // Ensure each worker process/thread has a ready VectorService instance.
     // `initVectorService` is idempotent and will create + initialize the correct
@@ -700,7 +830,8 @@ export default async function ({ interactionId, chatId }) {
         // Use the top 20 QA matches directly for sentence matching
         const bestSentenceMatches = await findBestSentenceMatches(
             sourceEmbedding,
-            similarEmbeddings // Pass the top 20 QA matches
+            similarEmbeddings,
+            aiProvider
         );
         // All sentences must have a real match (matchStatus === 'matched')
         const allSentencesMatched = bestSentenceMatches.length === sourceEmbedding.sentenceEmbeddings.length &&
@@ -722,18 +853,19 @@ export default async function ({ interactionId, chatId }) {
         );
         if (!bestCitationMatch.url || bestCitationMatch.similarity !== 1) {
             await createNoMatchEvaluation(interaction, chatId, { type: 'no_citation_match', msg: 'no matching citation found' });
-        
+
             return null;
         }
         await createEvaluation(
             interaction,
             bestSentenceMatches,
             chatId,
-            bestCitationMatch
+            bestCitationMatch,
+            bestSentenceMatches.__agentTelemetry || null
         );
         return true;
     } catch (error) {
-         ServerLoggingService.error('Error during interaction evaluation (worker)', chatId, error);
+        ServerLoggingService.error('Error during interaction evaluation (worker)', chatId, error);
         throw error; // Rethrow the error to be handled by the worker
     }
 }

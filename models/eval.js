@@ -17,6 +17,21 @@ const sentenceMatchTraceSchema = new Schema({
     matchExplanation: { type: String, required: false, default: '' } // Explanation for why a match was not found or invalid
 }, { _id: false });
 
+// Reuse the sentenceMatchTrace schema and extend minimally to capture agent-based choices
+sentenceMatchTraceSchema.add({
+    // Optional: candidate sentences considered by the agent for this source sentence
+    candidateChoices: [{
+        text: { type: String, required: false, default: '' },
+        matchedInteractionId: { type: Schema.Types.ObjectId, ref: 'Interaction', required: false, default: null },
+        matchedSentenceIndex: { type: Number, required: false },
+        similarity: { type: Number, required: false }
+    }],
+    // Index of the candidate chosen by the agent (into candidateChoices); null when agent not used
+    agentSelectedIndex: { type: Number, required: false, default: null },
+    // Short explanation or tag about the agent selection
+    agentSelectionExplanation: { type: String, required: false, default: '' }
+});
+
 const evalSchema = new Schema({
     expertFeedback: { 
         type: Schema.Types.ObjectId, 
@@ -38,6 +53,15 @@ const evalSchema = new Schema({
     fallbackSourceChatId: { type: String, required: false, default: '' }, // chatId of the fallback source interaction
     matchedCitationInteractionId: { type: String, required: false, default: '' }, // Citation match trace (interactionId string)
     matchedCitationChatId: { type: String, required: false, default: '' }, // Citation match trace
+    // Sentence-compare agent usage (top-level)
+    sentenceCompareUsed: { type: Boolean, required: false, default: false },
+    sentenceCompareMeta: {
+        provider: { type: String, required: false, default: '' },
+        model: { type: String, required: false, default: '' },
+        inputTokens: { type: Number, required: false, default: null },
+        outputTokens: { type: Number, required: false, default: null },
+        latencyMs: { type: Number, required: false, default: null }
+    }
 }, { 
     timestamps: true, 
     versionKey: false,
