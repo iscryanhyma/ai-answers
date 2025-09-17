@@ -147,7 +147,7 @@ async function runFallbackCompareCheck({ sourceInteraction, fallbackInteraction,
     }
 }
 
-// Fallback: create evaluation using QA match only if any of the top N matches has expert feedback score > 90
+
 async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, failedSentenceTraces = [], aiProvider = 'openai') {
     try {
         const topQAMatches = similarEmbeddings.slice(0, config.searchLimits.topQAMatchesForHighScoreFallback);
