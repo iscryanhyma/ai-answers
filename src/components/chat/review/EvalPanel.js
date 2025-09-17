@@ -10,6 +10,22 @@ const formatDate = (d) => {
   } catch (_) { return ''; }
 };
 
+const renderChatLink = (chatId) => {
+  if (chatId === null || typeof chatId === 'undefined') {
+    return null;
+  }
+  const strId = String(chatId);
+  if (!strId.length) {
+    return null;
+  }
+  const url = `/en?chat=${encodeURIComponent(strId)}&review=1`;
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer">
+      {strId}
+    </a>
+  );
+};
+
 const EvalPanel = ({ message, t, reviewMode }) => {
   // Show panel in review mode as requested (no longer hidden)
   const [loading, setLoading] = useState(false);
@@ -118,9 +134,9 @@ const EvalPanel = ({ message, t, reviewMode }) => {
               {evalObj.noMatchReasonType || evalObj.noMatchReasonMsg ? (
                 <div><strong>{t('reviewPanels.noMatchReason') || 'No-match reason'}:</strong> {evalObj.noMatchReasonType || ''} {evalObj.noMatchReasonMsg ? `- ${evalObj.noMatchReasonMsg}` : ''}</div>
               ) : null}
-              {evalObj.fallbackSourceChatId ? (<div><strong>{t('reviewPanels.fallbackSourceChatId') || 'Fallback source chatId'}:</strong> {evalObj.fallbackSourceChatId}</div>) : null}
+              {evalObj.fallbackSourceChatId ? (<div><strong>{t('reviewPanels.fallbackSourceChatId') || 'Fallback source chatId'}:</strong> {renderChatLink(evalObj.fallbackSourceChatId)}</div>) : null}
               {evalObj.matchedCitationInteractionId ? (<div><strong>{t('reviewPanels.matchedCitationInteractionId') || 'Matched citation interactionId'}:</strong> {evalObj.matchedCitationInteractionId}</div>) : null}
-              {evalObj.matchedCitationChatId ? (<div><strong>{t('reviewPanels.matchedCitationChatId') || 'Matched citation chatId'}:</strong> {evalObj.matchedCitationChatId}</div>) : null}
+              {evalObj.matchedCitationChatId ? (<div><strong>{t('reviewPanels.matchedCitationChatId') || 'Matched citation chatId'}:</strong> {renderChatLink(evalObj.matchedCitationChatId)}</div>) : null}
               <div><strong>{t('reviewPanels.createdAt') || 'Created at'}:</strong> {formatDate(evalObj.createdAt)}</div>
               <div><strong>{t('reviewPanels.updatedAt') || 'Updated at'}:</strong> {formatDate(evalObj.updatedAt)}</div>
             </div>
@@ -155,7 +171,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
                       <tr key={i}>
                         <td>{s.sourceIndex}</td>
                         <td>{s.sourceSentenceText || ''}</td>
-                        <td>{s.matchedChatId || ''}</td>
+                        <td>{renderChatLink(s.matchedChatId) || ''}</td>
                         <td>{typeof s.matchedSentenceIndex !== 'undefined' ? s.matchedSentenceIndex : ''}</td>
                         <td>{s.matchedSentenceText || ''}</td>
                         <td>{typeof s.similarity !== 'undefined' ? s.similarity : ''}</td>
@@ -207,7 +223,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
                           <tr key={`cand-${si}-${ci}`}>
                             <td>{s.sourceIndex}</td>
                             <td>{ci}</td>
-                            <td>{c.matchedChatId || ''}</td>
+                            <td>{renderChatLink(c.matchedChatId) || ''}</td>
                             <td>{c.text || ''}</td>
                             <td>{typeof c.matchedSentenceIndex !== 'undefined' ? c.matchedSentenceIndex : ''}</td>
                             <td>{typeof c.similarity !== 'undefined' ? c.similarity : ''}</td>
