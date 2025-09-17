@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.37.2](https://github.com/cds-snc/ai-answers/compare/v1.37.1...v1.37.2) (2025-09-17)
+
+
+### Bug Fixes
+
+* prevent-redaction-of-number mentions ([9bad210](https://github.com/cds-snc/ai-answers/commit/9bad210cf8e0c6ce86fc84387a6ea7edb6271e4f))
+* prevent-redaction-of-number mentions ([4c341d3](https://github.com/cds-snc/ai-answers/commit/4c341d310ea8b0c0d2a74bdcfcc5b0a366e73340))
+
+
+### Code Refactoring
+
+* enhance batch processing statistics handling and logging ([c7c0cca](https://github.com/cds-snc/ai-answers/commit/c7c0ccac20d9f30e04d6114ad5b5cc6dcde5e7e9))
+* enhance batch processing statistics handling and logging ([6a97ee2](https://github.com/cds-snc/ai-answers/commit/6a97ee2cf0cb98f863694bfeaab68679cc06e335))
+
 ## [1.37.1](https://github.com/cds-snc/ai-answers/compare/v1.37.0...v1.37.1) (2025-09-17)
 
 
