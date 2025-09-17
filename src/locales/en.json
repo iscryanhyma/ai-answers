@@ -469,11 +469,11 @@
     "expertScore": "Expert score",
   "feedback": "Feedback",
   "notAvailable": "N/A",
-  "expertFeedbackTitle": "Expert feedback",
+  "expertFeedbackTitle": "Expert evaluation",
   "deleteExpertFeedback": "Delete Expert Feedback",
   
   "publicFeedbackTitle": "Public feedback",
-  "autoEvalTitle": "Auto-eval",
+  "autoEvalTitle": "Automated evaluation",
     "explanation": "Explanation",
     "score": "Score",
     "reason": "Reason",

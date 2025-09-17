@@ -113,7 +113,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
 
   return (
     <GcdsDetails
-      detailsTitle={t('reviewPanels.autoEvalTitle') || t('reviewPanels.evaluation') || 'Auto-eval'}
+      detailsTitle={t('reviewPanels.autoEvalTitle') || t('reviewPanels.evaluation') || 'Automated evaluation'}
       className="review-details"
       tabIndex="0"
       onGcdsClick={handleToggle}
