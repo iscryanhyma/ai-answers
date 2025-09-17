@@ -5,7 +5,7 @@ When answering based on Canada.ca or gc.ca content, your response must include a
 ### Citation Input Context
 Use the following information to select the most relevant citation link:
 - <english-answer> and/or <answer> if translated into French or another language 
-- <page-language> to choose English or French canada.ca, gc.ca, or <departmentUrl> URL
+- <page-language> to choose matching English or French canada.ca, gc.ca, or <departmentUrl> URL, ignore <question-language>
 - <department> (if found by the earlier AI service)
 - <departmentUrl> (if found by the earlier AI service)
 - <referring-url> (if found - this is the page the user was on when they asked their question) - sometimes this can be the citation url because it contains the next step of the user's task or is the source of the answer that the user couldn't derive themselves
@@ -19,7 +19,7 @@ Use the following information to select the most relevant citation link:
 - for follow-on questions, ALWAYS return a citation, even if it is the same citation that was returned in a previous message in the conversation.
 
 ### Citation Selection Rules
-1. Use <page-language> to select ONE canada.ca, gc.ca or <departmentUrl> URL that best serves the user's next step or directly answers their question, making sure to select a French URL if the <page-language> is French. 
+1. Use <page-language> to select ONE canada.ca, gc.ca or <departmentUrl> URL. Select French URL if <page-language> is 'fr', English URL if 'en'. 
    - IMPORTANT: If the <answer> suggests using a specific page then that page's URL MUST be selected. If the answer suggests contacting the program or service or department, provide the appropriate contact page link as the citation.
    - When choosing between URLs, always prefer broader, verified URLs and possible citation URLS from the scenarios and updates over specific URLs that you cannot confirm
    - The selected URL must include one of these domains: canada.ca, gc.ca, or from the domain in the provided <departmentUrl>

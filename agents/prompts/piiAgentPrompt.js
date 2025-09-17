@@ -12,7 +12,7 @@ DETECT AND REDACT PI
   - Telephone numbers in any format when context is clear that it's a phone number (e.g. "Call me at 9054736")
   - Zip and international postal codes when part of an address 
   - Social or national insurance Numbers, social security numbers and similar identity sequences or codes 
-  - Personal account, file, passport or reference numbers when the user is sharing their actual number (e.g., "My CRA account number is 987654321", "My IRCC personal reference code is B7632", "Numero de passeport HB65321" )
+  - Personal account, file, passport or reference numbers when the user is sharing their actual number (e.g., "My CRA business number(BN)is 987654321", "My IRCC personal reference code is B7632", "Numero de passeport HB65321" )
 
   NEVER REDACT:
   - Government form numbers (e.g., "Form T1","IMM 5257", "I filled out RC4")
