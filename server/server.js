@@ -49,6 +49,9 @@ import dbDeleteSystemLogsHandler from '../api/db/db-delete-system-logs.js';
 import settingHandler from '../api/setting/setting-handler.js';
 import settingPublicHandler from '../api/setting/setting-public-handler.js';
 import dbPublicEvalListHandler from '../api/db/db-public-eval-list.js';
+import evalGetHandler from '../api/eval/eval-get.js';
+import evalDeleteHandler from '../api/eval/eval-delete.js';
+import evalRunHandler from '../api/eval/eval-run.js';
 import dbChatHandler from '../api/db/db-chat.js';
 import dbExpertFeedbackCountHandler from '../api/db/db-expert-feedback-count.js';
 import dbEvalNonEmptyCountHandler from '../api/db/db-eval-non-empty-count.js';
@@ -103,6 +106,9 @@ app.post('/api/vector/vector-reinitialize', vectorReinitializeHandler);
 app.get('/api/vector/vector-similar-chats', similarChatsHandler);
 app.get('/api/vector/vector-stats', vectorStatsHandler);
 app.get('/api/db/db-public-eval-list', dbPublicEvalListHandler);
+app.post('/api/eval/eval-get', evalGetHandler);
+app.post('/api/eval/eval-delete', evalDeleteHandler);
+app.post('/api/eval/eval-run', evalRunHandler);
 app.get('/api/db/db-chat', dbChatHandler);
 app.post('/api/feedback/feedback-persist-expert', feedbackPersistExpertHandler);
 app.post('/api/feedback/feedback-persist-public', feedbackPersistPublicHandler);
@@ -192,4 +198,3 @@ const PORT = process.env.PORT || 3001;
     process.exit(1);
   }
 })();
-

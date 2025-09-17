@@ -516,26 +516,35 @@ async function findBestSentenceMatches(sourceEmbedding, topMatches, aiProvider =
             // If multiple filtered candidates exist for this source sentence, try the sentenceCompare agent
             // Build candidate texts up to 10 entries
             const candidates = [];
-            for (const f of filtered.slice(0, 10)) {
-                try {
-                    // Attempt to load the target sentence text from DB for more accurate comparison
-                    const emb = await Embedding.findOne({ interactionId: f.interactionId }).lean();
-                    let sentenceText = null;
-                    if (emb && Array.isArray(emb.sentenceEmbeddings) && emb.sentenceEmbeddings.length > 0) {
-                        // If sentence texts are not stored on embedding, we'll fetch the Interaction's answer sentences
-                        const matchInteraction = await Interaction.findById(f.interactionId).populate({ path: 'answer', populate: { path: 'sentences' } });
-                        sentenceText = matchInteraction?.answer?.sentences?.[f.sentenceIndex] || null;
-                    } else {
-                        const matchInteraction = await Interaction.findById(f.interactionId).populate({ path: 'answer', populate: { path: 'sentences' } });
-                        sentenceText = matchInteraction?.answer?.sentences?.[f.sentenceIndex] || null;
-                    }
-                    if (sentenceText && typeof sentenceText === 'string') {
-                        candidates.push({ text: sentenceText, match: f });
-                    }
-                } catch (e) {
-                    ServerLoggingService.warn('Error loading candidate sentence text for compare agent (worker)', 'system', e);
-                }
-            }
+                      for (const f of filtered.slice(0, 10)) {
+                          try {
+                              // Attempt to load the target sentence text from DB for more accurate comparison
+                              const emb = await Embedding.findOne({ interactionId: f.interactionId }).lean();
+                              let sentenceText = null;
+                              if (emb && Array.isArray(emb.sentenceEmbeddings) && emb.sentenceEmbeddings.length > 0) {
+                                  // If sentence texts are not stored on embedding, we'll fetch the Interaction's answer sentences
+                                  const matchInteraction = await Interaction.findById(f.interactionId).populate({ path: 'answer', populate: { path: 'sentences' } });
+                                  sentenceText = matchInteraction?.answer?.sentences?.[f.sentenceIndex] || null;
+                              } else {
+                                  const matchInteraction = await Interaction.findById(f.interactionId).populate({ path: 'answer', populate: { path: 'sentences' } });
+                                  sentenceText = matchInteraction?.answer?.sentences?.[f.sentenceIndex] || null;
+                              }
+                              // Resolve candidate chatId for display in UI
+                              let candidateChatId = null;
+                              try {
+                                  const Chat = mongoose.model('Chat');
+                                  const chatDoc = await Chat.findOne({ interactions: f.interactionId }, { chatId: 1 }).lean();
+                                  candidateChatId = chatDoc ? chatDoc.chatId : null;
+                              } catch (e) {
+                                  candidateChatId = null;
+                              }
+                              if (sentenceText && typeof sentenceText === 'string') {
+                                  candidates.push({ text: sentenceText, match: f, chatId: candidateChatId });
+                              }
+                          } catch (e) {
+                              ServerLoggingService.warn('Error loading candidate sentence text for compare agent (worker)', 'system', e);
+                          }
+                      }
 
             if (candidates.length > 1) {
                 try {
@@ -550,16 +559,36 @@ async function findBestSentenceMatches(sourceEmbedding, topMatches, aiProvider =
                     const compareResult = await AgentOrchestratorService.invokeWithStrategy({ chatId: 'sentence-compare', agentType: aiProvider || 'openai', request, createAgentFn, strategy: sentenceCompareStrategy });
                     const latencyMs = Date.now() - t0;
                     // parse winner
-                    const winner = compareResult?.parsed?.winner;
+                        const winner = compareResult?.parsed?.winner;
+                        const results = Array.isArray(compareResult?.parsed?.results) ? compareResult.parsed.results : null;
+                        const checksByIndex = new Map();
+                        if (results) {
+                            for (const item of results) {
+                                if (item && typeof item.index === 'number' && item.checks) {
+                                    checksByIndex.set(item.index, item.checks);
+                                }
+                            }
+                        }
+                        const winnerChecks = (!results && winner && typeof winner.index === 'number' && winner.checks) ? winner.checks : null;
                     if (winner && typeof winner.index === 'number' && winner.index >= 0 && winner.index < candidateStrings.length) {
                         const chosen = candidates[winner.index].match;
                         // Build per-sentence trace extras for persistence
-                        const candidateChoices = candidates.map((c) => ({
-                            text: c.text,
-                            matchedInteractionId: c.match?.interactionId ?? null,
-                            matchedSentenceIndex: c.match?.sentenceIndex ?? null,
-                            similarity: typeof c.match?.similarity === 'number' ? c.match.similarity : null,
-                        }));
+                            const candidateChoices = candidates.map((c, idx) => {
+                                let checks = null;
+                                if (results) {
+                                    checks = checksByIndex.get(idx) || null;
+                                } else if (winnerChecks && winner.index === idx) {
+                                    checks = winnerChecks;
+                                }
+                                return {
+                                    text: c.text,
+                                    matchedInteractionId: c.match?.interactionId ?? null,
+                                    matchedChatId: c.chatId || '',
+                                    matchedSentenceIndex: c.match?.sentenceIndex ?? null,
+                                    similarity: typeof c.match?.similarity === 'number' ? c.match.similarity : null,
+                                    checks: checks || undefined,
+                                };
+                            });
                         bestSentenceMatches.push({
                             sourceIndex,
                             targetIndex: chosen.sentenceIndex,

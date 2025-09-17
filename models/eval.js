@@ -23,8 +23,12 @@ sentenceMatchTraceSchema.add({
     candidateChoices: [{
         text: { type: String, required: false, default: '' },
         matchedInteractionId: { type: Schema.Types.ObjectId, ref: 'Interaction', required: false, default: null },
+        matchedChatId: { type: String, required: false, default: '' },
         matchedSentenceIndex: { type: Number, required: false },
-        similarity: { type: Number, required: false }
+        similarity: { type: Number, required: false },
+        // Compressed checks output from sentenceCompare agent for this candidate
+        // Shape: { numbers: {p:'p'|'f', r?}, dates_times: {...}, ... }
+        checks: { type: Schema.Types.Mixed, required: false, default: null }
     }],
     // Index of the candidate chosen by the agent (into candidateChoices); null when agent not used
     agentSelectedIndex: { type: Number, required: false, default: null },
