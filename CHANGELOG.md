@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.37.1](https://github.com/cds-snc/ai-answers/compare/v1.37.0...v1.37.1) (2025-09-17)
+
+
+### Code Refactoring
+
+* remove async/await from feedback handling for improved perf… ([132a878](https://github.com/cds-snc/ai-answers/commit/132a878b2cdaeafcb244f12399b9f5e3ee09e817))
+* remove async/await from feedback handling for improved performance ([29e734e](https://github.com/cds-snc/ai-answers/commit/29e734e7a0401a76dc1a9ed0771b902e3622c22b))
+
 ## [1.37.0](https://github.com/cds-snc/ai-answers/compare/v1.36.0...v1.37.0) (2025-09-15)
 
 
