@@ -6,8 +6,9 @@ import { Embedding } from '../models/embedding.js';
 import { SentenceEmbedding } from '../models/sentenceEmbedding.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import { AgentOrchestratorService } from '../agents/AgentOrchestratorService.js';
-import { createSentenceCompareAgent } from '../agents/AgentFactory.js';
+import { createSentenceCompareAgent, createFallbackCompareAgent } from '../agents/AgentFactory.js';
 import { sentenceCompareStrategy } from '../agents/strategies/sentenceCompareStrategy.js';
+import { fallbackCompareStrategy } from '../agents/strategies/fallbackCompareStrategy.js';
 import dbConnect from '../api/db/db-connect.js';
 import config from '../config/eval.js';
 import { VectorService, initVectorService } from '../services/VectorServiceFactory.js';
@@ -26,18 +27,136 @@ async function getChatIdForInteraction(interactionId, embeddingChatId = null) {
     }
 }
 
+function extractAnswerText(interaction) {
+    if (!interaction || !interaction.answer) return '';
+    const answer = interaction.answer;
+    if (Array.isArray(answer.sentences) && answer.sentences.length > 0) {
+        return answer.sentences
+            .map((value) => (typeof value === 'string' ? value : ''))
+            .join(' ')
+            .trim();
+    }
+    const fallbackFields = ['text', 'answer', 'answerText', 'resolvedAnswer'];
+    for (const field of fallbackFields) {
+        const candidate = answer[field];
+        if (typeof candidate === 'string' && candidate.trim()) {
+            return candidate.trim();
+        }
+    }
+    return '';
+}
+
+async function buildQuestionFlowForInteraction(interaction) {
+    try {
+        const interactionId = interaction?._id || interaction;
+        if (!interactionId) return '';
+        const Chat = mongoose.model('Chat');
+        const chatDoc = await Chat.findOne({ interactions: interactionId })
+            .populate({
+                path: 'interactions',
+                populate: { path: 'question', select: 'englishQuestion redactedQuestion' }
+            });
+        if (!chatDoc || !Array.isArray(chatDoc.interactions) || !chatDoc.interactions.length) {
+            return '';
+        }
+        const targetId = interactionId.toString();
+        const flowParts = [];
+        let questionNumber = 1;
+        for (const chatInteraction of chatDoc.interactions) {
+            const qDoc = chatInteraction?.question;
+            const rawQuestion = qDoc?.englishQuestion || qDoc?.redactedQuestion || '';
+            const cleanedQuestion = typeof rawQuestion === 'string' ? rawQuestion.trim() : '';
+            if (cleanedQuestion) {
+                flowParts.push(`Question ${questionNumber}: ${cleanedQuestion}`);
+                questionNumber += 1;
+            }
+            if (chatInteraction?._id?.toString?.() === targetId) {
+                break;
+            }
+        }
+        return flowParts.join('\n');
+    } catch (err) {
+        const idStr = interaction?._id?.toString?.() || String(interaction || 'unknown');
+        ServerLoggingService.warn('Failed to build question flow for interaction (worker)', idStr, err);
+        return '';
+    }
+}
+
+function formatCompareInput(questionFlow, answerText) {
+    const sections = [];
+    if (questionFlow) {
+        sections.push(`Question Flow:\n${questionFlow}`);
+    }
+    if (answerText) {
+        sections.push(`Answer:\n${answerText}`);
+    }
+    return sections.join('\n\n');
+}
+
+async function runFallbackCompareCheck({ sourceInteraction, fallbackInteraction, sourceQuestionFlow = null, fallbackQuestionFlow = null, aiProvider = 'openai' }) {
+    try {
+        const sourceText = extractAnswerText(sourceInteraction);
+        const candidateText = extractAnswerText(fallbackInteraction);
+        const ensuredSourceFlow = typeof sourceQuestionFlow === 'string' && sourceQuestionFlow.length
+            ? sourceQuestionFlow
+            : await buildQuestionFlowForInteraction(sourceInteraction);
+        const ensuredCandidateFlow = typeof fallbackQuestionFlow === 'string' && fallbackQuestionFlow.length
+            ? fallbackQuestionFlow
+            : await buildQuestionFlowForInteraction(fallbackInteraction);
+
+        const sourcePayload = formatCompareInput(ensuredSourceFlow, sourceText);
+        const candidatePayload = formatCompareInput(ensuredCandidateFlow, candidateText);
+        if (!sourcePayload || !candidatePayload) {
+            ServerLoggingService.info('Fallback compare skipped due to insufficient text (worker)', 'fallback-compare', {
+                hasSourceText: !!sourceText,
+                hasCandidateText: !!candidateText,
+                hasSourceFlow: !!ensuredSourceFlow,
+                hasCandidateFlow: !!ensuredCandidateFlow
+            });
+            return { checks: null, raw: null, meta: null, performed: false, sourceQuestionFlow: ensuredSourceFlow, fallbackQuestionFlow: ensuredCandidateFlow };
+        }
+
+        const createAgentFn = async (agentType, localChatId) => await createFallbackCompareAgent(agentType, localChatId, 5000);
+        const request = { source: sourcePayload, candidate: candidatePayload };
+        const started = Date.now();
+        const agentResult = await AgentOrchestratorService.invokeWithStrategy({
+            chatId: 'fallback-compare',
+            agentType: aiProvider || 'openai',
+            request,
+            createAgentFn,
+            strategy: fallbackCompareStrategy
+        });
+        const latencyMs = Date.now() - started;
+        return {
+            checks: agentResult?.parsed ?? null,
+            raw: agentResult?.raw ?? null,
+            meta: {
+                provider: aiProvider || 'openai',
+                model: agentResult?.model || '',
+                inputTokens: agentResult?.inputTokens ?? null,
+                outputTokens: agentResult?.outputTokens ?? null,
+                latencyMs
+            },
+            performed: true,
+            sourceQuestionFlow: ensuredSourceFlow,
+            fallbackQuestionFlow: ensuredCandidateFlow
+        };
+    } catch (err) {
+        ServerLoggingService.warn('Fallback compare agent invocation failed (worker)', 'fallback-compare', err);
+        return { checks: { error: 'exception', message: err?.message ?? 'unknown_error' }, raw: null, meta: null, performed: false, sourceQuestionFlow: null, fallbackQuestionFlow: null };
+    }
+}
+
 // Fallback: create evaluation using QA match only if any of the top N matches has expert feedback score > 90
-async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbeddings, failedSentenceTraces = []) {
+async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, failedSentenceTraces = [], aiProvider = 'openai') {
     try {
         const topQAMatches = similarEmbeddings.slice(0, config.searchLimits.topQAMatchesForHighScoreFallback);
-        // Find all QA matches with expert feedback score > 90
         const highScoreMatches = [];
         const chatIdMap = new Map();
         for (const match of topQAMatches) {
             const expertFeedback = match.embedding.interactionId.expertFeedback;
             if (expertFeedback && typeof expertFeedback.totalScore === 'number' && expertFeedback.totalScore >= 90) {
                 highScoreMatches.push(match);
-                // Find the chatId for the fallback source interaction
                 const Chat = mongoose.model('Chat');
                 const chatDoc = await Chat.findOne({ interactions: match.embedding.interactionId._id }, { chatId: 1 });
                 if (chatDoc) {
@@ -45,45 +164,82 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbedding
                 }
             }
         }
-        if (highScoreMatches.length > 0) {
-            // Find best citation match among all high score QA matches
+        if (!highScoreMatches.length) {
+            return false;
+        }
+
+        const sourceQuestionFlow = await buildQuestionFlowForInteraction(interaction);
+        const fallbackFlowCache = new Map();
+        const candidateQueue = [...highScoreMatches];
+        while (candidateQueue.length) {
+            const candidateMatch = candidateQueue.shift();
+
             const bestCitationMatch = await findBestCitationMatch(
                 interaction,
-                highScoreMatches
+                [candidateMatch]
             );
-            // Only proceed if an exact match was found (similarity === 1 and url is not empty)
+
             if (!bestCitationMatch.url || bestCitationMatch.similarity !== 1) {
-                ServerLoggingService.info('No exact citation match found in QA high score fallback (worker)', chatId, {
+                ServerLoggingService.info('QA high score fallback candidate skipped due to citation mismatch (worker)', chatId, {
                     sourceUrl: interaction.answer?.citation?.providedCitationUrl,
-                    attemptedMatchUrl: bestCitationMatch.url
+                    attemptedMatchUrl: bestCitationMatch.url || '',
                 });
-                return false;
+                continue;
             }
-            // Find the high score match that produced the citation
-            let matchedHighScoreMatch = null;
-            for (const match of highScoreMatches) {
-                const matchInteraction = await Interaction.findById(match.embedding.interactionId._id).populate({
+
+            const matchedExpertFeedback = candidateMatch.embedding.interactionId.expertFeedback;
+            const fallbackInteraction = await Interaction.findById(candidateMatch.embedding.interactionId._id)
+                .populate({
                     path: 'answer',
-                    populate: { path: 'citation', model: 'Citation' }
+                    populate: { path: 'sentences' }
                 });
-                const matchUrl = matchInteraction?.answer?.citation?.providedCitationUrl;
-                if (matchUrl && matchUrl.toLowerCase() === bestCitationMatch.url.toLowerCase()) {
-                    matchedHighScoreMatch = match;
-                    break;
-                }
-            }
-            if (!matchedHighScoreMatch) {
-                ServerLoggingService.info('Exact citation match found, but no matching high score QA match (worker)', chatId, {
-                    sourceUrl: interaction.answer?.citation?.providedCitationUrl,
-                    attemptedMatchUrl: bestCitationMatch.url
+            if (!fallbackInteraction) {
+                ServerLoggingService.warn('Fallback interaction not found for QA high score match (worker)', chatId, {
+                    fallbackInteractionId: candidateMatch.embedding.interactionId._id.toString()
                 });
-                return false;
+                continue;
             }
-            // Use matchedExpertFeedback for clarity
-            const matchedExpertFeedback = matchedHighScoreMatch.embedding.interactionId.expertFeedback;
-            // Minimal evaluation: only QA match info
+
+            let fallbackSourceChatId = chatIdMap.get(candidateMatch.embedding.interactionId._id.toString()) || null;
+            if (!fallbackSourceChatId) {
+                fallbackSourceChatId = await getChatIdForInteraction(
+                    candidateMatch.embedding.interactionId._id,
+                    candidateMatch.embedding.chatId ?? null
+                );
+            }
+
+            const candidateInteractionIdStr = candidateMatch.embedding.interactionId._id.toString();
+            let fallbackQuestionFlow = fallbackFlowCache.get(candidateInteractionIdStr);
+            if (fallbackQuestionFlow === undefined) {
+                fallbackQuestionFlow = await buildQuestionFlowForInteraction(fallbackInteraction);
+                fallbackFlowCache.set(candidateInteractionIdStr, fallbackQuestionFlow);
+            }
+
+            const fallbackCompareOutcome = await runFallbackCompareCheck({
+                sourceInteraction: interaction,
+                fallbackInteraction,
+                sourceQuestionFlow,
+                fallbackQuestionFlow,
+                aiProvider
+            });
+
+            const compareUsed = !!fallbackCompareOutcome.performed;
+            const fallbackCompareMeta = compareUsed ? (fallbackCompareOutcome.meta || null) : null;
+            const fallbackCompareChecks = compareUsed ? (fallbackCompareOutcome.checks || null) : null;
+            const fallbackCompareRaw = compareUsed ? (fallbackCompareOutcome.raw || null) : null;
+
+            const comparePassed = compareUsed && fallbackCompareChecks && Object.values(fallbackCompareChecks).every((entry) => entry && entry.p === 'p');
+            if (!comparePassed) {
+                ServerLoggingService.info('Fallback compare agent rejected QA match candidate (worker)', chatId, {
+                    candidateInteractionId: candidateInteractionIdStr,
+                    compareUsed,
+                    fallbackCompareChecks: fallbackCompareChecks || null
+                });
+                continue;
+            }
+
             const newExpertFeedback = new ExpertFeedback({
-                totalScore: null, // will be recalculated below
+                totalScore: null,
                 type: 'ai',
                 citationScore: bestCitationMatch.score,
                 citationExplanation: bestCitationMatch.explanation,
@@ -91,20 +247,17 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbedding
                 expertCitationUrl: matchedExpertFeedback?.expertCitationUrl ?? '',
                 feedback: 'qa-high-score-fallback'
             });
-            // Copy up to 4 sentence scores/explanations/harmful flags
             for (let i = 1; i <= 4; i++) {
                 newExpertFeedback[`sentence${i}Score`] = matchedExpertFeedback?.[`sentence${i}Score`] ?? 100;
                 newExpertFeedback[`sentence${i}Explanation`] = matchedExpertFeedback?.[`sentence${i}Explanation`] ?? '';
                 newExpertFeedback[`sentence${i}Harmful`] = matchedExpertFeedback?.[`sentence${i}Harmful`] ?? false;
             }
-            // Recalculate totalScore using computeTotalScore
             const recalculatedScore = computeTotalScore(newExpertFeedback, 4);
             newExpertFeedback.totalScore = recalculatedScore;
-            // Update feedback field based on recalculated score
             if (newExpertFeedback.totalScore === 100) {
-                newExpertFeedback.feedback = "positive";
+                newExpertFeedback.feedback = 'positive';
             } else if (newExpertFeedback.totalScore < 100) {
-                newExpertFeedback.feedback = "negative";
+                newExpertFeedback.feedback = 'negative';
             }
             const savedFeedback = await newExpertFeedback.save();
             ServerLoggingService.info('AI feedback saved using QA high score fallback (worker)', chatId, {
@@ -112,7 +265,7 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbedding
                 totalScore: savedFeedback.totalScore,
                 citationScore: bestCitationMatch.score
             });
-            const fallbackSourceChatId = chatIdMap.get(matchedHighScoreMatch.embedding.interactionId._id.toString()) || null;
+
             const newEval = new Eval({
                 expertFeedback: savedFeedback._id,
                 processed: true,
@@ -121,11 +274,15 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbedding
                     sentences: [],
                     citation: bestCitationMatch.similarity || 0
                 },
-                sentenceMatchTrace: failedSentenceTraces,
+                sentenceMatchTrace: Array.isArray(failedSentenceTraces) ? failedSentenceTraces : [],
                 fallbackType: 'qa-high-score',
-                fallbackSourceChatId: fallbackSourceChatId,
+                fallbackSourceChatId: fallbackSourceChatId || '',
                 matchedCitationInteractionId: bestCitationMatch.matchedCitationInteractionId || '',
-                matchedCitationChatId: bestCitationMatch.matchedCitationChatId || ''
+                matchedCitationChatId: bestCitationMatch.matchedCitationChatId || '',
+                fallbackCompareUsed: compareUsed,
+                fallbackCompareMeta: fallbackCompareMeta || undefined,
+                fallbackCompareChecks: fallbackCompareChecks || undefined,
+                fallbackCompareRaw: fallbackCompareRaw || undefined
             });
             const savedEval = await newEval.save();
             await Interaction.findByIdAndUpdate(
@@ -138,17 +295,21 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, similarEmbedding
                 feedbackId: savedFeedback._id,
                 totalScore: savedFeedback.totalScore,
                 similarityScores: newEval.similarityScores,
-                traceCount: Array.isArray(failedSentenceTraces) ? failedSentenceTraces.length : 0
+                traceCount: Array.isArray(failedSentenceTraces) ? failedSentenceTraces.length : 0,
+                fallbackCompareMeta: fallbackCompareMeta || null
             });
             return true;
         }
+
+        ServerLoggingService.info('QA high score fallback exhausted all candidates without passing fallback compare (worker)', chatId, {
+            candidateCountTried: highScoreMatches.length
+        });
         return false;
     } catch (error) {
         ServerLoggingService.error('Error in tryQAMatchHighScoreFallback', chatId, error);
         return false;
     }
 }
-
 
 async function validateInteractionAndCheckExisting(interaction, chatId) {
     ServerLoggingService.debug('Validating interaction (worker)', chatId, {
@@ -782,7 +943,9 @@ async function createNoMatchEvaluation(interaction, chatId, reason) {
     return savedEval;
 }
 
-export default async function ({ interactionId, chatId, aiProvider = 'openai' }) {
+
+export { runFallbackCompareCheck };
+export default async function ({ interactionId, chatId, aiProvider = 'openai', forceFallbackEval = false }) {
     await dbConnect();
     // Ensure each worker process/thread has a ready VectorService instance.
     // `initVectorService` is idempotent and will create + initialize the correct
@@ -827,6 +990,15 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai' })
             await createNoMatchEvaluation(interaction, chatId, { type: 'no_qa_match', msg: 'no similar embeddings found' });
             return null;
         }
+        if (forceFallbackEval) {
+            ServerLoggingService.info('Force fallback evaluation enabled; skipping sentence matching (worker)', chatId, { interactionId: interaction._id.toString() });
+            const forcedFallbackSuccess = await tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, [], aiProvider);
+            if (forcedFallbackSuccess) {
+                return true;
+            }
+            await createNoMatchEvaluation(interaction, chatId, { type: 'forced_fallback_no_match', msg: 'forced fallback did not find a passing candidate' });
+            return null;
+        }
         // Use the top 20 QA matches directly for sentence matching
         const bestSentenceMatches = await findBestSentenceMatches(
             sourceEmbedding,
@@ -838,7 +1010,7 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai' })
             bestSentenceMatches.every(m => m.matchStatus === 'matched');
         if (!allSentencesMatched) {
             // Fallback: try QA high score method, pass failed sentence traces
-            const fallbackSuccess = await tryQAMatchHighScoreFallback(interaction, chatId, similarEmbeddings, bestSentenceMatches);
+            const fallbackSuccess = await tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, bestSentenceMatches, aiProvider);
             if (fallbackSuccess) {
                 return true;
             } else {

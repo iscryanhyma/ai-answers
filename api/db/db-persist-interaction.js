@@ -21,6 +21,8 @@ async function handler(req, res) {
     await dbConnect();
 
     const interaction = req.body;
+    const forceFallbackEval = false;
+    delete interaction.forceFallbackEval;
     let chatId = interaction.chatId;
     ServerLoggingService.info('[db-persist-interaction] Start - chatId:', chatId, {});
     let chat = await Chat.findOne({ chatId: chatId });
@@ -121,7 +123,7 @@ async function handler(req, res) {
     if (deploymentMode === 'Vercel') {
       try {
         // Pass deploymentMode to evaluateInteraction
-        await EvaluationService.evaluateInteraction(dbInteraction, chatId, interaction.selectedAI);
+        await EvaluationService.evaluateInteraction(dbInteraction, chatId, interaction.selectedAI, { forceFallbackEval });
         ServerLoggingService.info('Evaluation completed successfully (Vercel mode)', chat.chatId, {});
       } catch (evalError) {
         ServerLoggingService.error('Evaluation failed (Vercel mode)', chat.chatId, evalError);
@@ -131,7 +133,7 @@ async function handler(req, res) {
       // CDS mode (or default)
       res.status(200).json({ message: 'Interaction logged successfully' });
       // Pass selectedAI to evaluateInteraction for background processing
-      EvaluationService.evaluateInteraction(dbInteraction, chatId, interaction.selectedAI)
+      EvaluationService.evaluateInteraction(dbInteraction, chatId, interaction.selectedAI, { forceFallbackEval })
         .then(() => {
           ServerLoggingService.info('Evaluation completed successfully (CDS mode background)', chat.chatId, {});
         })

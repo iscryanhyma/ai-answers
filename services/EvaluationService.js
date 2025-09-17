@@ -112,7 +112,7 @@ class EvaluationService {
         }
         return { deleted: 0, expertFeedbackDeleted: 0 };
     }
-    async evaluateInteraction(interaction, chatId, aiProvider = null) {
+    async evaluateInteraction(interaction, chatId, aiProvider = null, options = {}) {
         if (!interaction || !interaction._id) {
             ServerLoggingService.error('Invalid interaction object passed to evaluateInteraction', chatId,
                 { hasInteraction: !!interaction, hasId: !!interaction?._id });
@@ -133,13 +133,13 @@ class EvaluationService {
                         maxThreads: maxThreads,
                     });
                 }
-                return pool.run({ interactionId: interactionIdStr, chatId, aiProvider });
+                return pool.run({ interactionId: interactionIdStr, chatId, aiProvider, ...options });
             } else {
                 if (!directWorkerFn) {
                     const imported = await import('./evaluation.worker.js');
                     directWorkerFn = imported.default || imported;
                 }
-                return directWorkerFn({ interactionId: interactionIdStr, chatId, aiProvider });
+                return directWorkerFn({ interactionId: interactionIdStr, chatId, aiProvider, ...options });
             }
         } catch (error) {
             ServerLoggingService.error('Error during interaction evaluation dispatch', chatId, {

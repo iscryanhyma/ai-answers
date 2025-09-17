@@ -61,7 +61,18 @@ const evalSchema = new Schema({
         inputTokens: { type: Number, required: false, default: null },
         outputTokens: { type: Number, required: false, default: null },
         latencyMs: { type: Number, required: false, default: null }
-    }
+    },
+    // Fallback-compare agent usage (top-level)
+    fallbackCompareUsed: { type: Boolean, required: false, default: false },
+    fallbackCompareMeta: {
+        provider: { type: String, required: false, default: '' },
+        model: { type: String, required: false, default: '' },
+        inputTokens: { type: Number, required: false, default: null },
+        outputTokens: { type: Number, required: false, default: null },
+        latencyMs: { type: Number, required: false, default: null }
+    },
+    fallbackCompareChecks: { type: Schema.Types.Mixed, required: false, default: null },
+    fallbackCompareRaw: { type: Schema.Types.Mixed, required: false, default: null }
 }, { 
     timestamps: true, 
     versionKey: false,
