@@ -378,6 +378,24 @@
       "department": "Ministère",
       "date": "Date"
     },
+    "chatDashboard": {
+      "title": "Tableau de bord de chat",
+      "description": "Filtrez les interactions de chat et explorez les détails dans le tableau ci-dessous.",
+      "loading": "Chargement des chats...",
+      "error": "Impossible de charger les données de chat.",
+      "noResults": "Appliquez des filtres pour charger les interactions de chat.",
+      "resultsSummary": "Affichage de {count} chats",
+      "totalCount": "Total des chats correspondants : {total}",
+      "columns": {
+        "chatId": "ID de chat",
+        "department": "Ministère",
+        "language": "Langue",
+        "questionCount": "Questions",
+        "createdAt": "Créé",
+        "referringUrl": "URL de référence",
+        "date": "Date et heure"
+      }
+    },
     "deleteChat": {
       "title": "Supprimer une conversation avec des rétroactions incorrectes",
       "idLabel": "ID de chat",

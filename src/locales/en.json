@@ -300,6 +300,7 @@
       "eval": "Evaluation Administration",
       "metrics": "View performance metrics",
       "publicEval": "Public Evaluation",
+      "chatDashboard": "Chat dashboard",
       "logout": "Sign out",
       "vector": "Vector Administration"
     },
@@ -339,6 +340,24 @@
       "chatId": "Chat ID",
       "department": "Department",
       "date": "Date"
+    },
+    "chatDashboard": {
+      "title": "Chat dashboard",
+      "description": "Filter chat interactions and explore details in the table below.",
+      "loading": "Loading chats...",
+      "error": "Unable to load chat data.",
+      "noResults": "Apply filters to load chat interactions.",
+      "resultsSummary": "Showing {count} chats",
+      "totalCount": "Total matching chats: {total}",
+      "columns": {
+        "chatId": "Chat ID",
+        "department": "Department",
+        "language": "Language",
+        "questionCount": "Questions",
+        "createdAt": "Created",
+        "referringUrl": "Referring URL",
+        "date": "Date"
+      }
     },
     "chatLogs": {
       "title": "Download recent chat logs",
