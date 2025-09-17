@@ -470,6 +470,7 @@
   "feedback": "Feedback",
   "notAvailable": "N/A",
   "expertFeedbackTitle": "Expert evaluation",
+  "expertEmail": "Expert email",
   "deleteExpertFeedback": "Delete Expert Feedback",
   
   "publicFeedbackTitle": "Public feedback",

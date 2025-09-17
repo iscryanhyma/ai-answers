@@ -116,6 +116,10 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                         return (
                             <div>
                                 <div><strong>{t('reviewPanels.totalScore') || 'Total score'}:</strong> {totalVal !== null ? totalVal : (t('reviewPanels.notAvailable') || 'N/A')}</div>
+                                {/* Show expert email if available */}
+                                {efSource && (efSource.expertEmail || efSource.expert_email) ? (
+                                    <div><strong>{t('reviewPanels.expertEmail') || 'Expert email'}:</strong> {efSource.expertEmail || efSource.expert_email}</div>
+                                ) : null}
                             </div>
                         );
                     })()}

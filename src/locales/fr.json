@@ -507,6 +507,7 @@
     "expertScore": "Note de l'expert",
   "feedback": "Commentaire",
   "expertFeedbackTitle": "Évaluation d'expert",
+  "expertEmail": "Courriel de l'expert",
   "deleteExpertFeedback": "Supprimer la rétroaction d'expert",
   "publicFeedbackTitle": "Rétroaction publique",
   "autoEvalTitle": "Évaluation automatisée",
