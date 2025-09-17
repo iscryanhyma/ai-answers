@@ -194,6 +194,17 @@ const EvalPanel = ({ message, t, reviewMode }) => {
                 <div><strong>{t('reviewPanels.fallbackSourceChatId') || 'Fallback source chatId'}:</strong> {renderChatLink(evalObj.fallbackSourceChatId) || ''}</div>
                 <div><strong>{t('reviewPanels.fallbackCompareUsed') || 'Fallback compare used'}:</strong> {evalObj.fallbackCompareUsed ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}</div>
 
+                {/* Show fallback answer text and citation first (if present) */}
+                {evalObj.fallbackCandidateAnswerText ? (
+                  <div className="mt-100">
+                    <h5>{t('reviewPanels.fallbackCandidateAnswer') || 'Fallback candidate answer'}</h5>
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{evalObj.fallbackCandidateAnswerText}</div>
+                    {evalObj.fallbackCandidateCitation ? (
+                      <div><strong>{t('reviewPanels.fallbackCandidateCitation') || 'Candidate citation'}:</strong> {evalObj.fallbackCandidateCitation}</div>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {evalObj.fallbackCompareMeta ? (
                   <div className="mt-100">
                     <h5>{t('reviewPanels.fallbackCompareMeta') || 'Fallback compare meta'}</h5>
@@ -240,12 +251,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
                   </div>
                 ) : null}
 
-                {evalObj.fallbackCompareRaw ? (
-                  <div className="mt-200">
-                    <h5>{t('reviewPanels.fallbackCompareRaw') || 'Fallback compare raw'}</h5>
-                    <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(evalObj.fallbackCompareRaw, null, 2)}</pre>
-                  </div>
-                ) : null}
+                {/* raw fallback compare data intentionally not shown */}
               </div>
             </GcdsDetails>
 
@@ -402,12 +408,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
                 </div>
               ) : null}
 
-              {evalObj.fallbackCompareRaw ? (
-                <div className="mt-200">
-                  <h5>{t('reviewPanels.fallbackCompareRaw') || 'Fallback compare raw'}</h5>
-                  <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(evalObj.fallbackCompareRaw, null, 2)}</pre>
-                </div>
-              ) : null}
+              {/* raw fallback compare data intentionally not shown */}
               </GcdsDetails>
           </>
         ) : (

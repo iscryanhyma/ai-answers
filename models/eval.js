@@ -55,6 +55,9 @@ const evalSchema = new Schema({
     // Fallback logic fields
     fallbackType: { type: String, required: false, default: '' }, // e.g., 'qa-high-score'
     fallbackSourceChatId: { type: String, required: false, default: '' }, // chatId of the fallback source interaction
+    // Store fallback candidate answer and citation text for traceability
+    fallbackCandidateAnswerText: { type: String, required: false, default: '' },
+    fallbackCandidateCitation: { type: String, required: false, default: '' },
     matchedCitationInteractionId: { type: String, required: false, default: '' }, // Citation match trace (interactionId string)
     matchedCitationChatId: { type: String, required: false, default: '' }, // Citation match trace
     // Sentence-compare agent usage (top-level)

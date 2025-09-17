@@ -551,6 +551,8 @@
   "suggestedCitation": "URL de citation suggérée",
   "fallbackDetails": "Détails du repli",
   "fallbackType": "Type de repli",
+  "fallbackCandidateAnswer": "Réponse candidate de repli",
+  "fallbackCandidateCitation": "Citation du candidat",
   "fallbackCompareMeta": "Métadonnées de la comparaison de repli",
   "fallbackCompareRaw": "Données brutes de la comparaison de repli",
   "agentSelections": "Sélections de l'agent",

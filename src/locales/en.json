@@ -553,6 +553,8 @@
     ,
     "fallbackDetails": "Fallback details",
     "fallbackType": "Fallback type",
+  "fallbackCandidateAnswer": "Fallback candidate answer",
+  "fallbackCandidateCitation": "Candidate citation",
     "fallbackCompareMeta": "Fallback compare meta",
     "agentSelections": "Agent selections",
     "agentSelectedIndex": "Agent selected index",

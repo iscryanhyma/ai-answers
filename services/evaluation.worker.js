@@ -277,6 +277,16 @@ async function tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding,
                 sentenceMatchTrace: Array.isArray(failedSentenceTraces) ? failedSentenceTraces : [],
                 fallbackType: 'qa-high-score',
                 fallbackSourceChatId: fallbackSourceChatId || '',
+                // Include short fallback candidate answer and citation for traceability
+                fallbackCandidateAnswerText: extractAnswerText(fallbackInteraction) || '',
+                // Prefer the bestCitationMatch.url (the matched citation URL) if available;
+                // otherwise fallback to any populated citation on the interaction or the matched expert feedback url.
+                fallbackCandidateCitation: (
+                    (bestCitationMatch && bestCitationMatch.url) ||
+                    fallbackInteraction.answer?.citation?.providedCitationUrl ||
+                    matchedExpertFeedback?.expertCitationUrl ||
+                    ''
+                ),
                 matchedCitationInteractionId: bestCitationMatch.matchedCitationInteractionId || '',
                 matchedCitationChatId: bestCitationMatch.matchedCitationChatId || '',
                 fallbackCompareUsed: compareUsed,
@@ -1019,7 +1029,8 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai', f
             await createNoMatchEvaluation(interaction, chatId, { type: 'no_qa_match', msg: 'no similar embeddings found' });
             return null;
         }
-        if (forceFallbackEval) {
+
+        if (forceFallbackEvale) {
             ServerLoggingService.info('Force fallback evaluation enabled; skipping sentence matching (worker)', chatId, { interactionId: interaction._id.toString() });
             const forcedFallbackSuccess = await tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, [], aiProvider);
             if (forcedFallbackSuccess) {
