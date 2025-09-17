@@ -141,6 +141,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
               <div><strong>{t('reviewPanels.updatedAt') || 'Updated at'}:</strong> {formatDate(evalObj.updatedAt)}</div>
             </div>
             {/* Actions below timestamps */}
+            {/* Actions below timestamps */}
             <div className="mt-200" style={{ display: 'flex', gap: '0.5rem' }}>
               <GcdsButton onClick={handleReRun} disabled={reRunning} className="hydrated">
                 {reRunning ? (t('common.processing') || 'Processing...') : (t('reviewPanels.reEvaluate') || 'Re-evaluate')}
@@ -184,6 +185,68 @@ const EvalPanel = ({ message, t, reviewMode }) => {
               ) : (
                 <div>{t('reviewPanels.noSentenceTraces') || 'No sentence match traces available.'}</div>
               )}
+            </GcdsDetails>
+
+            {/* Fallback details section */}
+            <GcdsDetails detailsTitle={t('reviewPanels.fallbackDetails') || 'Fallback details'} className="mt-200">
+              <div>
+                <div><strong>{t('reviewPanels.fallbackType') || 'Fallback type'}:</strong> {evalObj.fallbackType || ''}</div>
+                <div><strong>{t('reviewPanels.fallbackSourceChatId') || 'Fallback source chatId'}:</strong> {renderChatLink(evalObj.fallbackSourceChatId) || ''}</div>
+                <div><strong>{t('reviewPanels.fallbackCompareUsed') || 'Fallback compare used'}:</strong> {evalObj.fallbackCompareUsed ? (t('common.yes') || 'yes') : (t('common.no') || 'no')}</div>
+
+                {evalObj.fallbackCompareMeta ? (
+                  <div className="mt-100">
+                    <h5>{t('reviewPanels.fallbackCompareMeta') || 'Fallback compare meta'}</h5>
+                    <table className="review-table">
+                      <thead>
+                        <tr>
+                          <th>{t('reviewPanels.field') || 'Field'}</th>
+                          <th>{t('reviewPanels.value') || 'Value'}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(evalObj.fallbackCompareMeta).map(([k, v]) => (
+                          <tr key={`fbm-${k}`}>
+                            <td>{k}</td>
+                            <td>{String(v)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
+
+                {evalObj.fallbackCompareChecks ? (
+                  <div className="mt-200">
+                    <h5>{t('reviewPanels.fallbackCompareChecks') || 'Fallback compare checks'}</h5>
+                    <table className="review-table">
+                      <thead>
+                        <tr>
+                          <th>{t('reviewPanels.check') || 'Check'}</th>
+                          <th>{t('reviewPanels.pass') || 'Pass'}</th>
+                          <th>{t('reviewPanels.details') || 'Details'}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(evalObj.fallbackCompareChecks).map(([k, v]) => (
+                          <tr key={`fcc-${k}`}>
+                            <td>{k}</td>
+                            <td>{typeof v === 'object' && v !== null && 'p' in v ? String(v.p) : ''}</td>
+                            <td><pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)}</pre></td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
+
+                {evalObj.fallbackCompareRaw ? (
+                  <div className="mt-200">
+                    <h5>{t('reviewPanels.fallbackCompareRaw') || 'Fallback compare raw'}</h5>
+                    <pre style={{ whiteSpace: 'pre-wrap' }}>{JSON.stringify(evalObj.fallbackCompareRaw, null, 2)}</pre>
+                  </div>
+                ) : null}
+              </div>
             </GcdsDetails>
 
             {/* Agent candidate choices per source sentence (if available) */}

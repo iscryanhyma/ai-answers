@@ -550,6 +550,13 @@
     "reEvaluate": "Re-evaluate",
     "deleteEvaluation": "Delete Evaluation",
     "runEvaluation": "Run evaluation"
+    ,
+    "fallbackDetails": "Fallback details",
+    "fallbackType": "Fallback type",
+    "fallbackCompareMeta": "Fallback compare meta",
+    "agentSelections": "Agent selections",
+    "agentSelectedIndex": "Agent selected index",
+    "agentSelectionExplanation": "Agent selection explanation"
   },
   "metrics": {
     "title": "Metrics dashboard",
