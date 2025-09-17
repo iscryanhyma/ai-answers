@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.37.3](https://github.com/cds-snc/ai-answers/compare/v1.37.2...v1.37.3) (2025-09-17)
+
+
+### Bug Fixes
+
+* providing citation based on question language ([fd512ed](https://github.com/cds-snc/ai-answers/commit/fd512ed4d03b4b7244bb9901532254f1006c3747))
+* providing citation based on question language ([bc30223](https://github.com/cds-snc/ai-answers/commit/bc302239c530cdd718c7323102d0c7ef92b01230))
+
 ## [1.37.2](https://github.com/cds-snc/ai-answers/compare/v1.37.1...v1.37.2) (2025-09-17)
 
 
