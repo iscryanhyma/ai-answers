@@ -406,6 +406,42 @@ const createSentenceCompareAgent = async (agentType = 'openai', chatId = 'system
   return llm;
 };
 
+// Fallback-compare agent: LLM-only agent that compares a single source sentence to a single
+// high-score fallback candidate. Supports 'openai' and 'azure'.
+const createFallbackCompareAgent = async (agentType = 'openai', chatId = 'system', maxTokens = undefined) => {
+  let llm;
+  switch (agentType) {
+    case 'openai': {
+      const cfg = getModelConfig('openai', 'gpt-4.1-mini');
+      llm = new ChatOpenAI({
+        openAIApiKey: process.env.OPENAI_API_KEY,
+        modelName: cfg.name,
+        temperature: cfg.temperature,
+        maxTokens: maxTokens ?? cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    case 'azure': {
+      const cfg = getModelConfig('azure', 'openai-gpt41-mini');
+      llm = new AzureChatOpenAI({
+        azureApiKey: process.env.AZURE_OPENAI_API_KEY,
+        azureEndpoint: process.env.AZURE_OPENAI_ENDPOINT,
+        apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-06-01',
+        azureOpenAIApiDeploymentName: cfg.name,
+        temperature: cfg.temperature,
+        maxTokens: maxTokens ?? cfg.maxTokens,
+        timeout: cfg.timeoutMs,
+      });
+      break;
+    }
+    default:
+      throw new Error(`Unknown agent type for fallback-compare: ${agentType}`);
+  }
+
+  return llm;
+};
+
 // Detect-language agent: LLM-only agent that uses the detectLanguage prompt/strategy.
 // Returns an LLM configured for low-latency deterministic responses.
 const createDetectLanguageAgent = async (agentType = 'openai', chatId = 'system') => {
@@ -444,6 +480,6 @@ const createDetectLanguageAgent = async (agentType = 'openai', chatId = 'system'
   return llm;
 };
 
-export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent };
+export { createClaudeAgent, createCohereAgent, createOpenAIAgent, createAzureOpenAIAgent, createContextAgent, createQueryAndPIIAgent, createPIIAgent, createQueryRewriteAgent, createRankerAgent, createTranslationAgent, createDetectLanguageAgent, createSentenceCompareAgent, createFallbackCompareAgent };
 
 
