@@ -69,10 +69,11 @@ async function batchStatsHandler(req, res) {
     const processed = counts.processed || 0;
     const failed = counts.failed || 0;
     const skipped = counts.skipped || 0;
+    const finished = Math.min(total, processed + failed);
 
-    console.log(`[batch-stats] Counts(agg): total=${total} processed=${processed} failed=${failed} skipped=${skipped}`);
+    console.log(`[batch-stats] Counts(agg): total=${total} processed=${processed} failed=${failed} skipped=${skipped} finished=${finished}`);
 
-  return res.status(200).json({ batchId: String(batch._id), workflow: batch.workflow || 'Default', total, processed, failed, skipped });
+  return res.status(200).json({ batchId: String(batch._id), workflow: batch.workflow || 'Default', total, processed, failed, skipped, finished });
   } catch (err) {
     console.error('Error computing batch stats:', err);
     return res.status(500).json({ message: 'Failed to compute stats', error: err.message });
@@ -82,3 +83,4 @@ async function batchStatsHandler(req, res) {
 export default function handler(req, res) {
   return withProtection(batchStatsHandler, authMiddleware, adminMiddleware)(req, res);
 }
+
