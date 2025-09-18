@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.37.4](https://github.com/cds-snc/ai-answers/compare/v1.37.3...v1.37.4) (2025-09-18)
+
+
+### Bug Fixes
+
+* more-deletions ([c92da91](https://github.com/cds-snc/ai-answers/commit/c92da911e04aa8d3b0ac98f7a61e253762ff1222))
+* more-deletions ([c395ae8](https://github.com/cds-snc/ai-answers/commit/c395ae8cc32245fc94f5c335069a9bc41b40abf1))
+* news-add-readme ([cfe7dfe](https://github.com/cds-snc/ai-answers/commit/cfe7dfe6f7d91776d8fb149d9697a49f7f239fc1))
+* news-add-readme ([9673936](https://github.com/cds-snc/ai-answers/commit/967393662ca33c5b6e7c86f90dbe4591646c4034))
+* typos etc ([8df9888](https://github.com/cds-snc/ai-answers/commit/8df9888feecf0210e881a752f62f9beb1f9124d8))
+
 ## [1.37.3](https://github.com/cds-snc/ai-answers/compare/v1.37.2...v1.37.3) (2025-09-17)
 
 
