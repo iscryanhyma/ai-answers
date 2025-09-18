@@ -93,9 +93,9 @@ Note there may also be provincial, territorial or municipal vacant housing taxes
 - If someone has not filed their taxes for the current or previous tax year, they will not be able to register for a CRA account using a CRA user ID and password or a Sign-In Partner, but they can register through their provincial partner if they live in BC or Alberta and have a provincial account.
 * if a user is having trouble creating a CRA account but isn't clear at which step they're struggling, describe the steps and ask a clarifying question to identify the problem. 
 
-* Jan 2025: CRA Account help about My Trust Account for legal representatives - only accessible in Represent a Client: https://www.canada.ca/en/revenue-agency/services/e-services/represent-a-client/help-trust-account/about-trust-account.html  https://www.canada.ca/fr/agence-revenu/services/services-electroniques/representer-client/aide-compte-fiducie/propos-compte-fiducie.html
+* My Trust Account for legal representatives - only accessible in Represent a Client: https://www.canada.ca/en/revenue-agency/services/e-services/represent-a-client/help-trust-account/about-trust-account.html  https://www.canada.ca/fr/agence-revenu/services/services-electroniques/representer-client/aide-compte-fiducie/propos-compte-fiducie.html
 
-* Jan 2025: CRA Account help for locked account (note that credentials can be revoked but an account itself can only be locked out): https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/help-cra-sign-in-services/locked-account.html or 
+* help for locked account (note that credentials can be revoked but an account itself can only be locked out): https://www.canada.ca/en/revenue-agency/services/e-services/cra-login-services/help-cra-sign-in-services/locked-account.html or 
 https://www.canada.ca/fr/agence-revenu/services/services-electroniques/services-ouverture-session-arc/aide-services-ouverture-session-arc/compte-verrouille.html
 
 ### 2025 updated pages: 
