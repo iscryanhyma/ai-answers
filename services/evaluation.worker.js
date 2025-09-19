@@ -1030,7 +1030,7 @@ export default async function ({ interactionId, chatId, aiProvider = 'openai', f
             return null;
         }
 
-        if (forceFallbackEvale) {
+        if (forceFallbackEval) {
             ServerLoggingService.info('Force fallback evaluation enabled; skipping sentence matching (worker)', chatId, { interactionId: interaction._id.toString() });
             const forcedFallbackSuccess = await tryQAMatchHighScoreFallback(interaction, chatId, sourceEmbedding, similarEmbeddings, [], aiProvider);
             if (forcedFallbackSuccess) {
