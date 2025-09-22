@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.39.0](https://github.com/cds-snc/ai-answers/compare/v1.38.0...v1.39.0) (2025-09-22)
+
+
+### Features
+
+* Add context, PII checking, short query validation, and translation services ([403a8d6](https://github.com/cds-snc/ai-answers/commit/403a8d66697faa86c7c78a24661a2f78929dd42d))
+* Add support for DefaultWithVectorGraph workflow in ChatOptions and ChatWorkflowService ([4baa7d5](https://github.com/cds-snc/ai-answers/commit/4baa7d538fc315c24cf4f67b60b7936c8386cbee))
+* Implement DefaultWithVectorGraph and related services for enhanced chat workflows ([23fcebd](https://github.com/cds-snc/ai-answers/commit/23fcebda755829ad41fecf025c571c9c9e374b45))
+* Implement RedactionService with profanity, threat, and manipulation pattern handling ([eff2a06](https://github.com/cds-snc/ai-answers/commit/eff2a060b6258cee3266ab5b2fca34a2e344a367))
+
 ## [1.38.0](https://github.com/cds-snc/ai-answers/compare/v1.37.4...v1.38.0) (2025-09-22)
 
 
