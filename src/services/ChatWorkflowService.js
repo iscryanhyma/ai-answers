@@ -85,6 +85,8 @@ export const ChatWorkflowService = {
     let mod;
     if (workflow === 'DefaultWithVector') {
       mod = await import('../workflows/DefaultWithVector.js');
+    } else if (workflow === 'DefaultWithVectorGraph') {
+      mod = await import('../workflows/DefaultWithVectorGraph.js');
     } else {
       mod = await import('../workflows/DefaultWorkflow.js');
     }
@@ -226,3 +228,4 @@ export class ShortQueryValidation extends Error {
     this.searchUrl = searchUrl;
   }
 }
+

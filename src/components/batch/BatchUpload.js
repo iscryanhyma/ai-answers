@@ -326,6 +326,7 @@ const BatchUpload = ({ lang, onBatchSaved }) => {
                 >
                   <option value="Default">Default</option>
                   <option value="DefaultWithVector">DefaultWithVector</option>
+                  <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
                 </select>
               </div>
             </div>

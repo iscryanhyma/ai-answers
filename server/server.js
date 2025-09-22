@@ -26,6 +26,7 @@ import chatSimilarAnswerHandler from '../api/chat/chat-similar-answer.js';
 import chatPIICheckHandler from '../api/chat/chat-pii-check.js';
 import chatDetectLanguageHandler from '../api/chat/chat-detect-language.js';
 import chatTranslateHandler from '../api/chat/chat-translate.js';
+import chatGraphRunHandler from '../api/chat/chat-graph-run.js';
 import dbVerifyChatSessionHandler from '../api/db/db-verify-chat-session.js';
 import dbCheckhandler from '../api/db/db-check.js';
 import dbPersistInteraction from '../api/db/db-persist-interaction.js';
@@ -162,6 +163,7 @@ app.post('/api/chat/chat-similar-answer', chatSimilarAnswerHandler);
 app.post('/api/chat/chat-pii-check', chatPIICheckHandler);
 app.post('/api/chat/chat-detect-language', chatDetectLanguageHandler);
 app.post('/api/chat/chat-translate', chatTranslateHandler);
+app.post('/api/chat/chat-graph-run', chatGraphRunHandler);
 
 
 const PORT = process.env.PORT || 3001;
@@ -200,3 +202,5 @@ const PORT = process.env.PORT || 3001;
     process.exit(1);
   }
 })();
+
+
