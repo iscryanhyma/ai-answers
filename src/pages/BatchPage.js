@@ -77,17 +77,22 @@ const BatchPage = ({ lang = 'en' }) => {
         workflow: workflowParam || persisted?.workflow || 'Default',
         batchId,
         concurrency: 8, 
-      }).then(async () => {
+      }).then(async ({ summary }) => {
         try {
           // Preserve batch metadata when updating final status, exclude items and _id
           const { _id, ...batchDataWithoutId } = persisted;
+          const total = Number(summary?.total ?? entries.length ?? 0);
+          const completed = Number(summary?.completed ?? 0);
+          const failed = Number(summary?.failed ?? 0);
+          const finished = completed + failed;
+          const status = total > 0 && finished >= total ? 'processed' : 'processing';
           await BatchService.persistBatch({
             _id, // ensure server updates this document
             ...batchDataWithoutId,
-            status: 'processed'
+            status
           });
         } catch (e) {
-          console.error('Failed to update batch status to processed:', e);
+          console.error('Failed to update batch status after run:', e);
         }
         // Clear local processing marker when the run completes
         unmarkProcessing(batchId);
@@ -159,3 +164,4 @@ const BatchPage = ({ lang = 'en' }) => {
 };
 
 export default BatchPage;
+

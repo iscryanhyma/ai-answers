@@ -20,8 +20,7 @@ export const EDSC_ESDC_SCENARIOS = `
 ### Account Type: EI Internet Reporting Service
 * Trigger phrases: "4 digit access code", "EI reporting"
 * Explanation: Separate from MSCA account - different service with different access code
-* Citation (EN): https://www.canada.ca/en/services/benefits/ei/employment-insurance-reporting.html
-* Citation (FR): https://www.canada.ca/fr/services/prestations/ae/declarations-assurance-emploi.html
+* Citation (EN): https://www.canada.ca/en/services/benefits/ei/employment-insurance-reporting.html or https://www.canada.ca/fr/services/prestations/ae/declarations-assurance-emploi.html
 
 ### Employment Insurance
  * For questions about eligibility for all EI, do not attempt to answer as it is too complex, instead provide a link to this new estimator tool to assess eligibility and estimate possible benefits: https://estimateurae-eiestimator.service.canada.ca/en orhttps://estimateurae-eiestimator.service.canada.ca/fr/ 
@@ -29,7 +28,7 @@ export const EDSC_ESDC_SCENARIOS = `
  * If the question appears to be about biweekly EI reports, this is not done through the MSCA account. Instead they need to use the 4 digit access code mailed to them in their benefits statement to file their report at: https://www.canada.ca/en/services/benefits/ei/employment-insurance-reporting.html#Internet-Reporting-Service or https://www.canada.ca/fr/services/prestations/ae/declarations-assurance-emploi.html
  * Applying for EI is not done through MSCA, separate application process starts here: https://www.canada.ca/en/services/benefits/ei/ei-regular-benefit/eligibility.html or https://www.canada.ca/fr/services/prestations/ae/assurance-emploi-reguliere/admissibilite.html
  * For EI applicants, provide the MSCA sign-in page as the citation to see their ROE, NOT the Employer page of ROE web where they submit for their employees. 
- * Updated March 2025 - Special measures for the EI Work-Sharing Program in response to the threat or potential realization of U.S. tariffs are in effect from March 7, 2025 until March 6, 2026 https://www.canada.ca/en/employment-social-development/services/work-sharing.html#h2.1 https://www.canada.ca/fr/emploi-developpement-social/services/travail-partage.html#h2.1
+ * Updated March 2025 - Special measures for the EI Work-Sharing Program in response to the threat or potential realization of U.S. tariffs https://www.canada.ca/en/employment-social-development/services/work-sharing.html#h2.1 https://www.canada.ca/fr/emploi-developpement-social/services/travail-partage.html#h2.1
  * Updated April 2025 - waiving waiting period, adjusting unemployment rate, suspending allocation of separation of earnings: https://www.canada.ca/en/services/benefits/ei/temporary-measures-for-major-economic-conditions.html https://www.canada.ca/fr/services/prestations/ae/mesures-temporaires-pour-conditions-economiques-majeures.html
 
  ### Canadian Dental Care Plan (CDCP)- all pages updated March 2025
@@ -40,7 +39,7 @@ export const EDSC_ESDC_SCENARIOS = `
  - do not need a copy of Notice of Assessment in front of them to renew, just need to have filed tax return and got confirmation that it was assessed
  - renewing after June 1 may cause a delay or gap in coverage, wait for confirmation before receiving oral health care services, services received during a gap in coverage will not be covered or reimbursed afterwards
 
- ### Register for MSCA Updated Dec 2024
+ ### Register for MSCA 
 - Creating an MSCA account starts with answering a few questions. The first question asks to choose a sign-in method for all future visits. Unless chose to register with provincial partner (alberta.ca or BC services card), the next question will ask for Personal Access Code (PAC) if have one already, or to use the Interac Verify service instead. Following these registration steps is a one-time action. Next time, sign in with the sign-in method chosen at registration. https://www.canada.ca/en/employment-social-development/services/my-account/registration.html https://www.canada.ca/fr/emploi-developpement-social/services/mon-dossier/inscription.html
 - Cannot change sign-in method once registered. For example, if registered with GCKey, must register again to use Interac® Sign-In Partner or provincial sign-in.
 

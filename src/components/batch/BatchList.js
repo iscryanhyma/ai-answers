@@ -145,8 +145,10 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
               const stats = data.stats || {};
               const total = Number(stats.total || 0);
               const processed = Number(stats.processed || 0);
+              const failed = Number(stats.failed || 0);
+              const finished = Number(stats.finished ?? processed + failed);
               if (totalsCell) {
-                totalsCell.innerText = `${processed}/${total} processed`;
+                totalsCell.innerText = `${finished}/${total} completed`;
               }
             } catch (e) {
               // ignore totals rendering errors
@@ -167,11 +169,13 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
             const stats = data.stats || {};
             const total = Number(stats.total || 0);
             const processedCount = Number(stats.processed || 0);
+            const failedCount = Number(stats.failed || 0);
+            const finishedCount = Number(stats.finished ?? processedCount + failedCount);
             // Show both Process and Delete buttons for running batches
             const isLocallyProcessing = processingBatches.includes(String(_id));
 
             if (
-              (processedCount >= total && status === 'processed') ||
+              (finishedCount >= total && status === 'processed') ||
               ['in_progress', 'processing', 'inprogress'].includes(status)
             ) {
               const ActionButtons = () => {
@@ -179,7 +183,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                 if (clicked) return null;
                 return (
                   <div style={{ display: 'flex', gap: '8px' }}>
-                    {processedCount >= total && status === 'processed' && (
+                    {finishedCount >= total && status === 'processed' && (
                       <>
                         <GcdsButton
                           size="small"
@@ -201,7 +205,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                         </GcdsButton>
                       </>
                     )}
-                    {(['in_progress', 'processing', 'inprogress'].includes(status) || processedCount < total) && (
+                    {(['in_progress', 'processing', 'inprogress'].includes(status) || finishedCount < total) && (
                       <GcdsButton
                         size="small"
                         onClick={() => {
@@ -229,7 +233,7 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
                 );
               };
               root.render(<ActionButtons />);
-            } else if (processedCount < total || total === 0) {
+            } else if (finishedCount < total || total === 0) {
               // Offer a Process button which triggers provider-side processing
               const ProcessButton = () => {
                 const [clicked, setClicked] = useState(false);
@@ -329,3 +333,5 @@ const BatchList = ({ onProcess, onCancel, onDelete, onExport, batchStatus, lang,
 };
 
 export default BatchList;
+
+

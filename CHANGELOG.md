@@ -1,5 +1,66 @@
 # Changelog
 
+## [1.38.0](https://github.com/cds-snc/ai-answers/compare/v1.37.4...v1.38.0) (2025-09-22)
+
+
+### Features
+
+* Implement fallback comparison check for interaction evaluations ([6dd5a3f](https://github.com/cds-snc/ai-answers/commit/6dd5a3f680565d1e00b28c9f47605eb63b2af9bc))
+* Implement localStorage persistence for filter panel state ([f1999de](https://github.com/cds-snc/ai-answers/commit/f1999deec02bae9e25bedcba5aa12c7d185688d3))
+
+
+### Bug Fixes
+
+* Correct indentation in loadSettings function and ensure proper loading of provider and logChats settings ([89a6d50](https://github.com/cds-snc/ai-answers/commit/89a6d50e6eadf4ba6e94039cc93c80c84403f69e))
+* Ensure EvalPanel displays correctly in review mode ([bc0cb7f](https://github.com/cds-snc/ai-answers/commit/bc0cb7f1df81e26e74b1409ff063f7be01759186))
+* Handle missing interactionId and chatId errors in eval-run handler ([7ac868f](https://github.com/cds-snc/ai-answers/commit/7ac868f8bf44c39d788d29dcc96cb3f26bbceca7))
+
+
+### Code Refactoring
+
+* Remove unused props from EvalPanel, ExpertFeedbackPanel, and PublicFeedbackPanel components ([3a860f6](https://github.com/cds-snc/ai-answers/commit/3a860f6ba78a75620abbe002c43471cfed6de6b6))
+
+## [1.37.4](https://github.com/cds-snc/ai-answers/compare/v1.37.3...v1.37.4) (2025-09-18)
+
+
+### Bug Fixes
+
+* more-deletions ([c92da91](https://github.com/cds-snc/ai-answers/commit/c92da911e04aa8d3b0ac98f7a61e253762ff1222))
+* more-deletions ([c395ae8](https://github.com/cds-snc/ai-answers/commit/c395ae8cc32245fc94f5c335069a9bc41b40abf1))
+* news-add-readme ([cfe7dfe](https://github.com/cds-snc/ai-answers/commit/cfe7dfe6f7d91776d8fb149d9697a49f7f239fc1))
+* news-add-readme ([9673936](https://github.com/cds-snc/ai-answers/commit/967393662ca33c5b6e7c86f90dbe4591646c4034))
+* typos etc ([8df9888](https://github.com/cds-snc/ai-answers/commit/8df9888feecf0210e881a752f62f9beb1f9124d8))
+
+## [1.37.3](https://github.com/cds-snc/ai-answers/compare/v1.37.2...v1.37.3) (2025-09-17)
+
+
+### Bug Fixes
+
+* providing citation based on question language ([fd512ed](https://github.com/cds-snc/ai-answers/commit/fd512ed4d03b4b7244bb9901532254f1006c3747))
+* providing citation based on question language ([bc30223](https://github.com/cds-snc/ai-answers/commit/bc302239c530cdd718c7323102d0c7ef92b01230))
+
+## [1.37.2](https://github.com/cds-snc/ai-answers/compare/v1.37.1...v1.37.2) (2025-09-17)
+
+
+### Bug Fixes
+
+* prevent-redaction-of-number mentions ([9bad210](https://github.com/cds-snc/ai-answers/commit/9bad210cf8e0c6ce86fc84387a6ea7edb6271e4f))
+* prevent-redaction-of-number mentions ([4c341d3](https://github.com/cds-snc/ai-answers/commit/4c341d310ea8b0c0d2a74bdcfcc5b0a366e73340))
+
+
+### Code Refactoring
+
+* enhance batch processing statistics handling and logging ([c7c0cca](https://github.com/cds-snc/ai-answers/commit/c7c0ccac20d9f30e04d6114ad5b5cc6dcde5e7e9))
+* enhance batch processing statistics handling and logging ([6a97ee2](https://github.com/cds-snc/ai-answers/commit/6a97ee2cf0cb98f863694bfeaab68679cc06e335))
+
+## [1.37.1](https://github.com/cds-snc/ai-answers/compare/v1.37.0...v1.37.1) (2025-09-17)
+
+
+### Code Refactoring
+
+* remove async/await from feedback handling for improved perf… ([132a878](https://github.com/cds-snc/ai-answers/commit/132a878b2cdaeafcb244f12399b9f5e3ee09e817))
+* remove async/await from feedback handling for improved performance ([29e734e](https://github.com/cds-snc/ai-answers/commit/29e734e7a0401a76dc1a9ed0771b902e3622c22b))
+
 ## [1.37.0](https://github.com/cds-snc/ai-answers/compare/v1.36.0...v1.37.0) (2025-09-15)
 
 

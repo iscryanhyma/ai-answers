@@ -116,13 +116,16 @@ class BatchService {
       // marked as 'uploaded' so the UI doesn't show them as actively processing.
       const total = Number(data.total || 0);
       const processed = Number(data.processed || 0);
+      const failed = Number(data.failed || 0);
+      const finished = Number(data.finished ?? processed + failed);
       let status = 'unknown';
       if (total === 0) status = 'unknown';
-      else if (processed === 0) status = 'uploaded';
-      else if (processed >= total) status = 'processed';
+      else if (finished === 0) status = 'uploaded';
+      else if (finished >= total) status = 'processed';
       else status = 'processing';
 
-      return { batchId, status, stats: data };
+      const stats = { ...data, finished };
+      return { batchId, status, stats };
     } catch (error) {
       console.error(`Error fetching status for batch ${batchId}:`, error);
       return { batchId, status: 'Error' };
@@ -188,16 +191,24 @@ class BatchService {
         } catch (err) {
           // Preserve the client-side values as a fallback so a single failing
           // batch doesn't break the whole list rendering.
-          return { batchId: String(batch._id), status: batch.status || 'unknown', stats: batch.stats || {} };
+          const fallbackStats = batch.stats || {};
+          const fallbackProcessed = Number(fallbackStats?.processed || 0);
+          const fallbackFailed = Number(fallbackStats?.failed || 0);
+          const fallbackFinished = Number(fallbackStats?.finished ?? fallbackProcessed + fallbackFailed);
+          return { batchId: String(batch._id), status: batch.status || 'unknown', stats: { ...fallbackStats, finished: fallbackFinished } };
         }
       });
       const statusResults = await Promise.all(statusPromises);
       return batches.map((batch) => {
         const statusResult = statusResults.find((status) => status && status.batchId === String(batch._id));
+        const sourceStats = statusResult ? statusResult.stats || {} : batch.stats || {};
+        const processed = Number(sourceStats?.processed || 0);
+        const failed = Number(sourceStats?.failed || 0);
+        const finished = Number(sourceStats?.finished ?? processed + failed);
         return {
           ...batch,
           status: statusResult ? statusResult.status : (batch.status || 'Unknown'),
-          stats: statusResult ? statusResult.stats || {} : batch.stats || {},
+          stats: { ...sourceStats, finished },
         };
       });
     } catch (error) {
@@ -483,3 +494,4 @@ class BatchService {
 }
 
 export default new BatchService();
+
