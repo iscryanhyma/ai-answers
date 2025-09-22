@@ -19,6 +19,8 @@ const escapeHtmlAttribute = (value) => {
     .replace(/>/g, '&gt;');
 };
 
+const TABLE_STORAGE_KEY = `chatDashboard_tableState_v1_`;
+
 const ChatDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const [rows, setRows] = useState([]);
@@ -26,7 +28,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
 
-  const TABLE_STORAGE_KEY = `chatDashboard_tableState_v1_${lang}`;
+  const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
   const FILTER_PANEL_STORAGE_KEY = 'chatFilterPanelState_v1';
 
   const numberFormatter = useMemo(
@@ -229,8 +231,8 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
               stateSave: false,
               order: (function() {
                 try {
-                  if (typeof window === 'undefined' || !window.localStorage) return [[2, 'desc']];
-                  const raw = window.localStorage.getItem(TABLE_STORAGE_KEY);
+              if (typeof window === 'undefined' || !window.localStorage) return [[2, 'desc']];
+                  const raw = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
                   if (!raw) return [[2, 'desc']];
                   const parsed = JSON.parse(raw);
                   if (!parsed) return [[2, 'desc']];
@@ -243,14 +245,16 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                 }
                 return [[2, 'desc']];
               })(),
-              initComplete: function(settings, json) {
+              // parameters provided by DataTables but intentionally unused
+              // eslint-disable-next-line no-unused-vars
+              initComplete: function(_settings, _json) {
                 try {
                   const table = this.api();
 
                   // Restore page, length, and search if stored
                   try {
                     if (typeof window !== 'undefined' && window.localStorage) {
-                      const raw = window.localStorage.getItem(TABLE_STORAGE_KEY);
+                      const raw = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
                       if (raw) {
                         const parsed = JSON.parse(raw);
                         if (parsed) {
@@ -280,7 +284,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                         length: table.page.len(),
                         search: table.search() || ''
                       };
-                      window.localStorage.setItem(TABLE_STORAGE_KEY, JSON.stringify(st));
+                      window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(st));
                     } catch (err) {
                       // ignore
                     }

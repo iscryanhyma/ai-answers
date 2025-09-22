@@ -9,7 +9,7 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
     const [data, setData] = useState(null);
     const [deleting, setDeleting] = useState(false);
 
-    const handleToggle = useCallback(async (e) => {
+    const handleToggle = useCallback(async () => {
         try {
             // If we already have data, make sure it matches the message's interaction.expertFeedback
             const interactionId = (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
@@ -111,7 +111,6 @@ const ExpertFeedbackPanel = ({ message, extractSentences, t }) => {
                             const total = sentenceComponent + citationComponent;
                             return Math.round(total * 100) / 100;
                         };
-                        const citationVal = (efSource && typeof efSource.citationScore !== 'undefined' && efSource.citationScore !== null) ? efSource.citationScore : null;
                         const totalVal = (efSource && typeof efSource.totalScore !== 'undefined' && efSource.totalScore !== null) ? efSource.totalScore : computeTotal(efSource, sentenceCount);
                         return (
                             <div>

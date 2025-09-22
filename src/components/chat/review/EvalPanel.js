@@ -26,7 +26,7 @@ const renderChatLink = (chatId) => {
   );
 };
 
-const EvalPanel = ({ message, t, reviewMode }) => {
+const EvalPanel = ({ message, t }) => {
   // Show panel in review mode as requested (no longer hidden)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -34,7 +34,9 @@ const EvalPanel = ({ message, t, reviewMode }) => {
   const [reRunning, setReRunning] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const getInteractionId = () => (message.interaction && (message.interaction._id || message.interaction.id)) || message.id;
+  const getInteractionId = useCallback(() => (
+    (message.interaction && (message.interaction._id || message.interaction.id)) || message.id
+  ), [message]);
 
   const loadEval = useCallback(async () => {
     try {
@@ -49,7 +51,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
     } finally {
       setLoading(false);
     }
-    }, [message]);
+  }, [getInteractionId]);
 
   const handleToggle = useCallback(async (e) => {
     try {
@@ -84,7 +86,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
       setReRunning(false);
       setLoading(false);
     }
-  }, [message]);
+  }, [getInteractionId, loadEval, message]);
 
   const handleDelete = useCallback(async () => {
     try {
@@ -103,7 +105,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
     } finally {
       setDeleting(false);
     }
-  }, [message]);
+  }, [getInteractionId, message]);
 
   if (!message) return null;
 
