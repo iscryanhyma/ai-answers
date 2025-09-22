@@ -2,6 +2,7 @@ import dbConnect from '../db/db-connect.js';
 import { Interaction } from '../../models/interaction.js';
 import { Chat } from '../../models/chat.js';
 import EvaluationService from '../../services/EvaluationService.js';
+import { SettingsService } from '../../services/SettingsService.js';
 import { withUser, withProtection, authMiddleware } from '../../middleware/auth.js';
 
 async function handler(req, res) {
@@ -20,10 +21,19 @@ async function handler(req, res) {
       return res.status(404).json({ message: 'Interaction not found' });
     }
 
-    // Resolve chatId and aiProvider
+    // Resolve chatId and aiProvider (fall back to global provider setting)
     const chat = await Chat.findOne({ interactions: interaction._id });
     const chatId = chat ? chat.chatId : null;
-    const aiProvider = chat ? chat.aiProvider : null;
+    let aiProvider = chat ? chat.aiProvider : null;
+    if (!aiProvider) {
+      // read provider from settings; default to 'openai' if unset
+      try {
+        const providerSetting = await SettingsService.get('provider');
+        aiProvider = providerSetting || 'openai';
+      } catch (e) {
+        aiProvider = 'openai';
+      }
+    }
 
     if (!chatId) {
       return res.status(400).json({ message: 'Unable to resolve chatId for interaction' });
