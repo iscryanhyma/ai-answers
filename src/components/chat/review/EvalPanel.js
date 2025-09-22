@@ -111,6 +111,13 @@ const EvalPanel = ({ message, t, reviewMode }) => {
   const sentenceTrace = Array.isArray(evalObj?.sentenceMatchTrace) ? evalObj.sentenceMatchTrace : [];
   const sim = evalObj?.similarityScores || {};
 
+  const fmt = (v) => {
+    if (v === null || typeof v === 'undefined' || v === '') return v;
+    const n = Number(v);
+    if (Number.isNaN(n)) return v;
+    return n.toFixed(3);
+  };
+
   return (
     <GcdsDetails
       detailsTitle={t('reviewPanels.autoEvalTitle') || t('reviewPanels.evaluation') || 'Automated evaluation'}
@@ -175,8 +182,8 @@ const EvalPanel = ({ message, t, reviewMode }) => {
                         <td>{renderChatLink(s.matchedChatId) || ''}</td>
                         <td>{typeof s.matchedSentenceIndex !== 'undefined' ? s.matchedSentenceIndex : ''}</td>
                         <td>{s.matchedSentenceText || ''}</td>
-                        <td>{typeof s.similarity !== 'undefined' ? s.similarity : ''}</td>
-                        <td>{typeof s.matchedExpertFeedbackSentenceScore !== 'undefined' ? s.matchedExpertFeedbackSentenceScore : ''}</td>
+                        <td>{typeof s.similarity !== 'undefined' ? fmt(s.similarity) : ''}</td>
+                        <td>{typeof s.matchedExpertFeedbackSentenceScore !== 'undefined' ? fmt(s.matchedExpertFeedbackSentenceScore) : ''}</td>
                         <td>{s.matchStatus || ''}</td>
                       </tr>
                     ))}
@@ -242,7 +249,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
                         {Object.entries(evalObj.fallbackCompareChecks).map(([k, v]) => (
                           <tr key={`fcc-${k}`}>
                             <td>{k}</td>
-                            <td>{typeof v === 'object' && v !== null && 'p' in v ? String(v.p) : ''}</td>
+                            <td>{typeof v === 'object' && v !== null && 'p' in v ? fmt(v.p) : ''}</td>
                             <td><pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)}</pre></td>
                           </tr>
                         ))}
@@ -295,7 +302,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
                             <td>{renderChatLink(c.matchedChatId) || ''}</td>
                             <td>{c.text || ''}</td>
                             <td>{typeof c.matchedSentenceIndex !== 'undefined' ? c.matchedSentenceIndex : ''}</td>
-                            <td>{typeof c.similarity !== 'undefined' ? c.similarity : ''}</td>
+                            <td>{typeof c.similarity !== 'undefined' ? fmt(c.similarity) : ''}</td>
                             <td>{cell('numbers')}</td>
                             <td>{cell('dates_times')}</td>
                             <td>{cell('negation')}</td>
@@ -326,12 +333,12 @@ const EvalPanel = ({ message, t, reviewMode }) => {
                   {Array.isArray(sim.sentences) && sim.sentences.length > 0 && sim.sentences.map((val, idx) => (
                     <tr key={`sim-s-${idx}`}>
                       <td>{(t('reviewPanels.sentence') || 'Sentence')} {idx + 1}</td>
-                      <td>{val}</td>
+                      <td>{fmt(val)}</td>
                     </tr>
                   ))}
                   <tr>
                     <td>{t('reviewPanels.citation') || 'Citation'}</td>
-                    <td>{typeof sim.citation !== 'undefined' ? sim.citation : (t('reviewPanels.notAvailable') || 'N/A')}</td>
+                    <td>{typeof sim.citation !== 'undefined' ? fmt(sim.citation) : (t('reviewPanels.notAvailable') || 'N/A')}</td>
                   </tr>
                 </tbody>
               </table>
@@ -399,7 +406,7 @@ const EvalPanel = ({ message, t, reviewMode }) => {
                       {Object.entries(evalObj.fallbackCompareChecks).map(([k, v]) => (
                         <tr key={`fcc-${k}`}>
                           <td>{k}</td>
-                          <td>{typeof v === 'object' && v !== null && 'p' in v ? String(v.p) : ''}</td>
+                          <td>{typeof v === 'object' && v !== null && 'p' in v ? fmt(v.p) : ''}</td>
                           <td><pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{typeof v === 'object' ? JSON.stringify(v, null, 2) : String(v)}</pre></td>
                         </tr>
                       ))}
