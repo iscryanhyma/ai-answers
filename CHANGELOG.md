@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.40.0](https://github.com/cds-snc/ai-answers/compare/v1.39.0...v1.40.0) (2025-09-22)
+
+
+### Features
+
+* Implement chat session handler with JWT token generation and se… ([f0b252c](https://github.com/cds-snc/ai-answers/commit/f0b252cd9ff1ba2d1f22a0acc0e81116ab83aac1))
+
 ## [1.39.0](https://github.com/cds-snc/ai-answers/compare/v1.38.0...v1.39.0) (2025-09-22)
 
 
