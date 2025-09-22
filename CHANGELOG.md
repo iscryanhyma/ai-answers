@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.38.0](https://github.com/cds-snc/ai-answers/compare/v1.37.4...v1.38.0) (2025-09-22)
+
+
+### Features
+
+* Implement fallback comparison check for interaction evaluations ([6dd5a3f](https://github.com/cds-snc/ai-answers/commit/6dd5a3f680565d1e00b28c9f47605eb63b2af9bc))
+* Implement localStorage persistence for filter panel state ([f1999de](https://github.com/cds-snc/ai-answers/commit/f1999deec02bae9e25bedcba5aa12c7d185688d3))
+
+
+### Bug Fixes
+
+* Correct indentation in loadSettings function and ensure proper loading of provider and logChats settings ([89a6d50](https://github.com/cds-snc/ai-answers/commit/89a6d50e6eadf4ba6e94039cc93c80c84403f69e))
+* Ensure EvalPanel displays correctly in review mode ([bc0cb7f](https://github.com/cds-snc/ai-answers/commit/bc0cb7f1df81e26e74b1409ff063f7be01759186))
+* Handle missing interactionId and chatId errors in eval-run handler ([7ac868f](https://github.com/cds-snc/ai-answers/commit/7ac868f8bf44c39d788d29dcc96cb3f26bbceca7))
+
+
+### Code Refactoring
+
+* Remove unused props from EvalPanel, ExpertFeedbackPanel, and PublicFeedbackPanel components ([3a860f6](https://github.com/cds-snc/ai-answers/commit/3a860f6ba78a75620abbe002c43471cfed6de6b6))
+
 ## [1.37.4](https://github.com/cds-snc/ai-answers/compare/v1.37.3...v1.37.4) (2025-09-18)
 
 
