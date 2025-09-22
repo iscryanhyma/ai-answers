@@ -34,6 +34,8 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
     return new Date(dateArr[0], dateArr[1] - 1, dateArr[2], timeArr[0], timeArr[1]);
   };
 
+  const STORAGE_KEY = 'chatFilterPanelState_v1';
+
   // Default to last 24 hours
   const getDefaultDates = useCallback(() => {
     const end = new Date();
@@ -49,6 +51,37 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
   const [presetValue, setPresetValue] = useState('1');
   const [department, setDepartment] = useState('');
   const [referringUrl, setReferringUrl] = useState('');
+
+  // Load saved state from localStorage (if available).
+  // Run on next tick so it overrides initial default/preset effects.
+  useEffect(() => {
+    try {
+      if (typeof window === 'undefined' || !window.localStorage) return;
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (!parsed) return;
+
+      setTimeout(() => {
+        try {
+          if (parsed.dateRange && parsed.dateRange.startDate && parsed.dateRange.endDate) {
+            setDateRange(parsed.dateRange);
+          }
+          if (parsed.filterType) setFilterType(parsed.filterType);
+          if (parsed.presetValue) setPresetValue(parsed.presetValue);
+          if (typeof parsed.department === 'string') setDepartment(parsed.department);
+          if (typeof parsed.referringUrl === 'string') setReferringUrl(parsed.referringUrl);
+        } catch (e) {
+          // ignore
+        }
+      }, 0);
+    } catch (err) {
+      // ignore corrupt localStorage entries
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+ 
 
   // Department options based on systemPrompt modules
   const departmentOptions = [
@@ -144,6 +177,26 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
     onApplyFilters(filters);
   };
 
+  // Also persist immediately when the user clicks Apply to avoid races
+  // where effects may not have flushed to localStorage before a reload.
+  const handleApplyWithPersist = () => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const payload = {
+          dateRange,
+          filterType,
+          presetValue,
+          department,
+          referringUrl
+        };
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      }
+    } catch (err) {
+      // ignore
+    }
+    handleApply();
+  };
+
   const handleClear = () => {
     const defaultDates = getDefaultDates();
     setDateRange(defaultDates);
@@ -151,6 +204,13 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
     setPresetValue('1');
     setDepartment('');
     setReferringUrl('');
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch (err) {
+      // ignore
+    }
     onClearFilters();
   };
 
@@ -419,7 +479,7 @@ const FilterPanel = ({ onApplyFilters, onClearFilters, isVisible = false }) => {
         <div className="filter-actions">
           <button
             type="button"
-            onClick={handleApply}
+            onClick={handleApplyWithPersist}
             className="filter-button filter-button-primary"
           >
             {t('admin.filters.apply')}

@@ -26,6 +26,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
 
+  const TABLE_STORAGE_KEY = `chatDashboard_tableState_v1_${lang}`;
+  const FILTER_PANEL_STORAGE_KEY = 'chatFilterPanelState_v1';
+
   const numberFormatter = useMemo(
     () => new Intl.NumberFormat(lang === 'fr' ? 'fr-CA' : 'en-CA'),
     [lang]
@@ -66,14 +69,74 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   }, []);
 
   useEffect(() => {
+    // On load, if we have a saved FilterPanel state, auto-apply it so the
+    // page reflects the last user selection. Otherwise fetch defaults.
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const raw = window.localStorage.getItem(FILTER_PANEL_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // Build filters in the same shape FilterPanel sends on Apply
+          const filters = {};
+          if (parsed) {
+            if (parsed.department) filters.department = parsed.department;
+            if (parsed.referringUrl) filters.referringUrl = parsed.referringUrl;
+            if (parsed.filterType) {
+              filters.filterType = parsed.filterType;
+              if (parsed.filterType === 'preset') {
+                filters.presetValue = parsed.presetValue;
+                if (parsed.presetValue !== 'all' && parsed.dateRange) {
+                  // convert stored local datetime-local strings to ISO if present
+                  if (parsed.dateRange.startDate) {
+                    const sd = new Date(parsed.dateRange.startDate);
+                    if (!Number.isNaN(sd.getTime())) filters.startDate = sd.toISOString();
+                  }
+                  if (parsed.dateRange.endDate) {
+                    const ed = new Date(parsed.dateRange.endDate);
+                    if (!Number.isNaN(ed.getTime())) filters.endDate = ed.toISOString();
+                  }
+                }
+              } else if (parsed.filterType === 'custom' && parsed.dateRange) {
+                if (parsed.dateRange.startDate) {
+                  const sd = new Date(parsed.dateRange.startDate);
+                  if (!Number.isNaN(sd.getTime())) filters.startDate = sd.toISOString();
+                }
+                if (parsed.dateRange.endDate) {
+                  const ed = new Date(parsed.dateRange.endDate);
+                  if (!Number.isNaN(ed.getTime())) filters.endDate = ed.toISOString();
+                }
+              }
+            }
+          }
+          // Use saved filters to fetch chats and reflect the UI
+          fetchChats(filters);
+          return;
+        }
+      }
+    } catch (e) {
+      // fall back to default fetch
+    }
     fetchChats({});
   }, [fetchChats]);
 
+  // When user applies filters, fetch with those filters but keep any
+  // existing table UI params (page/order/search). Only clear table params
+  // when the user explicitly clears filters.
   const handleApplyFilters = useCallback((filters) => {
     fetchChats(filters || {});
   }, [fetchChats]);
 
   const handleClearFilters = useCallback(() => {
+    // Clear saved table state so the DataTable resets to defaults.
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.removeItem(TABLE_STORAGE_KEY);
+      }
+    } catch (e) {
+      // ignore
+    }
+    // force DataTable re-init so restored state is reset
+    setTableKey((prev) => prev + 1);
     fetchChats({});
   }, [fetchChats]);
 
@@ -125,7 +188,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       </p>
 
       <FilterPanel
-        onApplyFilters={handleApplyFilters}
+        onApplyFilters={(filters) => { handleApplyFilters(filters); }}
         onClearFilters={handleClearFilters}
         isVisible={true}
       />
@@ -158,7 +221,80 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
             key={tableKey}
             data={rows}
             columns={columns}
-            options={{ paging: true, searching: true, ordering: true }}
+            options={{
+              paging: true,
+              searching: true,
+              ordering: true,
+              // Restore table state (order, page, length, search) from localStorage
+              stateSave: false,
+              order: (function() {
+                try {
+                  if (typeof window === 'undefined' || !window.localStorage) return [[2, 'desc']];
+                  const raw = window.localStorage.getItem(TABLE_STORAGE_KEY);
+                  if (!raw) return [[2, 'desc']];
+                  const parsed = JSON.parse(raw);
+                  if (!parsed) return [[2, 'desc']];
+                  // parsed may be object { order, page, length, search }
+                  if (Array.isArray(parsed.order) && parsed.order.length === 2) return [parsed.order];
+                  // Backwards compat: previously stored an array [col, dir]
+                  if (Array.isArray(parsed) && parsed.length === 2) return [parsed];
+                } catch (err) {
+                  // ignore
+                }
+                return [[2, 'desc']];
+              })(),
+              initComplete: function(settings, json) {
+                try {
+                  const table = this.api();
+
+                  // Restore page, length, and search if stored
+                  try {
+                    if (typeof window !== 'undefined' && window.localStorage) {
+                      const raw = window.localStorage.getItem(TABLE_STORAGE_KEY);
+                      if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed) {
+                          if (typeof parsed.length === 'number') {
+                            table.page.len(parsed.length);
+                          }
+                          if (typeof parsed.search === 'string' && parsed.search.length) {
+                            table.search(parsed.search).draw(false);
+                          }
+                          if (typeof parsed.page === 'number') {
+                            table.page(parsed.page).draw(false);
+                          }
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    // ignore restore errors
+                  }
+
+                  // Save full table state on relevant changes
+                  const saveState = () => {
+                    try {
+                      if (typeof window === 'undefined' || !window.localStorage) return;
+                      const st = {
+                        order: (() => { const o = table.order(); return Array.isArray(o[0]) ? o[0] : o; })(),
+                        page: table.page(),
+                        length: table.page.len(),
+                        search: table.search() || ''
+                      };
+                      window.localStorage.setItem(TABLE_STORAGE_KEY, JSON.stringify(st));
+                    } catch (err) {
+                      // ignore
+                    }
+                  };
+
+                  table.on('order.dt', saveState);
+                  table.on('page.dt', saveState);
+                  table.on('length.dt', saveState);
+                  table.on('search.dt', () => setTimeout(saveState, 0));
+                } catch (e) {
+                  // ignore
+                }
+              }
+            }}
           />
         </div>
       )}
