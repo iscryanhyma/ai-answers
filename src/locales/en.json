@@ -352,6 +352,7 @@
       "columns": {
         "chatId": "Chat ID",
         "department": "Department",
+        "expertEmail": "Expert email",
         "language": "Language",
         "questionCount": "Questions",
         "createdAt": "Created",

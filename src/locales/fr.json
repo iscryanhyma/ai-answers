@@ -389,6 +389,7 @@
       "columns": {
         "chatId": "ID de chat",
         "department": "Ministère",
+        "expertEmail": "Courriel de l'expert",
         "language": "Langue",
         "questionCount": "Questions",
         "createdAt": "Créé",
