@@ -320,7 +320,8 @@
   },
   "logging": {
     "title": "Visualiseur de chat",
-    "refresh": "Actualiser"
+    "refresh": "Afficher les journaux par niveau",
+    "refreshPending": "Patientez..."
   },
   "admin": {
   "title": "Tableau de bord d'administration de Réponses IA",

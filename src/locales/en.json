@@ -282,7 +282,8 @@
   },
   "logging": {
     "title": "Chat Viewer",
-    "refresh": "Refresh"
+    "refresh": "Display logs for level",
+    "refreshPending": "Please wait..."
   },
   "admin": {
   "title": "AI Answers Admin dashboard",
