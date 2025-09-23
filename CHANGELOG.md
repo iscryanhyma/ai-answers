@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.41.0](https://github.com/cds-snc/ai-answers/compare/v1.40.0...v1.41.0) (2025-09-23)
+
+
+### Features
+
+* Enhance chat dashboard with expert email integration and localization updates ([b7eaf14](https://github.com/cds-snc/ai-answers/commit/b7eaf14cf0616d638b8961b9dffe1be857848729))
+* Update logging functionality in ChatViewer with refresh state management and localization improvements ([b24688a](https://github.com/cds-snc/ai-answers/commit/b24688ab9919b7cbe22d0538260af81a50e77e5e))
+
+
+### Miscellaneous Chores
+
+* Review and update test instructions for ask-a-question feature ([332ccce](https://github.com/cds-snc/ai-answers/commit/332ccce919166cfed502365feb3176a241a11d5d))
+
 ## [1.40.0](https://github.com/cds-snc/ai-answers/compare/v1.39.0...v1.40.0) (2025-09-22)
 
 
