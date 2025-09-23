@@ -320,7 +320,8 @@
   },
   "logging": {
     "title": "Visualiseur de chat",
-    "refresh": "Actualiser"
+    "refresh": "Afficher les journaux par niveau",
+    "refreshPending": "Patientez..."
   },
   "admin": {
   "title": "Tableau de bord d'administration de Réponses IA",
@@ -389,6 +390,7 @@
       "columns": {
         "chatId": "ID de chat",
         "department": "Ministère",
+        "expertEmail": "Courriel de l'expert",
         "language": "Langue",
         "questionCount": "Questions",
         "createdAt": "Créé",

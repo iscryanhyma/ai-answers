@@ -92,7 +92,27 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    pipeline.push({ $project: { interactionContext: 0 } });
+    pipeline.push({
+      $lookup: {
+        from: 'expertfeedbacks',
+        localField: 'interactions.expertFeedback',
+        foreignField: '_id',
+        as: 'expertFeedbackDocs'
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
+        'interactions.expertEmail': {
+          $ifNull: [
+            { $arrayElemAt: ['$expertFeedbackDocs.expertEmail', 0] },
+            ''
+          ]
+        }
+      }
+    });
+
+    pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
 
     const andFilters = [];
     if (department) {
@@ -126,6 +146,9 @@ async function chatDashboardHandler(req, res) {
         createdAt: { $first: '$createdAt' },
         departments: {
           $addToSet: '$interactions.context.department'
+        },
+        expertEmails: {
+          $addToSet: '$interactions.expertEmail'
         }
       }
     });
@@ -159,6 +182,31 @@ async function chatDashboardHandler(req, res) {
               ]
             }
           }
+        },
+        expertEmail: {
+          $let: {
+            vars: {
+              filteredEmails: {
+                $filter: {
+                  input: '$expertEmails',
+                  as: 'email',
+                  cond: {
+                    $and: [
+                      { $ne: ['$$email', null] },
+                      { $ne: ['$$email', ''] }
+                    ]
+                  }
+                }
+              }
+            },
+            in: {
+              $cond: [
+                { $gt: [{ $size: '$$filteredEmails' }, 0] },
+                { $arrayElemAt: ['$$filteredEmails', 0] },
+                ''
+              ]
+            }
+          }
         }
       }
     });
@@ -171,6 +219,7 @@ async function chatDashboardHandler(req, res) {
     const chats = results.map((chat) => ({
       chatId: chat.chatId || '',
       department: chat.department || '',
+      expertEmail: chat.expertEmail || '',
       date: chat.createdAt ? chat.createdAt.toISOString() : null
     }));
 

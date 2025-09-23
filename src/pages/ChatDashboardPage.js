@@ -167,6 +167,11 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
       data: 'department'
     },
     {
+      title: t('admin.chatDashboard.columns.expertEmail', 'Expert email'),
+      data: 'expertEmail',
+      render: (value) => escapeHtmlAttribute(value || '')
+    },
+    {
       title: t('admin.chatDashboard.columns.date', 'Date'),
       data: 'date',
       render: (value) => formatDate(value)
