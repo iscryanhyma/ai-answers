@@ -137,7 +137,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // Clear saved table state so the DataTable resets to defaults.
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(TABLE_STORAGE_KEY);
+        window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY);
       }
     } catch (e) {
       // ignore
@@ -148,7 +148,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     try {
       if (tableApiRef.current) tableApiRef.current.ajax.reload();
     } catch (e) { /* ignore */ }
-  }, []);
+  }, [LOCAL_TABLE_STORAGE_KEY]);
 
   const resultsSummary = useMemo(() => {
     const template = t('admin.chatDashboard.resultsSummary', 'Total matching chats: {count}');
@@ -268,6 +268,27 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
             searching: false,
             ordering: true,
             order: [[4, 'desc']], // default to date desc
+            stateSave: true,
+            stateSaveCallback: function(settings, data) {
+              try {
+                if (typeof window !== 'undefined' && window.localStorage) {
+                  window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
+                }
+              } catch (e) {
+                // ignore
+              }
+            },
+            stateLoadCallback: function(settings) {
+              try {
+                if (typeof window !== 'undefined' && window.localStorage) {
+                  const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
+                  return stored ? JSON.parse(stored) : null;
+                }
+              } catch (e) {
+                // ignore
+              }
+              return null;
+            },
             ajax: async (dtParams, callback) => {
               try {
                 setLoading(true);
