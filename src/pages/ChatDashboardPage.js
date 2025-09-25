@@ -27,6 +27,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
+  const [dataTableReady, setDataTableReady] = useState(false);
   const [recordsTotal, setRecordsTotal] = useState(0);
   const [recordsFiltered, setRecordsFiltered] = useState(0);
 
@@ -108,11 +109,15 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
             }
           }
           filtersRef.current = filters;
+          // mark ready to render table after we've restored filters
+          setTimeout(() => setDataTableReady(true), 0);
         }
       }
     } catch (e) {
       // ignore
     }
+    // if no stored filters, still allow table to render
+    setTimeout(() => setDataTableReady(true), 0);
   }, []);
 
   // When user applies filters, fetch with those filters but keep any
@@ -137,17 +142,20 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     // Clear saved table state so the DataTable resets to defaults.
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
-        window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY);
+        // remove both the per-lang key and the base key for backwards compat
+        try { window.localStorage.removeItem(LOCAL_TABLE_STORAGE_KEY); } catch (e) { void e; }
+        try { window.localStorage.removeItem(TABLE_STORAGE_KEY); } catch (e) { void e; }
+        console.debug && console.debug('ChatDashboard: cleared local table storage', LOCAL_TABLE_STORAGE_KEY, TABLE_STORAGE_KEY);
       }
     } catch (e) {
-      // ignore
+      void e;
     }
     // force DataTable re-init so restored state is reset
     setTableKey((prev) => prev + 1);
     filtersRef.current = {};
     try {
       if (tableApiRef.current) tableApiRef.current.ajax.reload();
-    } catch (e) { /* ignore */ }
+    } catch (e) { void e; }
   }, [LOCAL_TABLE_STORAGE_KEY]);
 
   const resultsSummary = useMemo(() => {
@@ -258,84 +266,92 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
           <div>{resultsSummary}</div>
           <div>{totalSummary}</div>
         </div>
-        <DataTable
-          key={tableKey}
-          columns={columns}
-          options={{
-            processing: true,
-            serverSide: true,
-            paging: true,
-            searching: false,
-            ordering: true,
-            order: [[4, 'desc']], // default to date desc
-            stateSave: true,
-            stateSaveCallback: function(settings, data) {
-              try {
-                if (typeof window !== 'undefined' && window.localStorage) {
-                  window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
+        {dataTableReady ? (
+          <DataTable
+            key={tableKey}
+            columns={columns}
+            options={{
+              processing: true,
+              serverSide: true,
+              paging: true,
+              searching: false,
+              ordering: true,
+              order: [[4, 'desc']], // default to date desc
+              stateSave: true,
+              stateSaveCallback: function (settings, data) {
+                try {
+                  if (typeof window !== 'undefined' && window.localStorage) {
+                    window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(data));
+                    console.debug && console.debug('ChatDashboard: saved table state', LOCAL_TABLE_STORAGE_KEY, data);
+                  }
+                } catch (e) {
+                  // ignore
                 }
-              } catch (e) {
-                // ignore
-              }
-            },
-            stateLoadCallback: function(settings) {
-              try {
-                if (typeof window !== 'undefined' && window.localStorage) {
-                  const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
-                  return stored ? JSON.parse(stored) : null;
+              },
+              stateLoadCallback: function (settings) {
+                try {
+                  if (typeof window !== 'undefined' && window.localStorage) {
+                    const stored = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
+                    const parsed = stored ? JSON.parse(stored) : null;
+                    console.debug && console.debug('ChatDashboard: loaded table state', LOCAL_TABLE_STORAGE_KEY, parsed);
+                    return parsed;
+                  }
+                } catch (e) {
+                  // ignore
                 }
-              } catch (e) {
-                // ignore
+                return null;
+              },
+              ajax: async (dtParams, callback) => {
+                try {
+                  setLoading(true);
+                  setError(null);
+                  const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
+                  const orderBy = orderByForColumn(dtOrder.column);
+                  const orderDir = dtOrder.dir || 'desc';
+                  const query = {
+                    ...filtersRef.current,
+                    start: dtParams.start || 0,
+                    length: dtParams.length || 10,
+                    orderBy,
+                    orderDir,
+                    draw: dtParams.draw || 0
+                  };
+                  const result = await DashboardService.getChatDashboard(query);
+                  setRecordsTotal(result?.recordsTotal || 0);
+                  setRecordsFiltered(result?.recordsFiltered || 0);
+                  callback({
+                    draw: dtParams.draw || 0,
+                    recordsTotal: result?.recordsTotal || 0,
+                    recordsFiltered: result?.recordsFiltered || 0,
+                    data: Array.isArray(result?.data) ? result.data : []
+                  });
+                } catch (err) {
+                  console.error('Failed to load chat dashboard data', err);
+                  setError(err.message || String(err));
+                  callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
+                } finally {
+                  setLoading(false);
+                }
+              },
+              initComplete: function () {
+                try {
+                  const api = this.api();
+                  tableApiRef.current = api;
+                  console.debug && console.debug('ChatDashboard: DataTable initComplete');
+                  // Update counts after each xhr
+                  api.on('xhr.dt', function (_e, _settings, json) {
+                    try {
+                      setRecordsTotal((json && json.recordsTotal) || 0);
+                      setRecordsFiltered((json && json.recordsFiltered) || 0);
+                    } catch (e) { /* ignore */ }
+                  });
+                } catch (e) { /* ignore */ }
               }
-              return null;
-            },
-            ajax: async (dtParams, callback) => {
-              try {
-                setLoading(true);
-                setError(null);
-                const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
-                const orderBy = orderByForColumn(dtOrder.column);
-                const orderDir = dtOrder.dir || 'desc';
-                const query = {
-                  ...filtersRef.current,
-                  start: dtParams.start || 0,
-                  length: dtParams.length || 10,
-                  orderBy,
-                  orderDir,
-                  draw: dtParams.draw || 0
-                };
-                const result = await DashboardService.getChatDashboard(query);
-                setRecordsTotal(result?.recordsTotal || 0);
-                setRecordsFiltered(result?.recordsFiltered || 0);
-                callback({
-                  draw: dtParams.draw || 0,
-                  recordsTotal: result?.recordsTotal || 0,
-                  recordsFiltered: result?.recordsFiltered || 0,
-                  data: Array.isArray(result?.data) ? result.data : []
-                });
-              } catch (err) {
-                console.error('Failed to load chat dashboard data', err);
-                setError(err.message || String(err));
-                callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
-              } finally {
-                setLoading(false);
-              }
-            },
-            initComplete: function() {
-              try {
-                const api = this.api();
-                tableApiRef.current = api;
-                // Update counts after each xhr
-                api.on('xhr.dt', function(_e, _settings, json) {
-                  try {
-                    setRecordsTotal((json && json.recordsTotal) || 0);
-                    setRecordsFiltered((json && json.recordsFiltered) || 0);
-                  } catch (e) { /* ignore */ }
-                });
-              } catch (e) { /* ignore */ }
-            }
-          }}
-        />
+            }}
+          />
+        ) : (
+          <div>Initializing table...</div>
+        )}
       </div>
     </GcdsContainer>
   );
