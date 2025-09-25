@@ -2,12 +2,12 @@ import React, { useState, useCallback } from 'react';
 import { GcdsDetails } from '@cdssnc/gcds-components-react';
 import FeedbackService from '../../../services/FeedbackService.js';
 
-const PublicFeedbackPanel = ({ message, extractSentences, t }) => {
+const PublicFeedbackPanel = ({ message, t }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [data, setData] = useState(null);
 
-    const handleToggle = useCallback(async (e) => {
+    const handleToggle = useCallback(async () => {
         try {
             if (data) return;
             setLoading(true);
@@ -25,7 +25,7 @@ const PublicFeedbackPanel = ({ message, extractSentences, t }) => {
     if (!message) return null;
 
     const interaction = message.interaction || {};
-    const answer = interaction.answer || {};
+    
 
     // If we fetched data, API returns { publicFeedback: pf, sentences } — normalize to use pf
     const fetchedPublicFeedback = data && (data.publicFeedback || data);

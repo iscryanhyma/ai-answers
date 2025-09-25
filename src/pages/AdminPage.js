@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { GcdsContainer, GcdsLink } from '@cdssnc/gcds-components-react';
@@ -42,6 +40,7 @@ const AdminPage = ({ lang = 'en' }) => {
               {t('admin.navigation.aiAnswers', 'AI Answers')}
             </GcdsLink>
           </li>
+
           {/* Admin-only links */}
           <RoleBasedContent roles={["admin"]}>
             <li>
@@ -80,6 +79,7 @@ const AdminPage = ({ lang = 'en' }) => {
               </GcdsLink>
             </li>
           </RoleBasedContent>
+
           {/* Links for both roles */}
           <li>
             <GcdsLink href={`/${lang}/chat-viewer`}>
@@ -94,6 +94,11 @@ const AdminPage = ({ lang = 'en' }) => {
           <li>
             <GcdsLink href={`/${lang}/metrics`}>
               {t('admin.navigation.metrics', 'View performance metrics')}
+            </GcdsLink>
+          </li>
+          <li>
+            <GcdsLink href={`/${lang}/chat-dashboard`}>
+              {t('admin.navigation.chatDashboard', 'Chat dashboard')}
             </GcdsLink>
           </li>
           <li>
@@ -117,3 +122,4 @@ const AdminPage = ({ lang = 'en' }) => {
 };
 
 export default AdminPage;
+

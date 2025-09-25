@@ -3,9 +3,6 @@ import '../../styles/App.css';
 import { useTranslations } from '../../hooks/useTranslations.js';
 import { usePageContext, DEPARTMENT_MAPPINGS } from '../../hooks/usePageParam.js';
 import ChatInterface from './ChatInterface.js';
-import ExpertFeedbackPanel from './review/ExpertFeedbackPanel.js';
-import PublicFeedbackPanel from './review/PublicFeedbackPanel.js';
-import EvalPanel from './review/EvalPanel.js';
 import { ChatWorkflowService, RedactionError, ShortQueryValidation } from '../../services/ChatWorkflowService.js';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 

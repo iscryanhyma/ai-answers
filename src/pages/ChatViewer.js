@@ -15,6 +15,7 @@ const ChatViewer = () => {
   const [chatId, setChatId] = useState('');
   const [logs, setLogs] = useState([]);
   const [logLevel, setLogLevel] = useState('');
+  const [isRefreshingLogs, setIsRefreshingLogs] = useState(false);
   const tableRef = useRef(null);
   const dataTableRef = useRef(null);
   const [expandedMetadata, setExpandedMetadata] = useState(null);
@@ -222,17 +223,6 @@ const ChatViewer = () => {
     setChatId(newValue);
   };
 
-  // Explicitly refresh the chat ID from localStorage when button is clicked
-  const handleRefreshChatId = () => {
-    console.log('Refreshing chat ID from localStorage');
-    const storedChatId = localStorage.getItem('chatId');
-    if (storedChatId) {
-      console.log('Found chat ID in localStorage:', storedChatId);
-      setChatId(storedChatId);
-    } else {
-      console.log('No chat ID found in localStorage');
-    }
-  };
 
   const fetchLogs = async () => {
     if (!chatId) {
@@ -251,8 +241,17 @@ const ChatViewer = () => {
     }
   };
 
-  const handleRefreshLogs = () => {
-    fetchLogs();
+  const handleRefreshLogs = async () => {
+    if (!chatId || isRefreshingLogs) {
+      return;
+    }
+
+    setIsRefreshingLogs(true);
+    try {
+      await fetchLogs();
+    } finally {
+      setIsRefreshingLogs(false);
+    }
   };
 
   useEffect(() => {
@@ -301,11 +300,8 @@ const ChatViewer = () => {
                 className="form-control p-2 border rounded w-full"
               />
             </div>
-            <GcdsButton type="button" onClick={handleRefreshChatId} className="mt-4">
-              Refresh Chat ID from localStorage
-            </GcdsButton>
-          </div>
 
+          </div>
           <div className="space-y-6">
             <div className="flex gap-4 items-center">
               <div className="flex-shrink-0">
@@ -326,10 +322,10 @@ const ChatViewer = () => {
               </div>
               <GcdsButton
                 type="button"
-                disabled={!chatId}
+                disabled={!chatId || isRefreshingLogs}
                 onClick={handleRefreshLogs}
               >
-                {t('logging.refresh')}
+                {isRefreshingLogs ? t('logging.refreshPending') : t('logging.refresh')}
               </GcdsButton>
             </div>
 

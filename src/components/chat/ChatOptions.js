@@ -79,6 +79,7 @@ const ChatOptions = ({
               >
                 <option value="Default">Default</option>
                 <option value="DefaultWithVector">DefaultWithVector</option>
+                <option value="DefaultWithVectorGraph">DefaultWithVectorGraph</option>
               </select>
             </div>
           </div>
@@ -139,3 +140,4 @@ const ChatOptions = ({
 };
 
 export default ChatOptions;
+

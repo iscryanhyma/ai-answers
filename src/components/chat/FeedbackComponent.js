@@ -25,7 +25,7 @@ const FeedbackComponent = ({
   const [publicPositive, setPublicPositive] = useState(true);
   const hasExpertRole = useHasAnyRole(['admin', 'partner']);
 
-  const handleFeedback = async (isPositive) => {
+  const handleFeedback = (isPositive) => {
     let feedbackPayload = null;
     if (isPositive) {
       if (hasExpertRole) {
@@ -34,12 +34,8 @@ const FeedbackComponent = ({
           feedback: 'positive',
           totalScore: 100,
         };
-        try {
-          await FeedbackService.persistExpertFeedback({ chatId, interactionId: userMessageId, expertFeedback: feedbackPayload });
-          setFeedbackGiven(true);
-        } catch (e) {
-          setFeedbackError(true);
-        }
+        FeedbackService.persistExpertFeedback({ chatId, interactionId: userMessageId, expertFeedback: feedbackPayload });
+        setFeedbackGiven(true);
       } else {
         setPublicPositive(true);
         setShowPublicRating(true);
@@ -53,28 +49,20 @@ const FeedbackComponent = ({
       }
     }
   };
-  const handleExpertFeedback = async (expertFeedback) => {
+  const handleExpertFeedback = (expertFeedback) => {
     console.log('Expert feedback received:', expertFeedback);
     const feedbackWithType = {
       ...expertFeedback,
       type: 'expert'
     };
     setShowExpertRating(false);
-    try {
-      await FeedbackService.persistExpertFeedback({ chatId, interactionId: userMessageId, expertFeedback: feedbackWithType });
-      setFeedbackGiven(true);
-    } catch (e) {
-      setFeedbackError(true);
-    }
+    FeedbackService.persistExpertFeedback({ chatId, interactionId: userMessageId, expertFeedback: feedbackWithType });
+    setFeedbackGiven(true);
   };
 
-  const handlePublicFeedback = async (publicFeedback) => {
-    try {
-      await FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback });
-      setFeedbackGiven(true);
-    } catch (e) {
-      setFeedbackError(true);
-    }
+  const handlePublicFeedback = (publicFeedback) => {
+    FeedbackService.persistPublicFeedback({ chatId, interactionId: userMessageId, publicFeedback });
+    setFeedbackGiven(true);
     setShowPublicRating(false);
   };
 

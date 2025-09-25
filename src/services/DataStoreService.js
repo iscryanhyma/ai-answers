@@ -1,4 +1,4 @@
-import { getApiUrl } from '../utils/apiToUrl.js';
+﻿import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
 
 class DataStoreService {
@@ -87,7 +87,7 @@ class DataStoreService {
   
   static async getChatSession(sessionId) {
     try {
-      const response = await fetch(getApiUrl(`db-chat-session?sessionId=${sessionId}`));
+      const response = await fetch(getApiUrl(`chat-session`));
       if (!response.ok) throw new Error('Failed to get chat session');
       return await response.json();
     } catch (error) {
@@ -244,3 +244,5 @@ class DataStoreService {
 }
 
 export default DataStoreService;
+
+

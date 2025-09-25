@@ -1,6 +1,7 @@
 import  { useEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
+import ChatDashboardPage from './pages/ChatDashboardPage.js';
 import AdminPage from './pages/AdminPage.js';
 import BatchPage from './pages/BatchPage.js';
 import ChatViewer from './pages/ChatViewer.js';
@@ -33,6 +34,12 @@ const getAlternatePath = (currentPath, currentLang) => {
 
   // Split into segments. Leading slash produces an empty first segment.
   const segments = currentPath.split('/'); // ['', 'ai-answers', 'en', 'page']
+  // Debug: log incoming path and computed segments
+  try {
+    console.debug('[getAlternatePath] currentPath:', currentPath, 'currentLang:', currentLang, 'segments:', segments);
+  } catch (e) {
+    // ignore in non-browser environments
+  }
   const prefixes = ['ai-answers', 'reponses-ia'];
 
   const hadPrefix = segments[1] && prefixes.includes(segments[1]);
@@ -59,15 +66,45 @@ const getAlternatePath = (currentPath, currentLang) => {
     newSegments.push(...restSegments.filter(Boolean));
   }
 
-  return newSegments.join('/') || `/${newLang}`;
+  const result = newSegments.join('/') || `/${newLang}`;
+  try {
+    console.debug('[getAlternatePath] hadPrefix:', hadPrefix, 'langIndex:', langIndex, 'hasLang:', hasLang, 'restSegments:', restSegments, 'result:', result);
+  } catch (e) {
+    // ignore
+  }
+  return result;
 };
 
 // Compute both the current language and the alternate lang href (preserving search/hash).
 // Returns an object: { alternateLangHref, currentLang }
 const computeAlternateLangHref = (location) => {
-  const path = location.pathname || '/';
+  // location is the object from react-router; pathname does not include protocol/host
+  try {
+    console.debug('[computeAlternateLangHref] location:', location);
+  } catch (e) {
+    // ignore
+  }
+
+  const path = (location && location.pathname) || '/';
   const pathSegments = path.split('/');
+  // Debug: show computed path and segments
+  try {
+    console.debug('[computeAlternateLangHref] path:', path, 'pathSegments:', pathSegments);
+  } catch (e) {
+    // ignore
+  }
   const prefixes = { 'ai-answers': 'en', 'reponses-ia': 'fr' };
+
+  // Detect host-based prefix (subdomain) like ai-answers.alpha.canada.ca
+  // react-router's location object doesn't include `hostname`/`protocol` in the
+  // browser; fall back to `window.location` when available.
+  const runtimeHostname = (location && location.hostname) || (typeof window !== 'undefined' && window.location && window.location.hostname) || '';
+  const runtimeProtocol = (location && location.protocol) || (typeof window !== 'undefined' && window.location && window.location.protocol) || '';
+  // Use host (may include port) for replacement so we can preserve ports like :3000
+  const runtimeHostWithPort = (typeof window !== 'undefined' && window.location && window.location.host) || runtimeHostname;
+  const hostPrefixMatch = runtimeHostname.match(/^(ai-answers|reponses-ia)(?:\.|$)/);
+  const hostPrefix = hostPrefixMatch ? hostPrefixMatch[1] : null;
+  const hadHostPrefix = !!hostPrefix;
 
   let currentLang = 'en';
   if (pathSegments[1] === 'en' || pathSegments[1] === 'fr') {
@@ -76,14 +113,52 @@ const computeAlternateLangHref = (location) => {
     if (pathSegments[2] === 'en' || pathSegments[2] === 'fr') {
       currentLang = pathSegments[2];
     } else {
-      currentLang = prefixes[pathSegments[1]]; // infer from prefix
+      currentLang = prefixes[pathSegments[1]]; // infer from path prefix
     }
   } else if (pathSegments[2] && (pathSegments[2] === 'en' || pathSegments[2] === 'fr')) {
     currentLang = pathSegments[2];
+  } else if (hadHostPrefix) {
+    // Infer language from host prefix when path doesn't contain language or site prefix
+    currentLang = prefixes[hostPrefix] || currentLang;
+  }
+
+  try {
+    console.debug('[computeAlternateLangHref] hostname:', runtimeHostname, 'hostPrefix:', hostPrefix, 'hadHostPrefix:', hadHostPrefix, 'currentLang:', currentLang);
+  } catch (e) {
+    // ignore
   }
 
   const alternatePath = getAlternatePath(path, currentLang);
-  const alternateLangHref = `${alternatePath}${location.search || ''}${location.hash || ''}`;
+
+  // If the original site uses a host prefix (subdomain), toggle that subdomain
+  // and return an absolute URL; otherwise return a relative path. Use the
+  // runtimeProtocol/runtimeHostWithPort computed above and preserve search/hash
+  // by falling back to window.location when react-router's location doesn't
+  // include them.
+  const langToPrefix = { en: 'ai-answers', fr: 'reponses-ia' };
+  const newLang = currentLang === 'en' ? 'fr' : 'en';
+  let alternateLangHref;
+  if (hadHostPrefix) {
+    // Replace the first label of the hostname while preserving any port.
+    const [hostOnly, port] = runtimeHostWithPort.split(':');
+    const hostLabels = hostOnly.split('.');
+    hostLabels[0] = langToPrefix[newLang];
+    const newHost = hostLabels.join('.') + (port ? ':' + port : '');
+    const search = (location && location.search) || (typeof window !== 'undefined' ? window.location.search : '');
+    const hash = (location && location.hash) || (typeof window !== 'undefined' ? window.location.hash : '');
+    alternateLangHref = `${runtimeProtocol}//${newHost}${alternatePath}${search || ''}${hash || ''}`;
+  } else {
+    const search = (location && location.search) || (typeof window !== 'undefined' ? window.location.search : '');
+    const hash = (location && location.hash) || (typeof window !== 'undefined' ? window.location.hash : '');
+    alternateLangHref = `${alternatePath}${search || ''}${hash || ''}`;
+  }
+
+  try {
+    console.debug('[computeAlternateLangHref] currentLang:', currentLang, 'alternatePath:', alternatePath, 'alternateLangHref:', alternateLangHref);
+  } catch (e) {
+    // ignore
+  }
+
   return { alternateLangHref, currentLang };
 };
 
@@ -160,6 +235,8 @@ export default function App() {
     ];
 
     const protectedRoutes = [
+      { path: '/en/chat-dashboard', element: <ChatDashboardPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/chat-dashboard', element: <ChatDashboardPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/admin', element: <AdminPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/admin', element: <AdminPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/batch', element: <BatchPage lang="en" />, roles: ['admin'] },
