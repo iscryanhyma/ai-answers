@@ -301,6 +301,7 @@
       "eval": "Evaluation Administration",
       "metrics": "View performance metrics",
       "publicEval": "Public Evaluation",
+  "sessions": "Active Sessions",
       "chatDashboard": "Chat dashboard",
       "logout": "Sign out",
       "vector": "Vector Administration"
@@ -358,9 +359,15 @@
       "chatId": "Chat ID",
       "lastSeen": "Last seen",
       "requests": "Requests",
-      "errors": "Errors",
+  "errors": "Total errors",
+      "errorTypes": {
+        "redaction": "Redactions",
+        "shortQuery": "Short queries",
+        "other": "Other errors"
+      },
       "lastLatency": "Last latency (ms)",
       "avgLatency": "Avg latency (ms)",
+      "rpm": "Requests / minute",
       "errorLoading": "Failed to load sessions: {status} {text}",
       "errorGeneric": "Error: {message}"
     },

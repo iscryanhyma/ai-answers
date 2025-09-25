@@ -339,6 +339,7 @@
       "eval": "Administration des évaluations",
       "metrics": "Voir les métriques de performance",
       "publicEval": "Évaluation publique",
+  "sessions": "Sessions actives",
       "logout": "Se déconnecter",
       "vector": "Administration des vecteurs"
     },

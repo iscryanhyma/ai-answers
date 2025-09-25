@@ -100,6 +100,12 @@ class SessionManagementService {
   errorCount: 0,
   totalLatencyMs: 0,
   lastLatencyMs: 0
+      ,
+      // timestamps of requests (ms since epoch) used to compute RPM
+      requestTimestamps: []
+  ,
+  // per-error-type counters: { <type>: count }
+  errorTypes: {}
       };
       this.sessions.set(chatId, session);
     } else {
@@ -117,14 +123,32 @@ class SessionManagementService {
     return true;
   }
 
-  recordRequest(chatId, { latencyMs = 0, error = false } = {}) {
+  recordRequest(chatId, { latencyMs = 0, error = false, errorType = null } = {}) {
     const session = this.sessions.get(chatId);
     if (!session) return false;
     session.requestCount = (session.requestCount || 0) + 1;
     if (error) session.errorCount = (session.errorCount || 0) + 1;
+    // support errorType counting when provided
+    if (errorType) {
+      session.errorTypes = session.errorTypes || {};
+      session.errorTypes[errorType] = (session.errorTypes[errorType] || 0) + 1;
+    }
     if (typeof latencyMs === 'number' && latencyMs >= 0) {
       session.lastLatencyMs = latencyMs;
       session.totalLatencyMs = (session.totalLatencyMs || 0) + latencyMs;
+    }
+    // record timestamp for RPM calculation
+    try {
+      const now = Date.now();
+      session.requestTimestamps = session.requestTimestamps || [];
+      session.requestTimestamps.push(now);
+      // keep timestamps bounded by pruning anything older than 5 minutes
+      const pruneBefore = now - (5 * 60 * 1000);
+      let i = 0;
+      while (i < session.requestTimestamps.length && session.requestTimestamps[i] < pruneBefore) i++;
+      if (i > 0) session.requestTimestamps.splice(0, i);
+    } catch (e) {
+      // ignore timestamp recording errors
     }
     return true;
   }
@@ -139,8 +163,34 @@ class SessionManagementService {
         ttl: v.ttl,
         requestCount: v.requestCount || 0,
         errorCount: v.errorCount || 0,
+        // expose per-error-type counts and an "other" bucket
+        errorTypes: v.errorTypes || {},
+        errorTypesOther: (() => {
+          try {
+            const byType = v.errorTypes || {};
+            const sumSpecific = Object.values(byType).reduce((a, b) => a + b, 0);
+            const other = (v.errorCount || 0) - sumSpecific;
+            return other > 0 ? other : 0;
+          } catch (e) {
+            return 0;
+          }
+        })(),
         lastLatencyMs: v.lastLatencyMs || 0,
-        avgLatencyMs: v.requestCount ? Math.round((v.totalLatencyMs || 0) / v.requestCount) : 0
+        avgLatencyMs: v.requestCount ? Math.round((v.totalLatencyMs || 0) / v.requestCount) : 0,
+        // requests per minute: count of requests in the last 60 seconds
+        rpm: (() => {
+          try {
+            const now = Date.now();
+            const mts = v.requestTimestamps || [];
+            let count = 0;
+            for (let i = mts.length - 1; i >= 0; i--) {
+              if (now - mts[i] <= 60 * 1000) count++; else break;
+            }
+            return count;
+          } catch (e) {
+            return 0;
+          }
+        })()
       });
     }
     return out;
