@@ -347,9 +347,22 @@
         "requests": "Requests",
         "errors": "Errors",
         "lastLatency": "Last latency (ms)",
-        "avgLatency": "Avg latency (ms)"
+        "avgLatency": "Avg latency (ms)",
+        "errorLoading": "Failed to load sessions: {status} {text}",
+        "errorGeneric": "Error: {message}"
       },
       "date": "Date"
+    },
+    "session": {
+      "title": "Sessions",
+      "chatId": "Chat ID",
+      "lastSeen": "Last seen",
+      "requests": "Requests",
+      "errors": "Errors",
+      "lastLatency": "Last latency (ms)",
+      "avgLatency": "Avg latency (ms)",
+      "errorLoading": "Failed to load sessions: {status} {text}",
+      "errorGeneric": "Error: {message}"
     },
     "chatDashboard": {
       "title": "Chat dashboard",

@@ -385,8 +385,21 @@
         "requests": "Requêtes",
         "errors": "Erreurs",
         "lastLatency": "Dernière latence (ms)",
-        "avgLatency": "Latence moyenne (ms)"
+        "avgLatency": "Latence moyenne (ms)",
+        "errorLoading": "Échec du chargement des sessions : {status} {text}",
+        "errorGeneric": "Erreur : {message}"
       }
+    },
+    "session": {
+      "title": "Sessions",
+      "chatId": "ID de chat",
+      "lastSeen": "Dernière activité",
+      "requests": "Requêtes",
+      "errors": "Erreurs",
+      "lastLatency": "Dernière latence (ms)",
+      "avgLatency": "Latence moyenne (ms)",
+      "errorLoading": "Échec du chargement des sessions : {status} {text}",
+      "errorGeneric": "Erreur : {message}"
     },
     "chatDashboard": {
       "title": "Tableau de bord de chat",
