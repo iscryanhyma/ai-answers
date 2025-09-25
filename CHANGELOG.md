@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.42.0](https://github.com/cds-snc/ai-answers/compare/v1.41.0...v1.42.0) (2025-09-25)
+
+
+### Features
+
+* Add filter handling functionality in ChatDashboardPage ([a897c1f](https://github.com/cds-snc/ai-answers/commit/a897c1fa8782fb1b1029e006e2db9a261c2db02f))
+* Add filter handling functionality in ChatDashboardPage ([241b9a2](https://github.com/cds-snc/ai-answers/commit/241b9a2f8e42e1b57107ddca0c9a73925fc9ee47))
+* Enhance chat dashboard with pagination support, creator email d… ([e6ba590](https://github.com/cds-snc/ai-answers/commit/e6ba5908d9ae2fa1cfbf7cae1c4d163d5a586cc7))
+* Enhance chat dashboard with pagination support, creator email display, and localization updates ([2793a86](https://github.com/cds-snc/ai-answers/commit/2793a8669f6629a0cdead08f83e820398bc72fae))
+* Implement local storage management for table state in ChatDashboardPage ([e014d50](https://github.com/cds-snc/ai-answers/commit/e014d50cf1735a0b277c5fb491724a4ec7ebca03))
+
 ## [1.41.0](https://github.com/cds-snc/ai-answers/compare/v1.40.0...v1.41.0) (2025-09-23)
 
 
