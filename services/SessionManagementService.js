@@ -41,9 +41,13 @@ class SessionManagementService {
   constructor() {
     // Map chatId -> { chatId, createdAt, lastSeen, ttl, bucket }
     this.sessions = new Map();
-    this.defaultTTL = 1000 * 60 * 60; // 1 hour
-    this.cleanupInterval = 1000 * 60; // 1 minute
-    this.maxSessions = 1000; // default capacity
+    this.defaultTTL = 1000 * 60 * 60; // 1 hour fallback
+    this.cleanupInterval = 1000 * 60; // 1 minute fallback
+    this.maxSessions = 1000; // default capacity fallback
+    // default rate limit applied to new sessions unless overridden (fallback)
+    this.defaultRateLimit = { capacity: 60, refillPerSec: 1 };
+    // NOTE: we no longer load settings at construction. Session settings are read
+    // live from SettingsService (which caches values) when needed.
     this._startCleanup();
   }
 
@@ -73,21 +77,41 @@ class SessionManagementService {
     return this.sessions.size < this.maxSessions;
   }
 
-  register(chatId, {ttlMs, rateLimit} = {}) {
+  async register(chatId, {ttlMs, rateLimit} = {}) {
     if (!chatId) throw new Error('chatId required');
     if (!this.hasCapacity() && !this.sessions.has(chatId)) {
       return {ok: false, reason: 'capacity'};
     }
 
     const now = Date.now();
-    const ttl = ttlMs || this.defaultTTL;
+    // Determine TTL: prefer explicit ttlMs, otherwise read live setting
+    let ttl = ttlMs || this.defaultTTL;
+    try {
+      const { SettingsService } = await import('./SettingsService.js');
+      const ttlM = Number(await SettingsService.get('session.defaultTTLMinutes')) || null;
+      if (!ttlMs && ttlM !== null) ttl = ttlM * 60 * 1000;
+    } catch (e) {
+      // ignore and use fallback
+    }
 
     let session = this.sessions.get(chatId);
     if (!session) {
-      // create token bucket for rate limiting
+      // create token bucket for rate limiting. If caller provided rateLimit use it,
+      // otherwise read live values from SettingsService (cached) and fall back.
+      let rl = rateLimit || this.defaultRateLimit;
+      try {
+        const { SettingsService } = await import('./SettingsService.js');
+        const capacity = Number(await SettingsService.get('session.rateLimitCapacity')) || null;
+        const refill = Number(await SettingsService.get('session.rateLimitRefillPerSec')) || null;
+        if (!rateLimit && (capacity !== null || refill !== null)) {
+          rl = { capacity: capacity || this.defaultRateLimit.capacity, refillPerSec: refill || this.defaultRateLimit.refillPerSec };
+        }
+      } catch (e) {
+        // ignore and use fallback
+      }
       const bucket = new TokenBucket({
-        capacity: rateLimit?.capacity ?? 60,
-        refillPerSec: rateLimit?.refillPerSec ?? 1
+        capacity: rl.capacity,
+        refillPerSec: rl.refillPerSec
       });
       session = {
         chatId,
@@ -114,6 +138,16 @@ class SessionManagementService {
     }
 
     return {ok: true, session};
+  }
+
+
+  getCurrentSettings() {
+    return {
+      defaultTTLMs: this.defaultTTL,
+      cleanupIntervalMs: this.cleanupInterval,
+      rateLimit: this.defaultRateLimit,
+      maxSessions: this.maxSessions
+    };
   }
 
   touch(chatId) {

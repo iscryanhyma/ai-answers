@@ -5,7 +5,8 @@ const secretKey = process.env.JWT_SECRET_KEY || 'dev-secret';
 
 // Express/Next.js style middleware
 export default function sessionMiddleware(options = {}) {
-  const rateLimit = options.rateLimit || {capacity: 60, refillPerSec: 1};
+  // Rate limit configuration should come from SessionManagementService (which reads persisted
+  // settings from SettingsService). Do not allow middleware to override capacity/refill.
 
   return async function (req, res, next) {
     try {
@@ -42,7 +43,8 @@ export default function sessionMiddleware(options = {}) {
           return res.end('Server capacity exceeded, try again later');
         }
 
-        const r = SessionManagementService.register(chatId, {rateLimit});
+        // Register without passing a local rateLimit so the service applies its configured defaults.
+        const r = await SessionManagementService.register(chatId);
         if (!r.ok) {
           res.statusCode = 503;
           return res.end('Could not register session');
