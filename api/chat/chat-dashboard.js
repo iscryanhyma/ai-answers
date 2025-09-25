@@ -1,5 +1,6 @@
 ﻿import dbConnect from '../db/db-connect.js';
 import { Chat } from '../../models/chat.js';
+import mongoose from 'mongoose';
 import { authMiddleware, partnerOrAdminMiddleware, withProtection } from '../../middleware/auth.js';
 
 const HOURS_IN_DAY = 24;
@@ -49,16 +50,43 @@ async function chatDashboardHandler(req, res) {
       endDate,
       filterType,
       presetValue,
-      limit: limitParam
+      limit: limitParam,
+      lastId: lastIdParam,
+      start: startParam,
+      length: lengthParam,
+      orderBy: orderByParam,
+      orderDir: orderDirParam,
+      draw: drawParam
     } = req.query;
 
     const dateRange = getDateRange({ startDate, endDate, filterType, presetValue });
-    const limit = Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 2000);
+  const limit = Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 2000);
+  const start = Number.isFinite(parseInt(startParam, 10)) ? parseInt(startParam, 10) : 0;
+  const length = Number.isFinite(parseInt(lengthParam, 10)) ? parseInt(lengthParam, 10) : null;
+  const orderBy = orderByParam || 'createdAt';
+  const orderDir = (orderDirParam || 'desc').toLowerCase() === 'asc' ? 1 : -1;
+  const isDataTablesMode = length !== null; // when length provided, use offset/limit style
 
+    // Build initial match for createdAt and optional lastId for pagination
     const pipeline = [];
-
+    const initialMatch = {};
     if (dateRange) {
-      pipeline.push({ $match: { createdAt: dateRange } });
+      initialMatch.createdAt = dateRange;
+    }
+
+    let lastId = null;
+    if (!isDataTablesMode && lastIdParam) {
+      try {
+        lastId = mongoose.Types.ObjectId(lastIdParam);
+        // For descending sort, get documents with _id < lastId
+        initialMatch._id = { $lt: lastId };
+      } catch (err) {
+        return res.status(400).json({ error: 'Invalid lastId' });
+      }
+    }
+
+    if (Object.keys(initialMatch).length) {
+      pipeline.push({ $match: initialMatch });
     }
 
     pipeline.push({
@@ -112,7 +140,23 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
+    // Lookup user who created the chat to include their email
+    pipeline.push({
+      $lookup: {
+        from: 'users',
+        localField: 'user',
+        foreignField: '_id',
+        as: 'creator'
+      }
+    });
+
+    pipeline.push({
+      $addFields: {
+        creatorEmail: { $ifNull: [{ $arrayElemAt: ['$creator.email', 0] }, ''] }
+      }
+    });
+
+  pipeline.push({ $project: { interactionContext: 0, expertFeedbackDocs: 0 } });
 
     const andFilters = [];
     if (department) {
@@ -144,6 +188,7 @@ async function chatDashboardHandler(req, res) {
         _id: '$_id',
         chatId: { $first: '$chatId' },
         createdAt: { $first: '$createdAt' },
+        creatorEmail: { $first: '$creatorEmail' },
         departments: {
           $addToSet: '$interactions.context.department'
         },
@@ -155,9 +200,10 @@ async function chatDashboardHandler(req, res) {
 
     pipeline.push({
       $project: {
-        _id: 0,
+        // keep _id so we can use it as a cursor for pagination
         chatId: 1,
         createdAt: 1,
+        creatorEmail: 1,
         department: {
           $let: {
             vars: {
@@ -211,19 +257,62 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
-    pipeline.push({ $sort: { createdAt: -1 } });
-    pipeline.push({ $limit: limit });
 
-    const results = await Chat.aggregate(pipeline).allowDiskUse(true);
+    // Keep a copy of pipeline before adding sort/limit to calculate totalCount
+    const pipelineBeforeSortLimit = pipeline.slice();
+
+    // Dynamic sort mapping
+    const sortFieldMap = {
+      createdAt: 'createdAt',
+      chatId: 'chatId',
+      department: 'department',
+      expertEmail: 'expertEmail',
+      creatorEmail: 'creatorEmail'
+    };
+    const sortField = sortFieldMap[orderBy] || 'createdAt';
+    const sortStage = { $sort: { [sortField]: orderDir, _id: orderDir } };
+    pipeline.push(sortStage);
+
+    if (isDataTablesMode) {
+      if (start > 0) pipeline.push({ $skip: start });
+      pipeline.push({ $limit: Math.min(Math.max(length, 1), 2000) });
+    } else {
+      pipeline.push({ $limit: limit });
+    }
+
+  const results = await Chat.aggregate(pipeline).allowDiskUse(true);
+
+    // Calculate totalCount using a count aggregation that mirrors the pipeline up to grouping/project
+  const countPipeline = pipelineBeforeSortLimit.slice();
+  countPipeline.push({ $group: { _id: '$_id' } });
+  countPipeline.push({ $count: 'totalCount' });
+    const countResult = await Chat.aggregate(countPipeline).allowDiskUse(true);
+    const totalCount = (countResult && countResult[0] && countResult[0].totalCount) || 0;
 
     const chats = results.map((chat) => ({
+      _id: chat._id ? String(chat._id) : '',
       chatId: chat.chatId || '',
       department: chat.department || '',
       expertEmail: chat.expertEmail || '',
+      creatorEmail: chat.creatorEmail || '',
       date: chat.createdAt ? chat.createdAt.toISOString() : null
     }));
 
-    return res.status(200).json({ chats });
+    if (isDataTablesMode) {
+      // DataTables server-side response format
+      const draw = Number.isFinite(parseInt(drawParam, 10)) ? parseInt(drawParam, 10) : 0;
+      return res.status(200).json({
+        draw,
+        recordsTotal: totalCount,
+        recordsFiltered: totalCount,
+        data: chats
+      });
+    }
+
+    // Cursor-based response for batch loading
+    const nextLastId = chats.length > 0 && chats.length === limit ? chats[chats.length - 1]._id : null;
+    const progress = totalCount > 0 ? `${Math.min(Math.round((chats.length / totalCount) * 100), 100)}%` : '100%';
+    return res.status(200).json({ success: true, logs: chats, lastId: nextLastId, totalCount, progress });
   } catch (error) {
     console.error('Failed to fetch chat dashboard data', error);
     return res.status(500).json({

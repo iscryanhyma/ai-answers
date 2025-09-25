@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
 import DataTable from 'datatables.net-react';
 import DT from 'datatables.net-dt';
@@ -23,10 +23,15 @@ const TABLE_STORAGE_KEY = `chatDashboard_tableState_v1_`;
 
 const ChatDashboardPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
-  const [rows, setRows] = useState([]);
+  const [rows, setRows] = useState([]); // retained for compatibility but unused in server-side mode
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [tableKey, setTableKey] = useState(0);
+  const [recordsTotal, setRecordsTotal] = useState(0);
+  const [recordsFiltered, setRecordsFiltered] = useState(0);
+
+  const tableApiRef = useRef(null);
+  const filtersRef = useRef({});
 
   const LOCAL_TABLE_STORAGE_KEY = `${TABLE_STORAGE_KEY}${lang}`;
   const FILTER_PANEL_STORAGE_KEY = 'chatFilterPanelState_v1';
@@ -53,32 +58,25 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
   }, [lang]);
 
-  const fetchChats = useCallback(async (filters = {}) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await DashboardService.getChatDashboard(filters || {});
-      const chatRows = Array.isArray(data?.chats) ? data.chats : [];
-      setRows(chatRows);
-      setTableKey((prev) => prev + 1);
-    } catch (err) {
-      console.error('Failed to load chat dashboard data', err);
-      setRows([]);
-      setError(err.message || String(err));
-    } finally {
-      setLoading(false);
+  // Map DataTables column index to API orderBy fields
+  const orderByForColumn = useCallback((colIdx) => {
+    switch (colIdx) {
+      case 0: return 'chatId';
+      case 1: return 'department';
+      case 2: return 'expertEmail';
+      case 3: return 'creatorEmail';
+      case 4: return 'createdAt';
+      default: return 'createdAt';
     }
   }, []);
 
   useEffect(() => {
-    // On load, if we have a saved FilterPanel state, auto-apply it so the
-    // page reflects the last user selection. Otherwise fetch defaults.
+    // On load, if we have a saved FilterPanel state, restore it to filtersRef
     try {
       if (typeof window !== 'undefined' && window.localStorage) {
         const raw = window.localStorage.getItem(FILTER_PANEL_STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          // Build filters in the same shape FilterPanel sends on Apply
           const filters = {};
           if (parsed) {
             if (parsed.department) filters.department = parsed.department;
@@ -88,7 +86,6 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
               if (parsed.filterType === 'preset') {
                 filters.presetValue = parsed.presetValue;
                 if (parsed.presetValue !== 'all' && parsed.dateRange) {
-                  // convert stored local datetime-local strings to ISO if present
                   if (parsed.dateRange.startDate) {
                     const sd = new Date(parsed.dateRange.startDate);
                     if (!Number.isNaN(sd.getTime())) filters.startDate = sd.toISOString();
@@ -110,23 +107,31 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
               }
             }
           }
-          // Use saved filters to fetch chats and reflect the UI
-          fetchChats(filters);
-          return;
+          filtersRef.current = filters;
         }
       }
     } catch (e) {
-      // fall back to default fetch
+      // ignore
     }
-    fetchChats({});
-  }, [fetchChats]);
+  }, []);
 
   // When user applies filters, fetch with those filters but keep any
   // existing table UI params (page/order/search). Only clear table params
   // when the user explicitly clears filters.
   const handleApplyFilters = useCallback((filters) => {
-    fetchChats(filters || {});
-  }, [fetchChats]);
+    filtersRef.current = filters || {};
+    // trigger table reload if available
+    try {
+      if (tableApiRef.current) {
+        tableApiRef.current.ajax.reload();
+      } else {
+        // if table not ready, force re-init
+        setTableKey((prev) => prev + 1);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   const handleClearFilters = useCallback(() => {
     // Clear saved table state so the DataTable resets to defaults.
@@ -139,18 +144,21 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     }
     // force DataTable re-init so restored state is reset
     setTableKey((prev) => prev + 1);
-    fetchChats({});
-  }, [fetchChats]);
+    filtersRef.current = {};
+    try {
+      if (tableApiRef.current) tableApiRef.current.ajax.reload();
+    } catch (e) { /* ignore */ }
+  }, []);
 
   const resultsSummary = useMemo(() => {
-    const template = t('admin.chatDashboard.resultsSummary', 'Showing {count} chats');
-    return template.replace('{count}', numberFormatter.format(rows.length));
-  }, [numberFormatter, rows.length, t]);
+    const template = t('admin.chatDashboard.resultsSummary', 'Total matching chats: {count}');
+    return template.replace('{count}', numberFormatter.format(recordsFiltered));
+  }, [numberFormatter, recordsFiltered, t]);
 
   const totalSummary = useMemo(() => {
-    const template = t('admin.chatDashboard.totalCount', 'Total matching chats: {total}');
-    return template.replace('{total}', numberFormatter.format(rows.length));
-  }, [numberFormatter, rows.length, t]);
+    const template = t('admin.chatDashboard.totalCount', 'Total chats in range: {total}');
+    return template.replace('{total}', numberFormatter.format(recordsTotal));
+  }, [numberFormatter, recordsTotal, t]);
 
   const columns = useMemo(() => ([
     {
@@ -169,7 +177,33 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
     {
       title: t('admin.chatDashboard.columns.expertEmail', 'Expert email'),
       data: 'expertEmail',
-      render: (value) => escapeHtmlAttribute(value || '')
+      // Render email robustly: accept expertEmail but fall back to other
+      // common locations so the dashboard shows an email if present.
+      // DataTables' render signature: function(data, type, row, meta)
+      render: (value, _type, row) => {
+        try {
+          const email = value || (row && (row.email || row.userEmail || (row.user && row.user.email) || (row.expert && row.expert.email))) || '';
+          return escapeHtmlAttribute(email || '');
+        } catch (e) {
+          return '';
+        }
+      }
+    },
+    {
+      title: t('admin.chatDashboard.columns.creatorEmail', 'Creator email'),
+      data: 'creatorEmail',
+      render: (value, _type, row) => {
+        try {
+          const expert = value || (row && (row.creatorEmail || row.userEmail || (row.user && row.user.email))) || '';
+          // Show both: creator (from chat) and expert if present
+          const creatorEmail = escapeHtmlAttribute(expert || '');
+          const expertEmail = escapeHtmlAttribute(row && (row.expertEmail || '') || '');
+          if (creatorEmail && expertEmail) return `${creatorEmail} / ${expertEmail}`;
+          return creatorEmail || expertEmail || '';
+        } catch (e) {
+          return '';
+        }
+      }
     },
     {
       title: t('admin.chatDashboard.columns.date', 'Date'),
@@ -212,101 +246,76 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
         </div>
       )}
 
-      {!loading && !error && rows.length === 0 && (
+      {!loading && !error && (
         <div className="mt-400">
+          {/* A hint is shown regardless; DataTables server-side will handle empty states */}
           {t('admin.chatDashboard.noResults', 'Apply filters to load chat interactions.')}
         </div>
       )}
 
-      {rows.length > 0 && (
-        <div className="mt-400">
-          <div className="mb-200">
-            <div>{resultsSummary}</div>
-            <div>{totalSummary}</div>
-          </div>
-          <DataTable
-            key={tableKey}
-            data={rows}
-            columns={columns}
-            options={{
-              paging: true,
-              searching: true,
-              ordering: true,
-              // Restore table state (order, page, length, search) from localStorage
-              stateSave: false,
-              order: (function() {
-                try {
-              if (typeof window === 'undefined' || !window.localStorage) return [[2, 'desc']];
-                  const raw = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
-                  if (!raw) return [[2, 'desc']];
-                  const parsed = JSON.parse(raw);
-                  if (!parsed) return [[2, 'desc']];
-                  // parsed may be object { order, page, length, search }
-                  if (Array.isArray(parsed.order) && parsed.order.length === 2) return [parsed.order];
-                  // Backwards compat: previously stored an array [col, dir]
-                  if (Array.isArray(parsed) && parsed.length === 2) return [parsed];
-                } catch (err) {
-                  // ignore
-                }
-                return [[2, 'desc']];
-              })(),
-              // parameters provided by DataTables but intentionally unused
-              // eslint-disable-next-line no-unused-vars
-              initComplete: function(_settings, _json) {
-                try {
-                  const table = this.api();
-
-                  // Restore page, length, and search if stored
-                  try {
-                    if (typeof window !== 'undefined' && window.localStorage) {
-                      const raw = window.localStorage.getItem(LOCAL_TABLE_STORAGE_KEY);
-                      if (raw) {
-                        const parsed = JSON.parse(raw);
-                        if (parsed) {
-                          if (typeof parsed.length === 'number') {
-                            table.page.len(parsed.length);
-                          }
-                          if (typeof parsed.search === 'string' && parsed.search.length) {
-                            table.search(parsed.search).draw(false);
-                          }
-                          if (typeof parsed.page === 'number') {
-                            table.page(parsed.page).draw(false);
-                          }
-                        }
-                      }
-                    }
-                  } catch (e) {
-                    // ignore restore errors
-                  }
-
-                  // Save full table state on relevant changes
-                  const saveState = () => {
-                    try {
-                      if (typeof window === 'undefined' || !window.localStorage) return;
-                      const st = {
-                        order: (() => { const o = table.order(); return Array.isArray(o[0]) ? o[0] : o; })(),
-                        page: table.page(),
-                        length: table.page.len(),
-                        search: table.search() || ''
-                      };
-                      window.localStorage.setItem(LOCAL_TABLE_STORAGE_KEY, JSON.stringify(st));
-                    } catch (err) {
-                      // ignore
-                    }
-                  };
-
-                  table.on('order.dt', saveState);
-                  table.on('page.dt', saveState);
-                  table.on('length.dt', saveState);
-                  table.on('search.dt', () => setTimeout(saveState, 0));
-                } catch (e) {
-                  // ignore
-                }
-              }
-            }}
-          />
+      <div className="mt-400">
+        <div className="mb-200">
+          <div>{resultsSummary}</div>
+          <div>{totalSummary}</div>
         </div>
-      )}
+        <DataTable
+          key={tableKey}
+          columns={columns}
+          options={{
+            processing: true,
+            serverSide: true,
+            paging: true,
+            searching: false,
+            ordering: true,
+            order: [[4, 'desc']], // default to date desc
+            ajax: async (dtParams, callback) => {
+              try {
+                setLoading(true);
+                setError(null);
+                const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
+                const orderBy = orderByForColumn(dtOrder.column);
+                const orderDir = dtOrder.dir || 'desc';
+                const query = {
+                  ...filtersRef.current,
+                  start: dtParams.start || 0,
+                  length: dtParams.length || 10,
+                  orderBy,
+                  orderDir,
+                  draw: dtParams.draw || 0
+                };
+                const result = await DashboardService.getChatDashboard(query);
+                setRecordsTotal(result?.recordsTotal || 0);
+                setRecordsFiltered(result?.recordsFiltered || 0);
+                callback({
+                  draw: dtParams.draw || 0,
+                  recordsTotal: result?.recordsTotal || 0,
+                  recordsFiltered: result?.recordsFiltered || 0,
+                  data: Array.isArray(result?.data) ? result.data : []
+                });
+              } catch (err) {
+                console.error('Failed to load chat dashboard data', err);
+                setError(err.message || String(err));
+                callback({ draw: dtParams.draw || 0, recordsTotal: 0, recordsFiltered: 0, data: [] });
+              } finally {
+                setLoading(false);
+              }
+            },
+            initComplete: function() {
+              try {
+                const api = this.api();
+                tableApiRef.current = api;
+                // Update counts after each xhr
+                api.on('xhr.dt', function(_e, _settings, json) {
+                  try {
+                    setRecordsTotal((json && json.recordsTotal) || 0);
+                    setRecordsFiltered((json && json.recordsFiltered) || 0);
+                  } catch (e) { /* ignore */ }
+                });
+              } catch (e) { /* ignore */ }
+            }
+          }}
+        />
+      </div>
     </GcdsContainer>
   );
 };

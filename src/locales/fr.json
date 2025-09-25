@@ -388,9 +388,10 @@
       "resultsSummary": "Affichage de {count} chats",
       "totalCount": "Total des chats correspondants : {total}",
       "columns": {
-        "chatId": "ID de chat",
-        "department": "Ministère",
-        "expertEmail": "Courriel de l'expert",
+  "chatId": "ID de chat",
+  "department": "Ministère",
+  "expertEmail": "Courriel de l'expert",
+  "creatorEmail": "Courriel du créateur",
         "language": "Langue",
         "questionCount": "Questions",
         "createdAt": "Créé",

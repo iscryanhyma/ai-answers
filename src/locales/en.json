@@ -351,9 +351,10 @@
       "resultsSummary": "Showing {count} chats",
       "totalCount": "Total matching chats: {total}",
       "columns": {
-        "chatId": "Chat ID",
-        "department": "Department",
-        "expertEmail": "Expert email",
+  "chatId": "Chat ID",
+  "department": "Department",
+  "expertEmail": "Expert email",
+  "creatorEmail": "Creator email",
         "language": "Language",
         "questionCount": "Questions",
         "createdAt": "Created",
