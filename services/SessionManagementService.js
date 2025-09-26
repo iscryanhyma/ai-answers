@@ -6,7 +6,7 @@
 // - per-session token-bucket rate limiter
 
 class CreditBucket {
-  constructor({capacity = 60, refillPerSec = 1}) {
+  constructor({ capacity = 60, refillPerSec = 1 }) {
     this.capacity = capacity;
     this.credits = capacity;
     this.refillPerSec = refillPerSec;
@@ -73,7 +73,7 @@ class SessionManagementService {
     if (this.cleanupTimer.unref) this.cleanupTimer.unref();
   }
 
-  configure({defaultTTLMs, maxSessions, cleanupIntervalMs} = {}) {
+  configure({ defaultTTLMs, maxSessions, cleanupIntervalMs } = {}) {
     if (defaultTTLMs) this.defaultTTL = defaultTTLMs;
     if (maxSessions) this.maxSessions = maxSessions;
     if (cleanupIntervalMs) {
@@ -109,10 +109,10 @@ class SessionManagementService {
     return { ok: true };
   }
 
-  async register(chatId, {ttlMs, rateLimit} = {}) {
+  async register(chatId, { ttlMs, rateLimit } = {}) {
     if (!chatId) throw new Error('chatId required');
     if (!this.hasCapacity() && !this.sessions.has(chatId)) {
-      return {ok: false, reason: 'capacity'};
+      return { ok: false, reason: 'capacity' };
     }
 
     const now = Date.now();
@@ -148,18 +148,18 @@ class SessionManagementService {
         createdAt: now,
         lastSeen: now,
         ttl,
-  bucket,
-  // metrics
-  requestCount: 0,
-  errorCount: 0,
-  totalLatencyMs: 0,
-  lastLatencyMs: 0
-      ,
-      // timestamps of requests (ms since epoch) used to compute RPM
-      requestTimestamps: []
-  ,
-  // per-error-type counters: { <type>: count }
-  errorTypes: {}
+        bucket,
+        // metrics
+        requestCount: 0,
+        errorCount: 0,
+        totalLatencyMs: 0,
+        lastLatencyMs: 0
+        ,
+        // timestamps of requests (ms since epoch) used to compute RPM
+        requestTimestamps: []
+        ,
+        // per-error-type counters: { <type>: count }
+        errorTypes: {}
       };
       this.sessions.set(chatId, session);
     } else {
@@ -167,7 +167,7 @@ class SessionManagementService {
       session.ttl = ttl; // allow updating ttl
     }
 
-    return {ok: true, session};
+    return { ok: true, session };
   }
 
 
@@ -267,13 +267,13 @@ class SessionManagementService {
   // Check and consume credits from the session's bucket. Returns {ok, remaining}.
   canConsume(chatId, credits = 1) {
     const session = this.sessions.get(chatId);
-    if (!session) return {ok: false, reason: 'no_session'};
+    if (!session) return { ok: false, reason: 'no_session' };
     const allowed = session.bucket.consume(credits);
     if (allowed) {
-      return {ok: true, remaining: session.bucket.getCredits()};
+      return { ok: true, remaining: session.bucket.getCredits() };
     }
     // not enough credits
-    return {ok: false, reason: 'noCredits', remaining: session.bucket.getCredits()};
+    return { ok: false, reason: 'noCredits', remaining: session.bucket.getCredits() };
   }
 
   getInfo(chatId) {
@@ -288,7 +288,7 @@ class SessionManagementService {
   }
 }
 
-SessionManagementService.prototype._getWindowCounter = function(map, key, windowMs, maxEntries) {
+SessionManagementService.prototype._getWindowCounter = function (map, key, windowMs, maxEntries) {
   const now = Date.now();
   let entry = map.get(key);
   if (!entry || (now - entry.windowStart) >= windowMs) {
