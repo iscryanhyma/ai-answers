@@ -132,6 +132,49 @@ export default function sessionMiddleware(options = {}) {
   };
 }
 
+// Helper that adapts the Express-style middleware to an awaitable guard
+export function ensureSession(req, res) {
+  return new Promise((resolve) => {
+    try {
+      const mw = sessionMiddleware();
+      let nextCalled = false;
+      mw(req, res, (err) => {
+        if (err) return resolve(false);
+        nextCalled = true;
+        return resolve(true);
+      });
+
+      // If middleware synchronously wrote a response, short-circuit
+      setImmediate(() => {
+        if (!nextCalled && (res.headersSent || res.writableEnded)) {
+          return resolve(false);
+        }
+        // otherwise wait for middleware to call next
+      });
+    } catch (e) {
+      // On unexpected errors, block the handler
+      return resolve(false);
+    }
+  });
+}
+
+// Wrapper to make it easy to include session handling in individual handlers.
+// Usage: export default withSession(myHandler);
+export function withSession(handler) {
+  return async function (req, res) {
+    try {
+      const ok = await ensureSession(req, res);
+      if (!ok) return; // middleware already handled the response
+      return handler(req, res);
+    } catch (e) {
+      if (console && console.error) console.error('withSession error', e);
+      // If session step fails unexpectedly, block the request to be safe
+      if (!res.headersSent) res.status(500).json({ error: 'session error' });
+      return;
+    }
+  };
+}
+
 function parseCookies(header) {
   return header
     .split(';')
