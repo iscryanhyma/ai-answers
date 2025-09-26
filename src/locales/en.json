@@ -496,8 +496,8 @@
       "title": "Session settings",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "cleanupSeconds": "Session cleanup interval (seconds)",
-      "rateLimitCapacity": "Rate limit capacity (tokens)",
-  "rateLimitRefill": "Rate limit refill (requests/min)",
+     "rateLimitCapacity": "Rate limit capacity (credits)",
+     "rateLimitRefill": "Rate limit refill (credits per min)",
       "maxActiveSessions": "Max active sessions (count — empty = unlimited)"
     }
   },

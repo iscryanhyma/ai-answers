@@ -5,10 +5,10 @@
 // - capacity limit (max concurrent sessions)
 // - per-session token-bucket rate limiter
 
-class TokenBucket {
+class CreditBucket {
   constructor({capacity = 60, refillPerSec = 1}) {
     this.capacity = capacity;
-    this.tokens = capacity;
+    this.credits = capacity;
     this.refillPerSec = refillPerSec;
     this.lastRefill = Date.now();
   }
@@ -18,24 +18,27 @@ class TokenBucket {
     const elapsed = (now - this.lastRefill) / 1000;
     if (elapsed <= 0) return;
     const add = elapsed * this.refillPerSec;
-    this.tokens = Math.min(this.capacity, this.tokens + add);
+    this.credits = Math.min(this.capacity, this.credits + add);
     this.lastRefill = now;
   }
 
-  take(count = 1) {
+  // consume credits from the bucket (returns true if enough credits exist)
+  consume(count = 1) {
     this._refill();
-    if (this.tokens >= count) {
-      this.tokens -= count;
+    if (this.credits >= count) {
+      this.credits -= count;
       return true;
     }
     return false;
   }
 
-  getTokens() {
+  getCredits() {
     this._refill();
-    return this.tokens;
+    return this.credits;
   }
 }
+
+import { SettingsService } from './SettingsService.js';
 
 class SessionManagementService {
   constructor() {
@@ -87,7 +90,6 @@ class SessionManagementService {
     // Determine TTL: prefer explicit ttlMs, otherwise read live setting
     let ttl = ttlMs || this.defaultTTL;
     try {
-      const { SettingsService } = await import('./SettingsService.js');
       const ttlM = Number(await SettingsService.get('session.defaultTTLMinutes')) || null;
       if (!ttlMs && ttlM !== null) ttl = ttlM * 60 * 1000;
     } catch (e) {
@@ -100,7 +102,6 @@ class SessionManagementService {
       // otherwise read live values from SettingsService (cached) and fall back.
       let rl = rateLimit || this.defaultRateLimit;
       try {
-        const { SettingsService } = await import('./SettingsService.js');
         const capacity = Number(await SettingsService.get('session.rateLimitCapacity')) || null;
         const refill = Number(await SettingsService.get('session.rateLimitRefillPerSec')) || null;
         if (!rateLimit && (capacity !== null || refill !== null)) {
@@ -109,7 +110,7 @@ class SessionManagementService {
       } catch (e) {
         // ignore and use fallback
       }
-      const bucket = new TokenBucket({
+      const bucket = new CreditBucket({
         capacity: rl.capacity,
         refillPerSec: rl.refillPerSec
       });
@@ -234,11 +235,16 @@ class SessionManagementService {
     return this.sessions.delete(chatId);
   }
 
-  canConsume(chatId, tokens = 1) {
+  // Check and consume credits from the session's bucket. Returns {ok, remaining}.
+  canConsume(chatId, credits = 1) {
     const session = this.sessions.get(chatId);
     if (!session) return {ok: false, reason: 'no_session'};
-    const allowed = session.bucket.take(tokens);
-    return {ok: allowed, remaining: session.bucket.getTokens()};
+    const allowed = session.bucket.consume(credits);
+    if (allowed) {
+      return {ok: true, remaining: session.bucket.getCredits()};
+    }
+    // not enough credits
+    return {ok: false, reason: 'noCredits', remaining: session.bucket.getCredits()};
   }
 
   getInfo(chatId) {

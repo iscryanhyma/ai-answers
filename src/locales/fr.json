@@ -535,8 +535,8 @@
       "title": "Paramètres de session",
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",
       "cleanupSeconds": "Intervalle de nettoyage des sessions (secondes)",
-      "rateLimitCapacity": "Capacité du quota (jetons)",
-      "rateLimitRefill": "Recharge du quota (requêtes/min)",
+      "rateLimitCapacity": "Capacité du quota (crédits)",
+      "rateLimitRefill": "Recharge du quota (crédits/min)",
       "maxActiveSessions": "Sessions actives max (nombre — vide = illimité)"
     }
   },

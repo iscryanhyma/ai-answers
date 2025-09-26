@@ -40,14 +40,19 @@ export default function sessionMiddleware(options = {}) {
       if (!existing) {
         if (!SessionManagementService.hasCapacity()) {
           res.statusCode = 503;
-          return res.end('Server capacity exceeded, try again later');
+          return res.end(JSON.stringify({ error: 'noSessionCapacity' }));
         }
 
         // Register without passing a local rateLimit so the service applies its configured defaults.
         const r = await SessionManagementService.register(chatId);
         if (!r.ok) {
+          // If register failed for capacity reasons, return specific error.
+          if (r.reason === 'capacity') {
+            res.statusCode = 503;
+            return res.end(JSON.stringify({ error: 'noSessionCapacity' }));
+          }
           res.statusCode = 503;
-          return res.end('Could not register session');
+          return res.end(JSON.stringify({ error: 'couldNotRegister' }));
         }
       } else {
         SessionManagementService.touch(chatId);
@@ -56,8 +61,14 @@ export default function sessionMiddleware(options = {}) {
       // Rate limit check
       const allowed = SessionManagementService.canConsume(chatId, 1);
       if (!allowed.ok) {
+        // Map service reasons to client-visible error codes
+        if (allowed.reason === 'noCredits') {
+          res.statusCode = 429;
+          return res.end(JSON.stringify({ error: 'noCredits' }));
+        }
+        // fallback
         res.statusCode = 429;
-        return res.end('Rate limit exceeded');
+        return res.end(JSON.stringify({ error: 'rateLimitExceeded' }));
       }
 
       // Attach session info
