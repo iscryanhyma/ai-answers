@@ -49,6 +49,13 @@ class SessionManagementService {
     this.maxSessions = 1000; // default capacity fallback
     // default rate limit applied to new sessions unless overridden (fallback)
     this.defaultRateLimit = { capacity: 60, refillPerSec: 1 };
+    // Track anonymous session creation attempts to prevent churn abuse
+    this.fingerprintCounters = new Map();
+    this.ipCounters = new Map();
+    this.fingerprintLimit = { perWindow: 2, windowMs: 24 * 60 * 60 * 1000 }; // 2 sessions / 24h per fingerprint
+    this.ipLimit = { perWindow: 20, windowMs: 24 * 60 * 60 * 1000 }; // 20 sessions / 24h per IP
+    this.maxFingerprintEntries = 10000;
+    this.maxIpEntries = 20000;
     // NOTE: we no longer load settings at construction. Session settings are read
     // live from SettingsService (which caches values) when needed.
     this._startCleanup();
@@ -78,6 +85,28 @@ class SessionManagementService {
 
   hasCapacity() {
     return this.sessions.size < this.maxSessions;
+  }
+
+  canCreateSession({ fingerprintKey = null, ip = null } = {}) {
+    const increments = [];
+    if (fingerprintKey) {
+      const entry = this._getWindowCounter(this.fingerprintCounters, fingerprintKey, this.fingerprintLimit.windowMs, this.maxFingerprintEntries);
+      if (entry.count >= this.fingerprintLimit.perWindow) {
+        return { ok: false, reason: 'fingerprintThrottled' };
+      }
+      increments.push(() => entry.count++);
+    }
+
+    if (ip) {
+      const entry = this._getWindowCounter(this.ipCounters, ip, this.ipLimit.windowMs, this.maxIpEntries);
+      if (entry.count >= this.ipLimit.perWindow) {
+        return { ok: false, reason: 'ipThrottled' };
+      }
+      increments.push(() => entry.count++);
+    }
+
+    increments.forEach((fn) => fn());
+    return { ok: true };
   }
 
   async register(chatId, {ttlMs, rateLimit} = {}) {
@@ -254,8 +283,33 @@ class SessionManagementService {
   shutdown() {
     clearInterval(this.cleanupTimer);
     this.sessions.clear();
+    this.fingerprintCounters.clear();
+    this.ipCounters.clear();
   }
 }
+
+SessionManagementService.prototype._getWindowCounter = function(map, key, windowMs, maxEntries) {
+  const now = Date.now();
+  let entry = map.get(key);
+  if (!entry || (now - entry.windowStart) >= windowMs) {
+    entry = { count: 0, windowStart: now };
+    map.set(key, entry);
+  }
+
+  if (map.size > maxEntries) {
+    // simple pruning strategy: remove oldest 5 entries (best effort)
+    let removed = 0;
+    for (const [k, v] of map.entries()) {
+      if (now - v.windowStart >= windowMs || removed < 5) {
+        map.delete(k);
+        removed++;
+      }
+      if (removed >= 5) break;
+    }
+  }
+
+  return entry;
+};
 
 const singleton = new SessionManagementService();
 export default singleton;
