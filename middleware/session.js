@@ -2,12 +2,13 @@ import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
 import SessionManagementService from '../services/SessionManagementService.js';
+import { SettingsService } from '../services/SettingsService.js';
 
 const secretKey = process.env.JWT_SECRET_KEY || 'dev-secret';
 const fingerprintPepper = process.env.FP_PEPPER || 'dev-pepper';
 const CHAT_COOKIE_NAME = 'token';
 const SESSION_COOKIE_NAME = 'sessionToken';
-const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // 30 days
+const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60; // default 30 days fallback
 
 // Express/Next.js style middleware
 export default function sessionMiddleware(options = {}) {
@@ -77,8 +78,28 @@ export default function sessionMiddleware(options = {}) {
         const fingerprintKey = fingerprintHeader
           ? crypto.createHmac('sha256', fingerprintPepper).update(fingerprintHeader).digest('hex')
           : null;
-        const ip = extractClientIp(req);
-        const canCreate = SessionManagementService.canCreateSession({ fingerprintKey, ip });
+        // Verify server-signed fingerprint cookie (if present) to avoid counting unverified headers
+        let fingerprintVerified = false;
+        try {
+          const fpSigned = cookies['fpSigned'];
+          if (fpSigned) {
+            const decoded = jwt.verify(fpSigned, secretKey) || {};
+            // token payload should contain fp (raw header) and issuedAt
+            if (decoded && decoded.fp && decoded.fp === fingerprintHeader) {
+              fingerprintVerified = true;
+            }
+          }
+        } catch (e) {
+          // invalid signature or decode error => not verified
+          fingerprintVerified = false;
+        }
+
+  // Pass the HMACed fingerprintKey to the session manager so it can
+  // count and enforce fingerprint-based throttles even on the first
+  // request where the signed cookie (`fpSigned`) hasn't yet been set.
+  // Middleware still issues `fpSigned` for stronger verification on
+  // subsequent requests, but counting here avoids falling back to IP.
+  const canCreate = SessionManagementService.canCreateSession({ fingerprintKey: fingerprintKey });
         if (!canCreate.ok) {
           res.statusCode = 429;
           res.setHeader('Content-Type', 'application/json');
@@ -99,8 +120,28 @@ export default function sessionMiddleware(options = {}) {
         }
         sessionInfo = reg.session || SessionManagementService.getInfo(sessionId);
 
-        const sessionJwt = jwt.sign({}, secretKey, { jwtid: sessionId, expiresIn: `${SESSION_TTL_SECONDS}s` });
-        appendSetCookie(res, `${SESSION_COOKIE_NAME}=${sessionJwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${SESSION_TTL_SECONDS}`);
+        // Read dynamic session TTL from settings (minutes) if available.
+        let sessionTtlSeconds = SESSION_TTL_SECONDS;
+        try {
+          const ttlMinutes = await SettingsService.get('session.defaultTTLMinutes');
+          const ttlNum = Number(ttlMinutes);
+          if (!Number.isNaN(ttlNum) && ttlNum > 0) sessionTtlSeconds = Math.floor(ttlNum * 60);
+        } catch (e) {
+          // ignore and use fallback
+        }
+
+        const sessionJwt = jwt.sign({}, secretKey, { jwtid: sessionId, expiresIn: `${sessionTtlSeconds}s` });
+        appendSetCookie(res, `${SESSION_COOKIE_NAME}=${sessionJwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${sessionTtlSeconds}`);
+
+        // If client provided a fingerprint header and it was not yet verified, issue a signed fp cookie
+        try {
+          if (fingerprintHeader && !fingerprintVerified) {
+            const fpToken = jwt.sign({ fp: fingerprintHeader, iat: Math.floor(Date.now() / 1000) }, secretKey, { expiresIn: `${sessionTtlSeconds}s` });
+            appendSetCookie(res, `fpSigned=${fpToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${sessionTtlSeconds}`);
+          }
+        } catch (e) {
+          // ignore cookie issuance failures
+        }
       } else if (sessionId) {
         SessionManagementService.touch(sessionId);
       }
@@ -203,10 +244,4 @@ function appendSetCookie(res, cookie) {
   res.setHeader('Set-Cookie', [current, cookie]);
 }
 
-function extractClientIp(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string' && forwarded.length > 0) {
-    return forwarded.split(',')[0].trim();
-  }
-  return req.socket?.remoteAddress || null;
-}
+

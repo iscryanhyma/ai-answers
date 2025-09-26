@@ -50,12 +50,9 @@ class SessionManagementService {
     // default rate limit applied to new sessions unless overridden (fallback)
     this.defaultRateLimit = { capacity: 60, refillPerSec: 1 };
     // Track anonymous session creation attempts to prevent churn abuse
-    this.fingerprintCounters = new Map();
-    this.ipCounters = new Map();
-    this.fingerprintLimit = { perWindow: 2, windowMs: 24 * 60 * 60 * 1000 }; // 2 sessions / 24h per fingerprint
-    this.ipLimit = { perWindow: 20, windowMs: 24 * 60 * 60 * 1000 }; // 20 sessions / 24h per IP
-    this.maxFingerprintEntries = 10000;
-    this.maxIpEntries = 20000;
+  this.fingerprintCounters = new Map();
+  this.fingerprintLimit = { perWindow: 2, windowMs: 24 * 60 * 60 * 1000 }; // 2 sessions / 24h per fingerprint
+  this.maxFingerprintEntries = 10000;
     // NOTE: we no longer load settings at construction. Session settings are read
     // live from SettingsService (which caches values) when needed.
     this._startCleanup();
@@ -87,20 +84,14 @@ class SessionManagementService {
     return this.sessions.size < this.maxSessions;
   }
 
-  canCreateSession({ fingerprintKey = null, ip = null } = {}) {
+  // fingerprintKey: optional HMACed fingerprint. When provided it should be pre-verified by middleware
+  // (i.e., the server has validated the raw client fingerprint and issued a signed cookie).
+  canCreateSession({ fingerprintKey = null } = {}) {
     const increments = [];
     if (fingerprintKey) {
       const entry = this._getWindowCounter(this.fingerprintCounters, fingerprintKey, this.fingerprintLimit.windowMs, this.maxFingerprintEntries);
       if (entry.count >= this.fingerprintLimit.perWindow) {
         return { ok: false, reason: 'fingerprintThrottled' };
-      }
-      increments.push(() => entry.count++);
-    }
-
-    if (ip) {
-      const entry = this._getWindowCounter(this.ipCounters, ip, this.ipLimit.windowMs, this.maxIpEntries);
-      if (entry.count >= this.ipLimit.perWindow) {
-        return { ok: false, reason: 'ipThrottled' };
       }
       increments.push(() => entry.count++);
     }
