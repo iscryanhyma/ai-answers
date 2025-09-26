@@ -13,6 +13,7 @@
       "researchOnly": "Answers provided by this AI service are information, not official advice.  Improvements are ongoing."
     },
     "about": {
+      "title": "About AI Answers",
       "builtBy": "AI Answers is designed, operated and maintained by the Canadian Digital Service.",
       "aiServices": {
         "claude": "AI service Claude: Anthropic Claude Sonnet 3.7, knowledge to February 2025",
@@ -30,8 +31,8 @@
       "useful": "Good",
       "notUseful": "Needs improvement",
       "or": "or",
-          "thankYou": "Thank you for your feedback!",
-          "error": "Error submitting feedback, contact admin."
+      "thankYou": "Thank you for your feedback!",
+      "error": "Error submitting feedback, contact admin."
     },
     "publicFeedback": {
       "surveyLink": "Take a 3 minute feedback survey (opens in new tab)",
@@ -184,7 +185,7 @@
       "title": "On this page",
       "links": {
         "newEvaluation": "New Batch",
-  "runningBatches": "Incomplete batches",
+        "runningBatches": "Incomplete batches",
         "processedBatches": "Processed Batches",
         "onThisPage": "Links on this page"
       }
@@ -205,7 +206,7 @@
       "intro": "Select the AI service, language, and your CSV file. Use one you've downloaded and cleaned from the Feedback viewer.",
       "csvRequirements": {
         "title": "CSV must contain:",
-          "items": {
+        "items": {
           "problemDetails": "Problem Details / Question — required (headers: REDACTEDQUESTION, QUESTION, PROBLEM DETAILS; case‑insensitive)",
           "url": "URL / Referring URL — optional (headers: URL, REFERRINGURL; case‑insensitive)"
         }
@@ -234,7 +235,7 @@
         "upload": "Upload File",
         "startProcessing": "Start Processing"
       },
-  "processing": "Processing file, please wait...",
+      "processing": "Processing file, please wait...",
       "status": {
         "preparing": "Creating batch...",
         "started": "Batch started...",
@@ -258,7 +259,7 @@
         "createdDate": "Created Date",
         "provider": "Provider",
         "type": "Type",
-  "workflow": "Workflow",
+        "workflow": "Workflow",
         "status": "Status",
         "batchName": "Name",
         "action": "Action"
@@ -278,9 +279,9 @@
     "refreshPending": "Please wait..."
   },
   "admin": {
-  "title": "AI Answers Admin dashboard",
-  "partnerTitle": "AI Answers Partner Dashboard",
-  "backToAdmin": "Back to Admin",
+    "title": "AI Answers Admin dashboard",
+    "partnerTitle": "AI Answers Partner Dashboard",
+    "backToAdmin": "Back to Admin",
     "navigation": {
       "ariaLabel": "Admin Navigation",
       "title": "Admin Menu",
@@ -293,7 +294,7 @@
       "eval": "Evaluation Administration",
       "metrics": "View performance metrics",
       "publicEval": "Public Evaluation",
-  "sessions": "Active Sessions",
+      "sessions": "Active Sessions",
       "chatDashboard": "Chat dashboard",
       "logout": "Sign out",
       "vector": "Vector Administration"
@@ -351,7 +352,7 @@
       "chatId": "Chat ID",
       "lastSeen": "Last seen",
       "requests": "Requests",
-  "errors": "Total errors",
+      "errors": "Total errors",
       "errorTypes": {
         "redaction": "Redactions",
         "shortQuery": "Short queries",
@@ -496,8 +497,8 @@
       "title": "Session settings",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
       "cleanupSeconds": "Session cleanup interval (seconds)",
-     "rateLimitCapacity": "Rate limit capacity (credits)",
-     "rateLimitRefill": "Rate limit refill (credits per min)",
+      "rateLimitCapacity": "Rate limit capacity (credits)",
+      "rateLimitRefill": "Rate limit refill (credits per min)",
       "maxActiveSessions": "Max active sessions (count — empty = unlimited)"
     }
   },
@@ -517,14 +518,13 @@
   "reviewPanels": {
     "sentence": "Sentence",
     "expertScore": "Expert score",
-  "feedback": "Feedback",
-  "notAvailable": "N/A",
-  "expertFeedbackTitle": "Expert evaluation",
-  "expertEmail": "Expert email",
-  "deleteExpertFeedback": "Delete Expert Feedback",
-  
-  "publicFeedbackTitle": "Public feedback",
-  "autoEvalTitle": "Automated evaluation",
+    "feedback": "Feedback",
+    "notAvailable": "N/A",
+    "expertFeedbackTitle": "Expert evaluation",
+    "expertEmail": "Expert email",
+    "deleteExpertFeedback": "Delete Expert Feedback",
+    "publicFeedbackTitle": "Public feedback",
+    "autoEvalTitle": "Automated evaluation",
     "explanation": "Explanation",
     "score": "Score",
     "reason": "Reason",
@@ -580,12 +580,11 @@
     "modifiers": "Modifiers",
     "reEvaluate": "Re-evaluate",
     "deleteEvaluation": "Delete Evaluation",
-    "runEvaluation": "Run evaluation"
-    ,
+    "runEvaluation": "Run evaluation",
     "fallbackDetails": "Fallback details",
     "fallbackType": "Fallback type",
-  "fallbackCandidateAnswer": "Fallback candidate answer",
-  "fallbackCandidateCitation": "Candidate citation",
+    "fallbackCandidateAnswer": "Fallback candidate answer",
+    "fallbackCandidateCitation": "Candidate citation",
     "fallbackCompareMeta": "Fallback compare meta",
     "agentSelections": "Agent selections",
     "agentSelectedIndex": "Agent selected index",
