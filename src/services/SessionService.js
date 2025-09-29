@@ -1,5 +1,6 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
 import AuthService from './AuthService.js';
+import DataStoreService from './DataStoreService.js';
 
 const SessionService = {
   async getSessionMetrics() {
@@ -27,6 +28,25 @@ const SessionService = {
     } catch (e) {
       // swallow - non-fatal client-side telemetry
       if (console && console.error) console.error('SessionService.report failed', e);
+    }
+  },
+
+  /**
+   * Returns true when the public site status is 'available' AND there is at least one session available.
+   * Returns false on any error or when either condition is not met.
+   */
+  async isAvailable() {
+    try {
+      // Use the availability endpoint via apiToUrl so the dev proxy and overrides work
+      const url = getApiUrl('chat-session-availability');
+      const resp = await fetch(url);
+      if (!resp.ok) return false;
+      const data = await resp.json();
+      // expects { siteStatus: boolean, sessionAvailable: boolean }
+      return Boolean(data.siteStatus) && Boolean(data.sessionAvailable);
+    } catch (e) {
+      if (console && console.error) console.error('SessionService.isAvailable failed', e);
+      return false;
     }
   }
 };

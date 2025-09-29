@@ -46,18 +46,18 @@ class SessionManagementService {
     this.sessions = new Map();
     // Map chatId -> sessionId for quick lookup when clients report by chatId
     this.chatToSession = new Map();
-  this.defaultTTL = 1000 * 60 * 60; // 1 hour fallback
-  // cleanupInterval is stored in minutes for admin/settings clarity. Internally
-  // we convert to milliseconds when creating timers. Default: 1 minute.
-  this.cleanupIntervalMinutes = 1; // minutes
-  this.cleanupInterval = this.cleanupIntervalMinutes * 60 * 1000; // internal ms
+    this.defaultTTL = 1000 * 60 * 60; // 1 hour fallback
+    // cleanupInterval is stored in minutes for admin/settings clarity. Internally
+    // we convert to milliseconds when creating timers. Default: 1 minute.
+    this.cleanupIntervalMinutes = 1; // minutes
+    this.cleanupInterval = this.cleanupIntervalMinutes * 60 * 1000; // internal ms
     this.maxSessions = 1000; // default capacity fallback
     // default rate limit applied to new sessions unless overridden (fallback)
     this.defaultRateLimit = { capacity: 60, refillPerSec: 1 };
     // Track anonymous session creation attempts to prevent churn abuse
-  this.fingerprintCounters = new Map();
-  this.fingerprintLimit = { perWindow: 2, windowMs: 24 * 60 * 60 * 1000 }; // 2 sessions / 24h per fingerprint
-  this.maxFingerprintEntries = 10000;
+    this.fingerprintCounters = new Map();
+    this.fingerprintLimit = { perWindow: 2, windowMs: 24 * 60 * 60 * 1000 }; // 2 sessions / 24h per fingerprint
+    this.maxFingerprintEntries = 10000;
     // NOTE: settings will be read live from SettingsService when needed.
     // start cleanup timer with defaults
     this._startCleanup();
@@ -77,7 +77,7 @@ class SessionManagementService {
   _restartCleanupTimer(ms) {
     try {
       clearInterval(this.cleanupTimer);
-    } catch (e) {}
+    } catch (e) { }
     this.cleanupInterval = ms;
     this._startCleanup();
   }
@@ -118,8 +118,16 @@ class SessionManagementService {
     }
   }
 
-  hasCapacity() {
-    return this.sessions.size < this.maxSessions;
+  async hasCapacity() {
+    // Delegate to sessionsAvailable which reads `session.maxActiveSessions`
+    // live from SettingsService. Keeping this method async avoids using any
+    // cached `this.maxSessions` value.
+    try {
+      return await this.sessionsAvailable();
+    } catch (e) {
+      if (console && console.error) console.error('hasCapacity check failed', e);
+      return false;
+    }
   }
 
   // fingerprintKey: optional HMACed fingerprint. When provided it should be pre-verified by middleware
@@ -143,7 +151,7 @@ class SessionManagementService {
     const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit } = opts || {};
     if (!sessionId) throw new Error('sessionId required');
 
-    if (!this.hasCapacity() && !this.sessions.has(sessionId)) {
+    if (!(await this.hasCapacity()) && !this.sessions.has(sessionId)) {
       return { ok: false, reason: 'capacity' };
     }
 
@@ -172,8 +180,8 @@ class SessionManagementService {
           const refillVal = await SettingsService.get('session.rateLimitRefillPerSec');
           const cap = (typeof capVal !== 'undefined' && capVal !== null && capVal !== '') ? Number(capVal) : null;
           const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;
-          if (!Number.isNaN(cap) && cap > 0) rl = rl || {} , rl.capacity = cap; // ensure rl is object when values exist
-          if (!Number.isNaN(refill) && refill >= 0) rl = rl || {} , rl.refillPerSec = refill;
+          if (!Number.isNaN(cap) && cap > 0) rl = rl || {}, rl.capacity = cap; // ensure rl is object when values exist
+          if (!Number.isNaN(refill) && refill >= 0) rl = rl || {}, rl.refillPerSec = refill;
         } catch (e) {
           // ignore and fall back to defaults
         }
@@ -211,15 +219,69 @@ class SessionManagementService {
   }
 
 
-  getCurrentSettings() {
-    return {
-      defaultTTLMs: this.defaultTTL,
-      // expose minutes to admin clients
-      cleanupIntervalMinutes: this.cleanupIntervalMinutes,
-      cleanupIntervalMs: this.cleanupInterval,
-      rateLimit: this.defaultRateLimit,
-      maxSessions: this.maxSessions
-    };
+  async getCurrentSettings() {
+    // Read live values from SettingsService where available. Fall back to
+    // the in-memory defaults if the setting is absent or malformed.
+    try {
+      const ttlMinutesVal = await SettingsService.get('session.defaultTTLMinutes');
+      const cleanupMinutesVal = await SettingsService.get('session.cleanupIntervalMinutes');
+      const rateLimitCapVal = await SettingsService.get('session.rateLimitCapacity');
+      const rateLimitRefillVal = await SettingsService.get('session.rateLimitRefillPerSec');
+      const maxActiveVal = await SettingsService.get('session.maxActiveSessions');
+
+      const defaultTTLMs = (typeof ttlMinutesVal !== 'undefined' && ttlMinutesVal !== null && ttlMinutesVal !== '') ? Number(ttlMinutesVal) * 60 * 1000 : this.defaultTTL;
+      const cleanupIntervalMinutes = (typeof cleanupMinutesVal !== 'undefined' && cleanupMinutesVal !== null && cleanupMinutesVal !== '') ? Number(cleanupMinutesVal) : this.cleanupIntervalMinutes;
+      const cleanupIntervalMs = cleanupIntervalMinutes * 60 * 1000;
+      const rateLimit = {
+        capacity: (!Number.isNaN(Number(rateLimitCapVal)) && rateLimitCapVal !== null && rateLimitCapVal !== '') ? Number(rateLimitCapVal) : this.defaultRateLimit.capacity,
+        refillPerSec: (!Number.isNaN(Number(rateLimitRefillVal)) && rateLimitRefillVal !== null && rateLimitRefillVal !== '') ? Number(rateLimitRefillVal) : this.defaultRateLimit.refillPerSec
+      };
+      let maxSessions = this.maxSessions;
+      if (typeof maxActiveVal !== 'undefined' && maxActiveVal !== null && maxActiveVal !== '') {
+        const n = Number(maxActiveVal);
+        if (!Number.isNaN(n)) maxSessions = n;
+      }
+
+      return {
+        defaultTTLMs,
+        cleanupIntervalMinutes,
+        cleanupIntervalMs,
+        rateLimit,
+        maxSessions
+      };
+    } catch (e) {
+      if (console && console.error) console.error('getCurrentSettings failed', e);
+      return {
+        defaultTTLMs: this.defaultTTL,
+        cleanupIntervalMinutes: this.cleanupIntervalMinutes,
+        cleanupIntervalMs: this.cleanupInterval,
+        rateLimit: this.defaultRateLimit,
+        maxSessions: this.maxSessions
+      };
+    }
+  }
+
+  // Return true if there is capacity to create a new session based on the
+  // `session.maxActiveSessions` setting. If the setting is empty/null, treat
+  // it as unlimited (sessionAvailable = true). If the setting is a number,
+  // compute (maxActiveSessions - currentSessions) > 0.
+  async sessionsAvailable() {
+    try {
+      const maxVal = await SettingsService.get('session.maxActiveSessions');
+      // Empty string or null => unlimited
+      if (maxVal === '' || maxVal === null || typeof maxVal === 'undefined') {
+        return true;
+      }
+      const max = Number(maxVal);
+      if (Number.isNaN(max)) {
+        // Fall back to configured maxSessions property
+        return this.sessions.size < this.maxSessions;
+      }
+      return (max - this.sessions.size) > 0;
+    } catch (e) {
+      if (console && console.error) console.error('sessionsAvailable check failed', e);
+      return false;
+    }
   }
 
   touch(chatId) {

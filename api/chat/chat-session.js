@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
-import SessionManagementService from '../../services/SessionManagementService.js';
+
 
 const secretKey = process.env.JWT_SECRET_KEY || 'dev-secret';
 
