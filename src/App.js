@@ -21,14 +21,7 @@ import MetricsPage from './pages/MetricsPage.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
 import SessionPage from './pages/SessionPage.js';
 
-// Helper function to get alternate language path.
-// Rules:
-// - If the URL contains a site prefix ('ai-answers' or 'reponses-ia') we preserve
-//   that the prefix maps to a language: 'ai-answers' => 'en', 'reponses-ia' => 'fr'.
-//   When switching language we replace the prefix with the one matching the new
-//   language (so 'ai-answers' <-> 'reponses-ia').
-// - If the URL has no site prefix, we only toggle the leading language segment
-//   (or insert it) and keep the rest of the pathname unchanged.
+
 const getAlternatePath = (currentPath, currentLang) => {
   const newLang = currentLang === 'en' ? 'fr' : 'en';
 

@@ -58,5 +58,10 @@
       "name": "Debug Both",
       "configurations": ["Launch Server", "Launch Edge"]
     }
+    ,
+    {
+      "name": "Debug Server + Chrome",
+      "configurations": ["Launch Server", "Launch Chrome"]
+    }
   ]
 }
