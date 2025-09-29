@@ -10,6 +10,7 @@ import {
 } from "@cdssnc/gcds-components-react";
 import { useTranslations } from "../hooks/useTranslations.js";
 import DataStoreService from "../services/DataStoreService.js";
+import SessionService from "../services/SessionService.js";
 import OutageComponent from "../components/OutageComponent.js";
 import { useHasAnyRole } from "../components/RoleBasedUI.js";
 
@@ -56,6 +57,7 @@ const HomePage = ({ lang = "en" }) => {
   const isPrivileged = useHasAnyRole(["admin", "partner"]);
   const [serviceStatus, setServiceStatus] = useState({
     isAvailable: null,
+    sessionAvailable: null,
     message: "",
   });
   const [chatId, setChatId] = useState(reviewChatId || null);
@@ -64,25 +66,17 @@ const HomePage = ({ lang = "en" }) => {
   const [chatSessionFailed, setChatSessionFailed] = useState(false);
 
   useEffect(() => {
-    DataStoreService.getSiteStatus()
-      .then((status) => {
-        if (status === "available") {
-          setServiceStatus({ isAvailable: true, message: "" });
-        } else if (status === "unavailable") {
-          setServiceStatus({
-            isAvailable: false,
-            message: t("homepage.errors.serviceUnavailable"),
-          });
-        }
-        // removed unused loading state update
-      })
-      .catch(() => {
-        setServiceStatus({
-          isAvailable: false,
-          message: t("homepage.errors.serviceUnavailable"),
-        });
-        // removed unused loading state update
-      });
+    // Use client SessionService wrapper which checks siteSetting + sessions via API
+    (async () => {
+      try {
+        const ok = await SessionService.isAvailable();
+        // isAvailable() returns true only when site is 'available' AND sessions exist
+        // We set sessionAvailable = ok and isAvailable = ok for compatibility with existing logic
+        setServiceStatus({ isAvailable: ok, sessionAvailable: ok, message: ok ? '' : t('homepage.errors.serviceUnavailable') });
+      } catch (e) {
+        setServiceStatus({ isAvailable: false, sessionAvailable: false, message: t('homepage.errors.serviceUnavailable') });
+      }
+    })();
   }, [t]);
 
   async function fetchSession() {
@@ -103,7 +97,10 @@ const HomePage = ({ lang = "en" }) => {
 
   useEffect(() => {
     if (reviewChatId) return;
-    if (serviceStatus.isAvailable !== false || isPrivileged) {
+    // Only fetch a chat session if not explicitly unavailable (site and sessions), or if privileged
+    const siteNotFalse = serviceStatus.isAvailable !== false;
+    const sessionsNotFalse = serviceStatus.sessionAvailable !== false;
+    if (isPrivileged || (siteNotFalse && sessionsNotFalse)) {
       if (!chatId) {
         fetchSession();
       }

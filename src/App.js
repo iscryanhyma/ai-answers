@@ -19,15 +19,9 @@ import { AuthProvider } from './contexts/AuthContext.js';
 import { RoleProtectedRoute } from './components/RoleProtectedRoute.js';
 import MetricsPage from './pages/MetricsPage.js';
 import PublicEvalPage from './pages/PublicEvalPage.js';
+import SessionPage from './pages/SessionPage.js';
 
-// Helper function to get alternate language path.
-// Rules:
-// - If the URL contains a site prefix ('ai-answers' or 'reponses-ia') we preserve
-//   that the prefix maps to a language: 'ai-answers' => 'en', 'reponses-ia' => 'fr'.
-//   When switching language we replace the prefix with the one matching the new
-//   language (so 'ai-answers' <-> 'reponses-ia').
-// - If the URL has no site prefix, we only toggle the leading language segment
-//   (or insert it) and keep the rest of the pathname unchanged.
+
 const getAlternatePath = (currentPath, currentLang) => {
   const newLang = currentLang === 'en' ? 'fr' : 'en';
 
@@ -257,6 +251,10 @@ export default function App() {
     { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
     { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] }
     ];
+
+  // Add sessions admin-only route
+  protectedRoutes.push({ path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] });
+  protectedRoutes.push({ path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] });
 
     return createBrowserRouter([
       {
