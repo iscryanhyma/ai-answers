@@ -393,12 +393,20 @@
     },
     "session": {
       "title": "Sessions",
+      "sessionId": "ID de session",
+      "creditsLeft": "Crédits restants",
       "chatId": "ID de chat",
       "lastSeen": "Dernière activité",
       "requests": "Requêtes",
       "errors": "Erreurs",
+      "errorTypes": {
+        "redaction": "Rédactions",
+        "shortQuery": "Questions trop courtes",
+        "other": "Autres erreurs"
+      },
       "lastLatency": "Dernière latence (ms)",
       "avgLatency": "Latence moyenne (ms)",
+      "rpm": "Requêtes / minute",
       "errorLoading": "Échec du chargement des sessions : {status} {text}",
       "errorGeneric": "Erreur : {message}"
     },

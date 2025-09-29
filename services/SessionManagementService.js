@@ -44,8 +44,11 @@ class SessionManagementService {
   constructor() {
     // Map chatId -> { chatId, createdAt, lastSeen, ttl, bucket }
     this.sessions = new Map();
-    this.defaultTTL = 1000 * 60 * 60; // 1 hour fallback
-    this.cleanupInterval = 1000 * 60; // 1 minute fallback
+  this.defaultTTL = 1000 * 60 * 60; // 1 hour fallback
+  // cleanupInterval is stored in minutes for admin/settings clarity. Internally
+  // we convert to milliseconds when creating timers. Default: 1 minute.
+  this.cleanupIntervalMinutes = 1; // minutes
+  this.cleanupInterval = this.cleanupIntervalMinutes * 60 * 1000; // internal ms
     this.maxSessions = 1000; // default capacity fallback
     // default rate limit applied to new sessions unless overridden (fallback)
     this.defaultRateLimit = { capacity: 60, refillPerSec: 1 };
@@ -55,6 +58,85 @@ class SessionManagementService {
   this.maxFingerprintEntries = 10000;
     // NOTE: we no longer load settings at construction. Session settings are read
     // live from SettingsService (which caches values) when needed.
+    // start with defaults, then load any admin-configured settings asynchronously
+    this._startCleanup();
+    // initialize settings (TTL, cleanup interval, rate limits, max sessions)
+    this._initFromSettings().catch(() => {
+      // ignore errors - service should continue with defaults
+    });
+  }
+
+  // High-level initializer: load all session-related settings and apply them
+  async _initFromSettings() {
+    // Load values in parallel
+    const keys = [
+      'session.defaultTTLMinutes',
+      'session.cleanupIntervalSeconds',
+      'session.rateLimitCapacity',
+      'session.rateLimitRefillPerSec',
+      'session.maxActiveSessions'
+    ];
+    const results = await Promise.all(keys.map((k) => SettingsService.get(k)));
+    const [ttlM, cleanupSeconds, rlCapacity, rlRefillPerSec, maxSessions] = results;
+
+    // Apply settings using dedicated helpers
+    this._applyTTL(ttlM);
+    this._applyCleanupIntervalFromSeconds(cleanupSeconds);
+    this._applyRateLimitDefaults(rlCapacity, rlRefillPerSec);
+    this._applyMaxSessions(maxSessions);
+  }
+
+  _applyTTL(ttlMinutesValue) {
+    try {
+      const ttlNum = Number(ttlMinutesValue);
+      if (!Number.isNaN(ttlNum) && ttlNum > 0) {
+        this.defaultTTL = ttlNum * 60 * 1000;
+      }
+    } catch (e) {
+      // ignore and keep default
+    }
+  }
+
+  _applyCleanupIntervalFromSeconds(secondsValue) {
+    try {
+      const seconds = Number(secondsValue);
+      if (!Number.isNaN(seconds) && seconds > 0) {
+        this.cleanupIntervalMinutes = seconds / 60;
+        const ms = Math.max(1000, this.cleanupIntervalMinutes * 60 * 1000);
+        this._restartCleanupTimer(ms);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  _applyRateLimitDefaults(capacityValue, refillPerSecValue) {
+    try {
+      const cap = Number(capacityValue);
+      const refill = Number(refillPerSecValue);
+      if (!Number.isNaN(cap) && cap > 0) this.defaultRateLimit.capacity = cap;
+      if (!Number.isNaN(refill) && refill >= 0) this.defaultRateLimit.refillPerSec = refill;
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  _applyMaxSessions(maxSessionsValue) {
+    try {
+      if (typeof maxSessionsValue !== 'undefined' && maxSessionsValue !== null && maxSessionsValue !== '') {
+        const val = Number(maxSessionsValue);
+        if (!Number.isNaN(val) && val >= 0) this.maxSessions = val;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  _restartCleanupTimer(ms) {
+    try {
+      clearInterval(this.cleanupTimer);
+    } catch (e) {}
+    this.cleanupInterval = ms;
     this._startCleanup();
   }
 
@@ -70,12 +152,26 @@ class SessionManagementService {
     if (this.cleanupTimer.unref) this.cleanupTimer.unref();
   }
 
-  configure({ defaultTTLMs, maxSessions, cleanupIntervalMs } = {}) {
+  // configure accepts cleanupIntervalMinutes (preferred) for human-friendly units,
+  // but also accepts cleanupIntervalMs for backward compatibility.
+  configure({ defaultTTLMs, maxSessions, cleanupIntervalMinutes, cleanupIntervalMs } = {}) {
     if (defaultTTLMs) this.defaultTTL = defaultTTLMs;
     if (maxSessions) this.maxSessions = maxSessions;
-    if (cleanupIntervalMs) {
+    let newIntervalMs = null;
+    if (typeof cleanupIntervalMinutes !== 'undefined' && cleanupIntervalMinutes !== null) {
+      // convert minutes -> ms
+      this.cleanupIntervalMinutes = Number(cleanupIntervalMinutes) || this.cleanupIntervalMinutes;
+      newIntervalMs = this.cleanupIntervalMinutes * 60 * 1000;
+    } else if (typeof cleanupIntervalMs !== 'undefined' && cleanupIntervalMs !== null) {
+      // backward compat: accept ms directly
+      newIntervalMs = Number(cleanupIntervalMs) || null;
+      // also derive minutes for reporting (rounded)
+      if (newIntervalMs) this.cleanupIntervalMinutes = Math.round(newIntervalMs / 60000);
+    }
+
+    if (newIntervalMs) {
       clearInterval(this.cleanupTimer);
-      this.cleanupInterval = cleanupIntervalMs;
+      this.cleanupInterval = newIntervalMs;
       this._startCleanup();
     }
   }
@@ -118,22 +214,10 @@ class SessionManagementService {
 
     let session = this.sessions.get(chatId);
     if (!session) {
-      // create token bucket for rate limiting. If caller provided rateLimit use it,
-      // otherwise read live values from SettingsService (cached) and fall back.
-      let rl = rateLimit || this.defaultRateLimit;
-      try {
-        const capacity = Number(await SettingsService.get('session.rateLimitCapacity')) || null;
-        const refill = Number(await SettingsService.get('session.rateLimitRefillPerSec')) || null;
-        if (!rateLimit && (capacity !== null || refill !== null)) {
-          rl = { capacity: capacity || this.defaultRateLimit.capacity, refillPerSec: refill || this.defaultRateLimit.refillPerSec };
-        }
-      } catch (e) {
-        // ignore and use fallback
-      }
-      const bucket = new CreditBucket({
-        capacity: rl.capacity,
-        refillPerSec: rl.refillPerSec
-      });
+      // create token bucket for rate limiting. Prefer explicit rateLimit, otherwise
+      // use defaults (already initialized from SettingsService on startup).
+      const rl = rateLimit || this.defaultRateLimit;
+      const bucket = this._createBucket(rl);
       session = {
         chatId,
         createdAt: now,
@@ -165,6 +249,8 @@ class SessionManagementService {
   getCurrentSettings() {
     return {
       defaultTTLMs: this.defaultTTL,
+      // expose minutes to admin clients
+      cleanupIntervalMinutes: this.cleanupIntervalMinutes,
       cleanupIntervalMs: this.cleanupInterval,
       rateLimit: this.defaultRateLimit,
       maxSessions: this.maxSessions
@@ -212,7 +298,12 @@ class SessionManagementService {
     const out = [];
     for (const [k, v] of this.sessions.entries()) {
       out.push({
+        // expose both `chatId` (legacy) and `sessionId` (alias) so clients
+        // that expect either name can work. Also expose creditsLeft computed
+        // from the token bucket so the UI can present remaining credits.
         chatId: k,
+        sessionId: k,
+        creditsLeft: v.bucket ? Math.round(v.bucket.getCredits()) : 0,
         createdAt: v.createdAt,
         lastSeen: v.lastSeen,
         ttl: v.ttl,
@@ -275,7 +366,12 @@ class SessionManagementService {
     clearInterval(this.cleanupTimer);
     this.sessions.clear();
     this.fingerprintCounters.clear();
-    this.ipCounters.clear();
+  }
+
+  _createBucket({ capacity = null, refillPerSec = null } = {}) {
+    const cap = (capacity !== null && !Number.isNaN(Number(capacity))) ? Number(capacity) : this.defaultRateLimit.capacity;
+    const refill = (refillPerSec !== null && !Number.isNaN(Number(refillPerSec))) ? Number(refillPerSec) : this.defaultRateLimit.refillPerSec;
+    return new CreditBucket({ capacity: cap, refillPerSec: refill });
   }
 }
 

@@ -56,7 +56,14 @@ const SessionPage = ({ lang: propLang }) => {
       <DataTable
         data={sessions}
         columns={[
-          { title: t('admin.session.chatId', 'Chat ID'), data: 'chatId', render: (data) => `<a href="/${lang}?chat=${data}&review=1">${data}</a>` },
+          { title: t('admin.session.sessionId', 'Session ID'), data: 'sessionId', render: (data) => data || '' },
+          { title: t('admin.session.chatId', 'Chat ID'), data: 'chatId', render: (data, type, row) => {
+              // prefer explicit chatId, otherwise fall back to the first chatId in chatIds
+              const cid = data || (Array.isArray(row.chatIds) && row.chatIds.length ? row.chatIds[0] : '') || '';
+              return `<a href="/${lang}?chat=${cid}&review=1">${cid}</a>`;
+            }
+          },
+          { title: t('admin.session.creditsLeft', 'Credits left'), data: 'creditsLeft', render: (data) => data !== undefined ? data : 0 },
           { title: t('admin.session.lastSeen', 'Last seen'), data: 'lastSeen', render: (data) => new Date(data).toLocaleString() },
           { title: t('admin.session.requests', 'Requests'), data: 'requestCount' },
           { title: t('admin.session.errors', 'Errors'), data: 'errorCount' },
