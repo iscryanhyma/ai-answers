@@ -58,36 +58,11 @@ class SessionManagementService {
   this.fingerprintCounters = new Map();
   this.fingerprintLimit = { perWindow: 2, windowMs: 24 * 60 * 60 * 1000 }; // 2 sessions / 24h per fingerprint
   this.maxFingerprintEntries = 10000;
-    // NOTE: we no longer load settings at construction. Session settings are read
-    // live from SettingsService (which caches values) when needed.
-    // start with defaults, then load any admin-configured settings asynchronously
+    // NOTE: settings will be read live from SettingsService when needed.
+    // start cleanup timer with defaults
     this._startCleanup();
-    // initialize settings (TTL, cleanup interval, rate limits, max sessions)
-    this._initFromSettings().catch(() => {
-      // ignore errors - service should continue with defaults
-    });
   }
-
-  // High-level initializer: load all session-related settings and apply them
-  async _initFromSettings() {
-    // Load values in parallel
-    const keys = [
-      'session.defaultTTLMinutes',
-      'session.cleanupIntervalSeconds',
-      'session.rateLimitCapacity',
-      'session.rateLimitRefillPerSec',
-      'session.maxActiveSessions'
-    ];
-    const results = await Promise.all(keys.map((k) => SettingsService.get(k)));
-    const [ttlM, cleanupSeconds, rlCapacity, rlRefillPerSec, maxSessions] = results;
-
-    // Apply settings using dedicated helpers
-    this._applyTTL(ttlM);
-    this._applyCleanupIntervalFromSeconds(cleanupSeconds);
-    this._applyRateLimitDefaults(rlCapacity, rlRefillPerSec);
-    this._applyMaxSessions(maxSessions);
-  }
-
+  // No settings caching helpers: SettingsService values must be read live where needed.
   _applyTTL(ttlMinutesValue) {
     try {
       const ttlNum = Number(ttlMinutesValue);
@@ -96,41 +71,6 @@ class SessionManagementService {
       }
     } catch (e) {
       // ignore and keep default
-    }
-  }
-
-  _applyCleanupIntervalFromSeconds(secondsValue) {
-    try {
-      const seconds = Number(secondsValue);
-      if (!Number.isNaN(seconds) && seconds > 0) {
-        this.cleanupIntervalMinutes = seconds / 60;
-        const ms = Math.max(1000, this.cleanupIntervalMinutes * 60 * 1000);
-        this._restartCleanupTimer(ms);
-      }
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  _applyRateLimitDefaults(capacityValue, refillPerSecValue) {
-    try {
-      const cap = Number(capacityValue);
-      const refill = Number(refillPerSecValue);
-      if (!Number.isNaN(cap) && cap > 0) this.defaultRateLimit.capacity = cap;
-      if (!Number.isNaN(refill) && refill >= 0) this.defaultRateLimit.refillPerSec = refill;
-    } catch (e) {
-      // ignore
-    }
-  }
-
-  _applyMaxSessions(maxSessionsValue) {
-    try {
-      if (typeof maxSessionsValue !== 'undefined' && maxSessionsValue !== null && maxSessionsValue !== '') {
-        const val = Number(maxSessionsValue);
-        if (!Number.isNaN(val) && val >= 0) this.maxSessions = val;
-      }
-    } catch (e) {
-      // ignore
     }
   }
 
@@ -209,10 +149,13 @@ class SessionManagementService {
 
     const now = Date.now();
     // Determine TTL: prefer explicit ttlMs, otherwise read live setting
-    let ttl = explicitTtlMs || this.defaultTTL;
+    let ttl = (typeof explicitTtlMs !== 'undefined' && explicitTtlMs !== null) ? explicitTtlMs : this.defaultTTL;
     try {
-      const ttlM = Number(await SettingsService.get('session.defaultTTLMinutes')) || null;
-      if (!ttlMs && ttlM !== null) ttl = ttlM * 60 * 1000;
+      const ttlMVal = await SettingsService.get('session.defaultTTLMinutes');
+      const ttlM = (typeof ttlMVal !== 'undefined' && ttlMVal !== null && ttlMVal !== '') ? Number(ttlMVal) : null;
+      if ((explicitTtlMs === undefined || explicitTtlMs === null) && ttlM !== null && !Number.isNaN(ttlM) && ttlM > 0) {
+        ttl = ttlM * 60 * 1000;
+      }
     } catch (e) {
       // ignore and use fallback
     }
@@ -221,8 +164,21 @@ class SessionManagementService {
     if (!session) {
       // create token bucket for rate limiting. Prefer explicit rateLimit, otherwise
       // use defaults (already initialized from SettingsService on startup).
-  const rl = explicitRateLimit || this.defaultRateLimit;
-      const bucket = this._createBucket(rl);
+      // Prefer explicit rateLimit. If not provided, try reading live settings.
+      let rl = explicitRateLimit || null;
+      if (!rl) {
+        try {
+          const capVal = await SettingsService.get('session.rateLimitCapacity');
+          const refillVal = await SettingsService.get('session.rateLimitRefillPerSec');
+          const cap = (typeof capVal !== 'undefined' && capVal !== null && capVal !== '') ? Number(capVal) : null;
+          const refill = (typeof refillVal !== 'undefined' && refillVal !== null && refillVal !== '') ? Number(refillVal) : null;
+          if (!Number.isNaN(cap) && cap > 0) rl = rl || {} , rl.capacity = cap; // ensure rl is object when values exist
+          if (!Number.isNaN(refill) && refill >= 0) rl = rl || {} , rl.refillPerSec = refill;
+        } catch (e) {
+          // ignore and fall back to defaults
+        }
+      }
+      const bucket = this._createBucket(rl || this.defaultRateLimit);
       session = {
         sessionId,
         chatId: providedChatId || null,
