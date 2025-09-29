@@ -45,6 +45,7 @@ class SessionManagementService {
     // Map sessionId -> { sessionId, chatId, createdAt, lastSeen, ttl, bucket }
     this.sessions = new Map();
     // Map chatId -> sessionId for quick lookup when clients report by chatId
+    // A single session can now be associated with multiple chatIds (multiple tabs)
     this.chatToSession = new Map();
     this.defaultTTL = 1000 * 60 * 60; // 1 hour fallback
     // cleanupInterval is stored in minutes for admin/settings clarity. Internally
@@ -189,7 +190,8 @@ class SessionManagementService {
       const bucket = this._createBucket(rl || this.defaultRateLimit);
       session = {
         sessionId,
-        chatId: providedChatId || null,
+        // support multiple chatIds per session (array). `session.chatId` is deprecated.
+        chatIds: providedChatId ? [providedChatId] : [],
         createdAt: now,
         lastSeen: now,
         ttl,
@@ -207,12 +209,22 @@ class SessionManagementService {
         errorTypes: {}
       };
       this.sessions.set(sessionId, session);
-      if (session.chatId) {
-        this.chatToSession.set(session.chatId, sessionId);
+      if (providedChatId) {
+        this.chatToSession.set(providedChatId, sessionId);
       }
     } else {
       session.lastSeen = now;
       session.ttl = ttl; // allow updating ttl
+    }
+
+    // If there's a provided chatId for an existing session, ensure it's tracked
+    if (session && providedChatId) {
+      session.chatIds = session.chatIds || [];
+      if (!session.chatIds.includes(providedChatId)) {
+        session.chatIds.push(providedChatId);
+        // note: `session.chatId` is deprecated; do not set it
+        this.chatToSession.set(providedChatId, sessionId);
+      }
     }
 
     return { ok: true, session };
@@ -324,55 +336,80 @@ class SessionManagementService {
   getSummary() {
     const out = [];
     for (const [k, v] of this.sessions.entries()) {
-      out.push({
-        // Return explicit `sessionId` and `chatId` fields. Do NOT alias them.
-        sessionId: k,
-        chatId: v.chatId || null,
-        creditsLeft: v.bucket ? Math.round(v.bucket.getCredits()) : 0,
-        createdAt: v.createdAt,
-        lastSeen: v.lastSeen,
-        ttl: v.ttl,
-        requestCount: v.requestCount || 0,
-        errorCount: v.errorCount || 0,
-        // expose per-error-type counts and an "other" bucket
-        errorTypes: v.errorTypes || {},
-        errorTypesOther: (() => {
-          try {
-            const byType = v.errorTypes || {};
-            const sumSpecific = Object.values(byType).reduce((a, b) => a + b, 0);
-            const other = (v.errorCount || 0) - sumSpecific;
-            return other > 0 ? other : 0;
-          } catch (e) {
-            return 0;
-          }
-        })(),
-        lastLatencyMs: v.lastLatencyMs || 0,
-        avgLatencyMs: v.requestCount ? Math.round((v.totalLatencyMs || 0) / v.requestCount) : 0,
-        // requests per minute: count of requests in the last 60 seconds
-        rpm: (() => {
-          try {
-            const now = Date.now();
-            const mts = v.requestTimestamps || [];
-            let count = 0;
-            for (let i = mts.length - 1; i >= 0; i--) {
-              if (now - mts[i] <= 60 * 1000) count++; else break;
+      const chatIds = (v.chatIds && v.chatIds.length) ? v.chatIds : [v.chatId || null];
+      for (const cid of chatIds) {
+        out.push({
+          // Return explicit `sessionId` and `chatId` fields. Do NOT alias them.
+          sessionId: k,
+          chatId: cid || null,
+          creditsLeft: v.bucket ? Math.round(v.bucket.getCredits()) : 0,
+          createdAt: v.createdAt,
+          lastSeen: v.lastSeen,
+          ttl: v.ttl,
+          requestCount: v.requestCount || 0,
+          errorCount: v.errorCount || 0,
+          // expose per-error-type counts and an "other" bucket
+          errorTypes: v.errorTypes || {},
+          errorTypesOther: (() => {
+            try {
+              const byType = v.errorTypes || {};
+              const sumSpecific = Object.values(byType).reduce((a, b) => a + b, 0);
+              const other = (v.errorCount || 0) - sumSpecific;
+              return other > 0 ? other : 0;
+            } catch (e) {
+              return 0;
             }
-            return count;
-          } catch (e) {
-            return 0;
-          }
-        })()
-      });
+          })(),
+          lastLatencyMs: v.lastLatencyMs || 0,
+          avgLatencyMs: v.requestCount ? Math.round((v.totalLatencyMs || 0) / v.requestCount) : 0,
+          // requests per minute: count of requests in the last 60 seconds
+          rpm: (() => {
+            try {
+              const now = Date.now();
+              const mts = v.requestTimestamps || [];
+              let count = 0;
+              for (let i = mts.length - 1; i >= 0; i--) {
+                if (now - mts[i] <= 60 * 1000) count++; else break;
+              }
+              return count;
+            } catch (e) {
+              return 0;
+            }
+          })()
+        });
+      }
     }
     return out;
   }
 
   unregister(chatId) {
-    // Accept either sessionId or chatId
-    const session = this.getInfo(chatId);
-    if (!session) return false;
-    if (session.chatId) this.chatToSession.delete(session.chatId);
-    return this.sessions.delete(session.sessionId);
+    // Accept either a sessionId (remove entire session) or a chatId (remove only that mapping)
+    if (!chatId) return false;
+
+    // If chatId is actually a sessionId key, delete entire session and its mappings
+    if (this.sessions.has(chatId)) {
+      const session = this.sessions.get(chatId);
+      if (session.chatIds && session.chatIds.length) {
+        for (const cid of session.chatIds) this.chatToSession.delete(cid);
+      }
+      return this.sessions.delete(chatId);
+    }
+
+    // Otherwise treat the input as a chatId -> remove that mapping from the session
+    const mappedSessionId = this.chatToSession.get(chatId);
+    if (!mappedSessionId) return false;
+    const session = this.sessions.get(mappedSessionId);
+    // remove the mapping
+    this.chatToSession.delete(chatId);
+    if (session && session.chatIds && session.chatIds.length) {
+      // remove the chatId from the session's chatIds array
+      session.chatIds = session.chatIds.filter(c => c !== chatId);
+    }
+    // If no chatIds remain, remove the whole session
+    if (!session || !session.chatIds || session.chatIds.length === 0) {
+      return this.sessions.delete(mappedSessionId);
+    }
+    return true;
   }
 
   // Check and consume credits from the session's bucket. Returns {ok, remaining}.
