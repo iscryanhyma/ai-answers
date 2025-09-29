@@ -1,5 +1,39 @@
 # Changelog
 
+## [1.43.0](https://github.com/cds-snc/ai-answers/compare/v1.42.0...v1.43.0) (2025-09-29)
+
+
+### Features
+
+* Add new debug configuration for simultaneous server and Chrome debugging ([0558ed5](https://github.com/cds-snc/ai-answers/commit/0558ed571fb9779673289569d633bb5921e03918))
+* Add session settings management with configurable TTL, cleanup interval, rate limits, and max active sessions ([e12b0e7](https://github.com/cds-snc/ai-answers/commit/e12b0e721fc7afa97267255dfa6dad1b28331bf5))
+* Enhance session management by adding chatId to session registration and improving session retrieval logic ([31a2f8b](https://github.com/cds-snc/ai-answers/commit/31a2f8b4f005f8a4700ccb2f2a6ee8ceb3e5d1db))
+* Enhance session reporting with error type tracking and add session metrics service ([34c9f20](https://github.com/cds-snc/ai-answers/commit/34c9f2064dc2f326acdf5f878b2b0079a837e759))
+* Implement chat session availability endpoint and integrate with SessionService for site and session status checks ([1a5537c](https://github.com/cds-snc/ai-answers/commit/1a5537c5c26797dbf85ce030ddd467c8004d3c3a))
+* Implement deterministic browser fingerprint utility with caching and async computation ([3c102e1](https://github.com/cds-snc/ai-answers/commit/3c102e1a278385adddefa66fef18440fad020e61))
+* Implement in-memory session management with credit-based rate limiting and session tracking ([69afadf](https://github.com/cds-snc/ai-answers/commit/69afadfd4fa7421235ad19717d2cdb26e2fbf198))
+* Implement proxy middleware for API requests to backend server ([0558ed5](https://github.com/cds-snc/ai-answers/commit/0558ed571fb9779673289569d633bb5921e03918))
+* Integrate session handling into API endpoints with session middleware ([94d6517](https://github.com/cds-snc/ai-answers/commit/94d6517dddcf7b2ca9e6424192442ff312f97688))
+* Support multiple chatIds per session in SessionManagementService and update fingerprint utility for enhanced uniqueness ([318c45e](https://github.com/cds-snc/ai-answers/commit/318c45e6d9293827060ac07eb32961204886988d))
+* Update localization strings for improved clarity and consistency ([a66694d](https://github.com/cds-snc/ai-answers/commit/a66694d924a3963ec85ff98450a29fb1fdf380d4))
+* Update session management to use credits instead of tokens and enhance localization for rate limits ([0116f2a](https://github.com/cds-snc/ai-answers/commit/0116f2ab15a9ae122211e373976560ae5753f1f2))
+
+
+### Styles
+
+* Improve code formatting and consistency in SessionManagementService ([7632f60](https://github.com/cds-snc/ai-answers/commit/7632f6097c3aa90d0e5fec41d9e50a94d9c350cb))
+
+
+### Miscellaneous Chores
+
+* Update localization files for improved clarity and consistency ([fd2dcda](https://github.com/cds-snc/ai-answers/commit/fd2dcda5934318dd88d63e48c847d1fc9edeadb1))
+
+
+### Code Refactoring
+
+* Simplify API URL handling to support development proxy ([0558ed5](https://github.com/cds-snc/ai-answers/commit/0558ed571fb9779673289569d633bb5921e03918))
+* Simplify session management initialization by removing settings caching and loading defaults directly ([339fac6](https://github.com/cds-snc/ai-answers/commit/339fac6c02736bcb9f0bc38dfc11bdeb2e0aafc9))
+
 ## [1.42.0](https://github.com/cds-snc/ai-answers/compare/v1.41.0...v1.42.0) (2025-09-25)
 
 
