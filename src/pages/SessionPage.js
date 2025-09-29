@@ -58,9 +58,8 @@ const SessionPage = ({ lang: propLang }) => {
         columns={[
           { title: t('admin.session.sessionId', 'Session ID'), data: 'sessionId', render: (data) => data || '' },
           { title: t('admin.session.chatId', 'Chat ID'), data: 'chatId', render: (data, type, row) => {
-              // prefer explicit chatId, otherwise fall back to the first chatId in chatIds
-              const cid = data || (Array.isArray(row.chatIds) && row.chatIds.length ? row.chatIds[0] : '') || '';
-              return `<a href="/${lang}?chat=${cid}&review=1">${cid}</a>`;
+              const cid = data || row.chatId || '';
+              return cid ? `<a href="/${lang}?chat=${cid}&review=1">${cid}</a>` : '';
             }
           },
           { title: t('admin.session.creditsLeft', 'Credits left'), data: 'creditsLeft', render: (data) => data !== undefined ? data : 0 },

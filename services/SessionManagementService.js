@@ -42,8 +42,10 @@ import { SettingsService } from './SettingsService.js';
 
 class SessionManagementService {
   constructor() {
-    // Map chatId -> { chatId, createdAt, lastSeen, ttl, bucket }
+    // Map sessionId -> { sessionId, chatId, createdAt, lastSeen, ttl, bucket }
     this.sessions = new Map();
+    // Map chatId -> sessionId for quick lookup when clients report by chatId
+    this.chatToSession = new Map();
   this.defaultTTL = 1000 * 60 * 60; // 1 hour fallback
   // cleanupInterval is stored in minutes for admin/settings clarity. Internally
   // we convert to milliseconds when creating timers. Default: 1 minute.
@@ -196,15 +198,18 @@ class SessionManagementService {
     return { ok: true };
   }
 
-  async register(chatId, { ttlMs, rateLimit } = {}) {
-    if (!chatId) throw new Error('chatId required');
-    if (!this.hasCapacity() && !this.sessions.has(chatId)) {
+  async register(sessionId, opts = {}) {
+    // sessionId: primary key for sessions. opts may include { chatId, ttlMs, rateLimit }
+    const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit } = opts || {};
+    if (!sessionId) throw new Error('sessionId required');
+
+    if (!this.hasCapacity() && !this.sessions.has(sessionId)) {
       return { ok: false, reason: 'capacity' };
     }
 
     const now = Date.now();
     // Determine TTL: prefer explicit ttlMs, otherwise read live setting
-    let ttl = ttlMs || this.defaultTTL;
+    let ttl = explicitTtlMs || this.defaultTTL;
     try {
       const ttlM = Number(await SettingsService.get('session.defaultTTLMinutes')) || null;
       if (!ttlMs && ttlM !== null) ttl = ttlM * 60 * 1000;
@@ -212,14 +217,15 @@ class SessionManagementService {
       // ignore and use fallback
     }
 
-    let session = this.sessions.get(chatId);
+    let session = this.sessions.get(sessionId);
     if (!session) {
       // create token bucket for rate limiting. Prefer explicit rateLimit, otherwise
       // use defaults (already initialized from SettingsService on startup).
-      const rl = rateLimit || this.defaultRateLimit;
+  const rl = explicitRateLimit || this.defaultRateLimit;
       const bucket = this._createBucket(rl);
       session = {
-        chatId,
+        sessionId,
+        chatId: providedChatId || null,
         createdAt: now,
         lastSeen: now,
         ttl,
@@ -236,7 +242,10 @@ class SessionManagementService {
         // per-error-type counters: { <type>: count }
         errorTypes: {}
       };
-      this.sessions.set(chatId, session);
+      this.sessions.set(sessionId, session);
+      if (session.chatId) {
+        this.chatToSession.set(session.chatId, sessionId);
+      }
     } else {
       session.lastSeen = now;
       session.ttl = ttl; // allow updating ttl
@@ -258,14 +267,14 @@ class SessionManagementService {
   }
 
   touch(chatId) {
-    const session = this.sessions.get(chatId);
+    const session = this.getInfo(chatId);
     if (!session) return false;
     session.lastSeen = Date.now();
     return true;
   }
 
   recordRequest(chatId, { latencyMs = 0, error = false, errorType = null } = {}) {
-    const session = this.sessions.get(chatId);
+    const session = this.getInfo(chatId);
     if (!session) return false;
     session.requestCount = (session.requestCount || 0) + 1;
     if (error) session.errorCount = (session.errorCount || 0) + 1;
@@ -298,11 +307,9 @@ class SessionManagementService {
     const out = [];
     for (const [k, v] of this.sessions.entries()) {
       out.push({
-        // expose both `chatId` (legacy) and `sessionId` (alias) so clients
-        // that expect either name can work. Also expose creditsLeft computed
-        // from the token bucket so the UI can present remaining credits.
-        chatId: k,
+        // Return explicit `sessionId` and `chatId` fields. Do NOT alias them.
         sessionId: k,
+        chatId: v.chatId || null,
         creditsLeft: v.bucket ? Math.round(v.bucket.getCredits()) : 0,
         createdAt: v.createdAt,
         lastSeen: v.lastSeen,
@@ -343,12 +350,16 @@ class SessionManagementService {
   }
 
   unregister(chatId) {
-    return this.sessions.delete(chatId);
+    // Accept either sessionId or chatId
+    const session = this.getInfo(chatId);
+    if (!session) return false;
+    if (session.chatId) this.chatToSession.delete(session.chatId);
+    return this.sessions.delete(session.sessionId);
   }
 
   // Check and consume credits from the session's bucket. Returns {ok, remaining}.
   canConsume(chatId, credits = 1) {
-    const session = this.sessions.get(chatId);
+    const session = this.getInfo(chatId);
     if (!session) return { ok: false, reason: 'no_session' };
     const allowed = session.bucket.consume(credits);
     if (allowed) {
@@ -359,7 +370,12 @@ class SessionManagementService {
   }
 
   getInfo(chatId) {
-    return this.sessions.get(chatId);
+    // Accept either a sessionId or a chatId. Prefer sessionId lookup for speed.
+    if (!chatId) return null;
+    if (this.sessions.has(chatId)) return this.sessions.get(chatId);
+    const mapped = this.chatToSession.get(chatId);
+    if (mapped) return this.sessions.get(mapped) || null;
+    return null;
   }
 
   shutdown() {

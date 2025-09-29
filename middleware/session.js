@@ -53,7 +53,7 @@ export default function sessionMiddleware(options = {}) {
           return res.end(JSON.stringify({ error: 'noSessionCapacity' }));
         }
 
-        const reg = await SessionManagementService.register(sessionId);
+  const reg = await SessionManagementService.register(sessionId, { chatId });
         if (!reg.ok) {
           if (reg.reason === 'capacity') {
             res.statusCode = 503;
@@ -106,8 +106,8 @@ export default function sessionMiddleware(options = {}) {
           return res.end(JSON.stringify({ error: canCreate.reason || 'sessionCreateThrottled' }));
         }
 
-        sessionId = uuidv4();
-        const reg = await SessionManagementService.register(sessionId);
+  sessionId = uuidv4();
+  const reg = await SessionManagementService.register(sessionId, { chatId });
         if (!reg.ok) {
           if (reg.reason === 'capacity') {
             res.statusCode = 503;
