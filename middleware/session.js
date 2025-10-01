@@ -143,7 +143,16 @@ export default function sessionMiddleware(options = {}) {
           // ignore cookie issuance failures
         }
       } else if (sessionId) {
-        SessionManagementService.touch(sessionId);
+        // existing session: update lastSeen and ensure any provided chatId
+        // is associated with the session. This ensures multiple tabs (chatIds)
+        // are tracked under the same session and will show up in the admin UI.
+        try {
+          // register will update ttl/lastSeen and add chatId to session.chatIds if provided
+          await SessionManagementService.register(sessionId, { chatId });
+        } catch (e) {
+          // fall back to touch on any failure to avoid blocking requests
+          SessionManagementService.touch(sessionId);
+        }
       }
 
       if (!sessionId) {
