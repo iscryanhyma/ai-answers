@@ -56,9 +56,8 @@ class SessionManagementService {
     // default rate limit applied to new sessions unless overridden (fallback)
     this.defaultRateLimit = { capacity: 60, refillPerSec: 1 };
     // Track anonymous session creation attempts to prevent churn abuse
-    this.fingerprintCounters = new Map();
-    this.fingerprintLimit = { perWindow: 2, windowMs: 24 * 60 * 60 * 1000 }; // 2 sessions / 24h per fingerprint
-    this.maxFingerprintEntries = 10000;
+  // Map verified fingerprintKey -> sessionId to ensure one session per fingerprint
+  this.fingerprintToSession = new Map();
     // NOTE: settings will be read live from SettingsService when needed.
     // start cleanup timer with defaults
     this._startCleanup();
@@ -133,24 +132,47 @@ class SessionManagementService {
 
   // fingerprintKey: optional HMACed fingerprint. When provided it should be pre-verified by middleware
   // (i.e., the server has validated the raw client fingerprint and issued a signed cookie).
-  canCreateSession({ fingerprintKey = null } = {}) {
-    const increments = [];
-    if (fingerprintKey) {
-      const entry = this._getWindowCounter(this.fingerprintCounters, fingerprintKey, this.fingerprintLimit.windowMs, this.maxFingerprintEntries);
-      if (entry.count >= this.fingerprintLimit.perWindow) {
-        return { ok: false, reason: 'fingerprintThrottled' };
-      }
-      increments.push(() => entry.count++);
-    }
-
-    increments.forEach((fn) => fn());
-    return { ok: true };
-  }
+  // fingerprint creation counters removed; session creation is now driven by
+  // fingerprint->session mapping. No canCreateSession helper exists anymore.
 
   async register(sessionId, opts = {}) {
-    // sessionId: primary key for sessions. opts may include { chatId, ttlMs, rateLimit }
-    const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit } = opts || {};
+    // sessionId: primary key for sessions. opts may include { chatId, ttlMs, rateLimit, fingerprintKey }
+    const { chatId: providedChatId, ttlMs: explicitTtlMs, rateLimit: explicitRateLimit, fingerprintKey } = opts || {};
     if (!sessionId) throw new Error('sessionId required');
+
+    // Require a verified fingerprintKey to create or reuse sessions. This prevents
+    // anonymous clients from spinning up unlimited sessions and ensures that the
+    // same fingerprint always maps to the same session object.
+    if (!fingerprintKey) {
+      return { ok: false, reason: 'fingerprintRequired' };
+    }
+
+    // If this fingerprint already maps to an active session, reuse it instead
+    const existing = this.fingerprintToSession.get(fingerprintKey);
+    if (existing) {
+      // If the fingerprint maps to a sessionId different from the provided
+      // sessionId (i.e. mismatch), treat the mapping as stale and remove it so
+      // we create/recreate the proper session below. This avoids accidentally
+      // returning a session that belongs to a different client or tab.
+      if (existing !== sessionId) {
+        try {
+          this.fingerprintToSession.delete(fingerprintKey);
+        } catch (e) { }
+      } else {
+        const sess = this.sessions.get(existing);
+        if (sess) {
+          // update lastSeen and return existing session
+          sess.lastSeen = Date.now();
+          // ensure provided chatId is tracked
+          if (providedChatId && !sess.chatIds.includes(providedChatId)) {
+            sess.chatIds.push(providedChatId);
+            this.chatToSession.set(providedChatId, sess.sessionId || existing);
+          }
+          return { ok: true, session: sess };
+        }
+        // stale mapping: fall through and create a new session, but ensure mapping is replaced below
+      }
+    }
 
     if (!(await this.hasCapacity()) && !this.sessions.has(sessionId)) {
       return { ok: false, reason: 'capacity' };
@@ -209,6 +231,12 @@ class SessionManagementService {
         errorTypes: {}
       };
       this.sessions.set(sessionId, session);
+      // map fingerprint -> sessionId for reuse if provided
+      if (fingerprintKey) {
+        try {
+          this.fingerprintToSession.set(fingerprintKey, sessionId);
+        } catch (e) { }
+      }
       if (providedChatId) {
         this.chatToSession.set(providedChatId, sessionId);
       }
@@ -407,14 +435,32 @@ class SessionManagementService {
     }
     // If no chatIds remain, remove the whole session
     if (!session || !session.chatIds || session.chatIds.length === 0) {
+      // also remove any fingerprint -> session mapping(s) that reference this session
+      try {
+        for (const [k, v] of this.fingerprintToSession.entries()) {
+          if (v === mappedSessionId) this.fingerprintToSession.delete(k);
+        }
+      } catch (e) { }
       return this.sessions.delete(mappedSessionId);
     }
     return true;
   }
 
   // Check and consume credits from the session's bucket. Returns {ok, remaining}.
-  canConsume(chatId, credits = 1) {
-    const session = this.getInfo(chatId);
+  // Accepts either a sessionId or a chatId. Prefer direct sessionId lookup
+  // to avoid accidentally resolving a sessionId via chat mappings.
+  canConsume(id, credits = 1) {
+    if (!id) return { ok: false, reason: 'no_session' };
+    // Prefer direct session lookup
+    let session = null;
+    if (this.sessions.has(id)) {
+      session = this.sessions.get(id);
+    } else {
+      // Fallback: treat id as chatId and map to session
+      const mapped = this.chatToSession.get(id);
+      if (mapped) session = this.sessions.get(mapped) || null;
+    }
+
     if (!session) return { ok: false, reason: 'no_session' };
     const allowed = session.bucket.consume(credits);
     if (allowed) {
@@ -436,7 +482,7 @@ class SessionManagementService {
   shutdown() {
     clearInterval(this.cleanupTimer);
     this.sessions.clear();
-    this.fingerprintCounters.clear();
+    this.fingerprintToSession.clear();
   }
 
   _createBucket({ capacity = null, refillPerSec = null } = {}) {
@@ -446,28 +492,7 @@ class SessionManagementService {
   }
 }
 
-SessionManagementService.prototype._getWindowCounter = function (map, key, windowMs, maxEntries) {
-  const now = Date.now();
-  let entry = map.get(key);
-  if (!entry || (now - entry.windowStart) >= windowMs) {
-    entry = { count: 0, windowStart: now };
-    map.set(key, entry);
-  }
-
-  if (map.size > maxEntries) {
-    // simple pruning strategy: remove oldest 5 entries (best effort)
-    let removed = 0;
-    for (const [k, v] of map.entries()) {
-      if (now - v.windowStart >= windowMs || removed < 5) {
-        map.delete(k);
-        removed++;
-      }
-      if (removed >= 5) break;
-    }
-  }
-
-  return entry;
-};
+// windowed fingerprint counters removed — no prototype helpers remain
 
 const singleton = new SessionManagementService();
 export default singleton;
