@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.44.0](https://github.com/cds-snc/ai-answers/compare/v1.43.0...v1.44.0) (2025-10-02)
+
+
+### Features
+
+* Enhance session management by integrating fingerprintKey for session registration and reuse, improving session tracking and security ([6db62e6](https://github.com/cds-snc/ai-answers/commit/6db62e6b65874b9b99410de7a28fbcd5303ee7d3))
+* Enhance session management to associate multiple chatIds with e… ([ad90896](https://github.com/cds-snc/ai-answers/commit/ad90896553446fbcee3525bfe67f7d98f66e1ccf))
+* Enhance session management to associate multiple chatIds with existing sessions for improved tracking ([863da95](https://github.com/cds-snc/ai-answers/commit/863da95934b7697f0c16f6a664b1c2840a378d7b))
+
 ## [1.43.0](https://github.com/cds-snc/ai-answers/compare/v1.42.0...v1.43.0) (2025-09-29)
 
 
