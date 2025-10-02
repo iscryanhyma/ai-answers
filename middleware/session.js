@@ -33,6 +33,13 @@ export default function sessionMiddleware(options = {}) {
       }
       if (chatId) req.chatId = chatId;
 
+      // Compute HMACed fingerprint key early so it can be passed to any
+      // SessionManagementService.register call (new or existing sessions).
+      const fingerprintHeader = (req.headers['x-fp-hash'] || req.headers['x-fp-id'] || '').toString();
+      const fingerprintKey = fingerprintHeader
+        ? crypto.createHmac('sha256', fingerprintPepper).update(fingerprintHeader).digest('hex')
+        : null;
+
       let sessionId = null;
       const sessionToken = cookies[SESSION_COOKIE_NAME] || req.headers['x-session-token'];
       if (sessionToken) {
@@ -53,7 +60,9 @@ export default function sessionMiddleware(options = {}) {
           return res.end(JSON.stringify({ error: 'noSessionCapacity' }));
         }
 
-  const reg = await SessionManagementService.register(sessionId, { chatId });
+        // Pass fingerprintKey when registering an existing-but-unknown session
+        // so the session manager can map any provided fingerprint to the session.
+        const reg = await SessionManagementService.register(sessionId, { chatId, fingerprintKey });
         if (!reg.ok) {
           if (reg.reason === 'capacity') {
             res.statusCode = 503;
@@ -73,11 +82,6 @@ export default function sessionMiddleware(options = {}) {
           res.setHeader('Content-Type', 'application/json');
           return res.end(JSON.stringify({ error: 'noSessionCapacity' }));
         }
-
-        const fingerprintHeader = (req.headers['x-fp-hash'] || req.headers['x-fp-id'] || '').toString();
-        const fingerprintKey = fingerprintHeader
-          ? crypto.createHmac('sha256', fingerprintPepper).update(fingerprintHeader).digest('hex')
-          : null;
         // Verify server-signed fingerprint cookie (if present) to avoid counting unverified headers
         let fingerprintVerified = false;
         try {
@@ -94,20 +98,12 @@ export default function sessionMiddleware(options = {}) {
           fingerprintVerified = false;
         }
 
-  // Pass the HMACed fingerprintKey to the session manager so it can
-  // count and enforce fingerprint-based throttles even on the first
-  // request where the signed cookie (`fpSigned`) hasn't yet been set.
-  // Middleware still issues `fpSigned` for stronger verification on
-  // subsequent requests, but counting here avoids falling back to IP.
-  const canCreate = SessionManagementService.canCreateSession({ fingerprintKey: fingerprintKey });
-        if (!canCreate.ok) {
-          res.statusCode = 429;
-          res.setHeader('Content-Type', 'application/json');
-          return res.end(JSON.stringify({ error: canCreate.reason || 'sessionCreateThrottled' }));
-        }
-
-  sessionId = uuidv4();
-  const reg = await SessionManagementService.register(sessionId, { chatId });
+        // Pass the HMACed fingerprintKey to the session manager so it can
+        // map the fingerprint to the created session. If the client provided
+        // a raw fingerprint header, we will still issue a signed `fpSigned`
+        // cookie for stronger verification on subsequent requests.
+        sessionId = uuidv4();
+        const reg = await SessionManagementService.register(sessionId, { chatId, fingerprintKey });
         if (!reg.ok) {
           if (reg.reason === 'capacity') {
             res.statusCode = 503;
@@ -143,7 +139,16 @@ export default function sessionMiddleware(options = {}) {
           // ignore cookie issuance failures
         }
       } else if (sessionId) {
-        SessionManagementService.touch(sessionId);
+        // existing session: update lastSeen and ensure any provided chatId
+        // is associated with the session. This ensures multiple tabs (chatIds)
+        // are tracked under the same session and will show up in the admin UI.
+        try {
+          // register will update ttl/lastSeen and add chatId to session.chatIds if provided
+          await SessionManagementService.register(sessionId, { chatId, fingerprintKey });
+        } catch (e) {
+          // fall back to touch on any failure to avoid blocking requests
+          SessionManagementService.touch(sessionId);
+        }
       }
 
       if (!sessionId) {
@@ -162,9 +167,9 @@ export default function sessionMiddleware(options = {}) {
         return res.end(JSON.stringify({ error: 'rateLimitExceeded' }));
       }
 
-  req.sessionId = sessionId;
-  req.session = sessionInfo || SessionManagementService.getInfo(sessionId);
-  req.chatSession = req.session;
+      req.sessionId = sessionId;
+      req.session = sessionInfo || SessionManagementService.getInfo(sessionId);
+      req.chatSession = req.session;
       return next();
     } catch (err) {
       if (console && console.error) console.error('sessionMiddleware error', err);
