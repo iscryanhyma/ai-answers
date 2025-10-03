@@ -215,8 +215,12 @@ export default function App() {
   const router = useMemo(() => {
     const homeEn = <HomePage lang="en" />;
     const homeFr = <HomePage lang="fr" />;
+    const runtimeHostname = (typeof window !== 'undefined' && window.location && window.location.hostname) || '';
+    const hostPrefixMatch = runtimeHostname.match(/^(ai-answers|reponses-ia)(?:\.|$)/);
+    const defaultLang = hostPrefixMatch && hostPrefixMatch[1] === 'reponses-ia' ? 'fr' : 'en';
+    const homeDefault = defaultLang === 'fr' ? homeFr : homeEn;
     const publicRoutes = [
-      { path: '/', element: homeEn },
+      { path: '/', element: homeDefault },
       { path: '/en', element: homeEn },
       { path: '/fr', element: homeFr },
       { path: '/en/signin', element: <LoginPage lang="en" /> },
