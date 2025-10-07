@@ -18,7 +18,6 @@ murdered
 shoot
 shoots
 shooting
-shot
 strangle
 sword
 torture

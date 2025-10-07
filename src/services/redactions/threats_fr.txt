@@ -11,13 +11,6 @@ bombardé
 explosif
 explosifs
 fusillade
-tirer
-tirerai
-tirera
-tirerons
-tireront
-tirons
-tiré
 otage
 meurtre
 tuer
