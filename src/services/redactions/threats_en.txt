@@ -10,8 +10,6 @@ detonate
 hostage
 hunt down
 kill
-killed
-killing
 knife
 murder
 shoot

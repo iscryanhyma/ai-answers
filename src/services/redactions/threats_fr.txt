@@ -13,11 +13,4 @@ explosifs
 fusillade
 otage
 meurtre
-tuer
-tuerai
-tuera
-tuerons
-tueront
-tuons
-tué
-tuerie
+
