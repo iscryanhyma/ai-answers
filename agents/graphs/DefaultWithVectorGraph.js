@@ -23,6 +23,7 @@ const GraphState = Annotation.Root({
   selectedAI: Annotation(),
   translationF: Annotation(),
   searchProvider: Annotation(),
+  overrideUserId: Annotation(),
   startTime: Annotation(),
   redactedText: Annotation(),
   translationData: Annotation(),
@@ -79,8 +80,10 @@ graph.addNode('translate', async (state) => {
 });
 
 graph.addNode('contextNode', async (state) => {
-  const { context: preContext, usedExistingContext, conversationHistory: cleanedHistory } = workflow.getContextForFlow({
+  const { context: preContext, usedExistingContext, conversationHistory: cleanedHistory } = await workflow.getContextForFlow({
     conversationHistory: state.conversationHistory,
+    department: state.department,
+    overrideUserId: state.overrideUserId,
     translationData: state.translationData,
     userMessage: state.userMessage,
     lang: state.lang,
@@ -99,6 +102,7 @@ graph.addNode('contextNode', async (state) => {
       referringUrl: state.referringUrl,
       searchProvider: state.searchProvider,
       conversationHistory: cleanedHistory,
+      overrideUserId: state.overrideUserId,
       chatId: state.chatId,
       translationData: state.translationData,
     });
@@ -256,3 +260,7 @@ export const defaultWithVectorGraphApp = graph.compile();
 export async function runDefaultWithVectorGraph(input) {
   return defaultWithVectorGraphApp.invoke(input);
 }
+
+
+
+

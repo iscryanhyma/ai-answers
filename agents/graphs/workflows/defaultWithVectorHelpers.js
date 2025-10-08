@@ -1,5 +1,6 @@
 import ServerLoggingService from '../../../services/ServerLoggingService.js';
 import { redactionService } from '../services/redactionService.js';
+import { ScenarioOverrideService } from '../../../services/ScenarioOverrideService.js';
 import { checkPII } from '../services/piiService.js';
 import { validateShortQueryOrThrow, ShortQueryValidation } from '../services/shortQuery.js';
 import { translateQuestion } from '../services/translationService.js';
@@ -172,7 +173,29 @@ export class DefaultWithVectorServerWorkflow {
     return pageLang === 'fr' ? 'fra' : originalLang;
   }
 
-  async deriveContext({ selectedAI, translationData, lang, department, referringUrl, searchProvider, conversationHistory, chatId }) {
+  async applyScenarioOverride({ context, departmentKey, overrideUserId, chatId }) {
+    if (!context || !overrideUserId || !departmentKey) {
+      return context;
+    }
+    try {
+      const override = await ScenarioOverrideService.getActiveOverride(overrideUserId, departmentKey);
+      if (override && override.overrideText) {
+        await ServerLoggingService.info('Scenario override applied', chatId, {
+          departmentKey,
+          overrideId: override._id ? override._id.toString() : undefined,
+        });
+        return { ...context, systemPrompt: override.overrideText };
+      }
+    } catch (error) {
+      await ServerLoggingService.warn('Scenario override lookup failed', chatId, {
+        departmentKey,
+        error: error?.message || error,
+      });
+    }
+    return context;
+  }
+
+  async deriveContext({ selectedAI, translationData, lang, department, referringUrl, searchProvider, conversationHistory, chatId, overrideUserId }) {
     const searchPayload = {
       message: translationData?.translatedText || translationData?.originalText || '',
       chatId,
@@ -206,7 +229,7 @@ export class DefaultWithVectorServerWorkflow {
       return match ? match[1] : null;
     };
 
-    return {
+    const contextData = {
       topic: parseField(/<topic>([\s\S]*?)<\/topic>/),
       topicUrl: parseField(/<topicUrl>([\s\S]*?)<\/topicUrl>/),
       department: parseField(/<department>([\s\S]*?)<\/department>/),
@@ -223,9 +246,18 @@ export class DefaultWithVectorServerWorkflow {
       outputLang: this.determineOutputLang(lang, translationData),
       originalLang: translationData.originalLanguage,
     };
+
+    const departmentKey = department || contextData.department;
+
+    return await this.applyScenarioOverride({
+      context: contextData,
+      departmentKey,
+      overrideUserId,
+      chatId,
+    });
   }
 
-  getContextForFlow({ conversationHistory, translationData, userMessage, lang, searchProvider, chatId, selectedAI }) {
+  async getContextForFlow({ conversationHistory, translationData, userMessage, lang, searchProvider, chatId, selectedAI, department, overrideUserId }) {
     const safeHistory = (conversationHistory || []).filter(m => m && !m.error);
     const cleanedHistory = safeHistory;
     const aiHistory = safeHistory.filter(m => m.sender === 'ai');
@@ -246,7 +278,14 @@ export class DefaultWithVectorServerWorkflow {
       context.translatedQuestion = translationData?.translatedText || userMessage;
       context.originalLang = translationData?.originalLanguage || lang;
       context.outputLang = this.determineOutputLang(lang, translationData);
-      return { context, usedExistingContext: true, conversationHistory: aiHistory };
+      const departmentKey = department || context.department;
+      const updatedContext = await this.applyScenarioOverride({
+        context,
+        departmentKey,
+        overrideUserId,
+        chatId,
+      });
+      return { context: updatedContext, usedExistingContext: true, conversationHistory: aiHistory };
     }
 
     const minimalContext = {
@@ -416,3 +455,10 @@ export class DefaultWithVectorServerWorkflow {
 }
 
 export { RedactionError, ShortQueryValidation };
+
+
+
+
+
+
+
