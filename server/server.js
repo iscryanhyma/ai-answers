@@ -68,6 +68,7 @@ import { VectorService, initVectorService } from '../services/VectorServiceFacto
 import vectorReinitializeHandler from '../api/vector/vector-reinitialize.js';
 import vectorStatsHandler from '../api/vector/vector-stats.js';
 import dbBatchStatsHandler from '../api/batch/batch-stats.js';
+import scenarioOverrideHandler from '../api/scenario/scenario-overrides.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -169,6 +170,7 @@ app.post('/api/chat/chat-pii-check', chatPIICheckHandler);
 app.post('/api/chat/chat-detect-language', chatDetectLanguageHandler);
 app.post('/api/chat/chat-translate', chatTranslateHandler);
 app.post('/api/chat/chat-graph-run', chatGraphRunHandler);
+app.all('/api/scenario/scenario-overrides', scenarioOverrideHandler);
 
 
 const PORT = process.env.PORT || 3001;
@@ -207,6 +209,7 @@ const PORT = process.env.PORT || 3001;
     process.exit(1);
   }
 })();
+
 
 
 
