@@ -1,8 +1,9 @@
-import  { useEffect, useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { createBrowserRouter, RouterProvider, Outlet, useLocation } from 'react-router-dom';
 import HomePage from './pages/HomePage.js';
 import ChatDashboardPage from './pages/ChatDashboardPage.js';
 import AdminPage from './pages/AdminPage.js';
+import ScenarioOverridesPage from './pages/ScenarioOverridesPage.js';
 import BatchPage from './pages/BatchPage.js';
 import ChatViewer from './pages/ChatViewer.js';
 import SignupPage from './pages/SignupPage.js';
@@ -167,13 +168,13 @@ const AppLayout = () => {
   // Update Open Graph meta tags based on current language
   useEffect(() => {
     const ogImage = currentLang === 'fr' ? 'og-image-fr.png' : 'og-image-en.png';
-    
+
     // Update og:image meta tag
     let ogImageMeta = document.querySelector('meta[property="og:image"]');
     if (ogImageMeta) {
       ogImageMeta.setAttribute('content', ogImage);
     }
-    
+
     // Update twitter:image meta tag
     let twitterImageMeta = document.querySelector('meta[property="twitter:image"]');
     if (twitterImageMeta) {
@@ -193,9 +194,9 @@ const AppLayout = () => {
           </small>
         </div>
       </section>
-      <GcdsHeader 
-        lang={currentLang} 
-        langHref={alternateLangHref} 
+      <GcdsHeader
+        lang={currentLang}
+        langHref={alternateLangHref}
         skipToHref="#main-content"
       >
         <GcdsBreadcrumbs slot="breadcrumb">
@@ -248,17 +249,19 @@ export default function App() {
       { path: '/fr/public-eval', element: <PublicEvalPage lang="fr" />, roles: ['admin', 'partner'] },
       { path: '/en/metrics', element: <MetricsPage lang="en" />, roles: ['admin', 'partner'] },
       { path: '/fr/metrics', element: <MetricsPage lang="fr" />, roles: ['admin', 'partner'] },
-    { path: '/en/settings', element: <SettingsPage lang="en" />, roles: ['admin'] },
-    { path: '/fr/settings', element: <SettingsPage lang="fr" />, roles: ['admin'] },
-    { path: '/en/database', element: <DatabasePage lang="en" />, roles: ['admin'] },
-    { path: '/fr/database', element: <DatabasePage lang="fr" />, roles: ['admin'] },
-    { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
-    { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] }
+      { path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/scenario-overrides', element: <ScenarioOverridesPage lang="en" />, roles: ['admin', 'partner'] },
+      { path: '/fr/scenario-overrides', element: <ScenarioOverridesPage lang="fr" />, roles: ['admin', 'partner'] },
+      { path: '/en/settings', element: <SettingsPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/settings', element: <SettingsPage lang="fr" />, roles: ['admin'] },
+      { path: '/en/database', element: <DatabasePage lang="en" />, roles: ['admin'] },
+      { path: '/fr/database', element: <DatabasePage lang="fr" />, roles: ['admin'] },
+      { path: '/en/vector', element: <VectorPage lang="en" />, roles: ['admin'] },
+      { path: '/fr/vector', element: <VectorPage lang="fr" />, roles: ['admin'] }
     ];
 
-  // Add sessions admin-only route
-  protectedRoutes.push({ path: '/en/sessions', element: <SessionPage lang="en" />, roles: ['admin'] });
-  protectedRoutes.push({ path: '/fr/sessions', element: <SessionPage lang="fr" />, roles: ['admin'] });
+    // sessions routes are defined in the protectedRoutes array above
 
     return createBrowserRouter([
       {
