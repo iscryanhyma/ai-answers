@@ -1,5 +1,31 @@
 # Changelog
 
+## [1.46.0](https://github.com/cds-snc/ai-answers/compare/v1.45.0...v1.46.0) (2025-10-08)
+
+
+### Features
+
+* Add overrideUserId parameter to workflows and update related functions; create scenario override test steps ([81f3362](https://github.com/cds-snc/ai-answers/commit/81f336239c3a12a51ec36167670cca529d03e1b0))
+* Add overrideUserId support across workflows and services for scenario overrides ([d134923](https://github.com/cds-snc/ai-answers/commit/d1349237402e4493368095e3ac541d4b43be2404))
+* Add scenario override handler and integrate with server routes ([ed78409](https://github.com/cds-snc/ai-answers/commit/ed78409a02f74a8edd683057e0a375741076c4ae))
+* Add scenario overrides navigation link in AdminPage and update locale files ([16b696d](https://github.com/cds-snc/ai-answers/commit/16b696d672e3d17a315e703ad249ab6020a59690))
+* Add ScenarioOverridesPage and integrate routing for scenario overrides ([211dc0c](https://github.com/cds-snc/ai-answers/commit/211dc0cc70ef6fd7c4fcd6e89eeb930c96d15df4))
+* Enhance loadSystemPrompt to support scenario overrides and improve logging ([e39be5c](https://github.com/cds-snc/ai-answers/commit/e39be5cb48bd7662baa988080f8f4d4e94400a41))
+* Implement ScenarioOverride model and service with caching and CRUD operations ([54943c6](https://github.com/cds-snc/ai-answers/commit/54943c6058e682f6e9aef52971594611cf6f637a))
+* Implement session bypass functionality with admin role check and integrate into services ([647a4f2](https://github.com/cds-snc/ai-answers/commit/647a4f2c60c959f9e8b97dfd713f6d47bf50a408))
+* Integrate AuthService for user ID retrieval and enhance message preparation with scenario overrides ([c0905a1](https://github.com/cds-snc/ai-answers/commit/c0905a1298f7573a81f0058eb51c3c6c71437722))
+* Refactor ScenarioOverrideClient to ScenarioOverrideService and update related imports and usages ([9267edd](https://github.com/cds-snc/ai-answers/commit/9267edd0369058cb861dd44077c50db1fa884c03))
+* Update version to 1.0.0 and add 'diff' dependency; remove setupProxy.js ([8263a9f](https://github.com/cds-snc/ai-answers/commit/8263a9ff74547cd9a1ed2be07af94748adf3d0bb))
+
+
+### Bug Fixes
+
+* edit-locales ([558680f](https://github.com/cds-snc/ai-answers/commit/558680f22469404fbf837edeb22b8455cb48b1ac))
+* remove kill ([f5498f4](https://github.com/cds-snc/ai-answers/commit/f5498f409b48e0cd595250301f48b734099661f2))
+* remove murdered ([3f51141](https://github.com/cds-snc/ai-answers/commit/3f5114197db87a0e9b1c24f14e6e207caa85961e))
+* remove-shot-from-threatwords ([a88f873](https://github.com/cds-snc/ai-answers/commit/a88f873093f044904ba308dd92e3a4c07e875d1b))
+* remove-shot-from-threatwords ([54ab53c](https://github.com/cds-snc/ai-answers/commit/54ab53cc296526d5681bf224ce5309ae96ef4894))
+
 ## [1.45.0](https://github.com/cds-snc/ai-answers/compare/v1.44.0...v1.45.0) (2025-10-06)
 
 
