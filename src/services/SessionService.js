@@ -22,6 +22,8 @@ const SessionService = {
     try {
       await fetch(url, {
         method: 'POST',
+        // Ensure cookies / session token are sent so the server can map chatId -> session
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json', ...AuthService.getAuthHeader() },
         body: JSON.stringify({ chatId, latencyMs, error, errorType })
       });

@@ -3,6 +3,7 @@ import { getApiUrl } from '../utils/apiToUrl.js';
 import RedactionService from './RedactionService.js';
 import LoggingService from './ClientLoggingService.js';
 import { getFingerprint } from '../utils/fingerprint.js';
+import getSessionBypassHeaders from './sessionHeaders.js';
 
 export const WorkflowStatus = {
   REDACTING: 'redacting',
@@ -17,7 +18,6 @@ export const WorkflowStatus = {
   ERROR: 'error',
   NEED_CLARIFICATION: 'needClarification',
 };
-
 
 // Helper function to control which status updates are actually sent to the UI
 const sendStatusUpdate = (onStatusUpdate, status) => {
@@ -44,7 +44,6 @@ const countWords = (text) => {
   // Stop counting after 4 words for efficiency
   return Math.min(words.length, 4);
 };
-
 
 // Helper function to check if query is too short
 const isShortQuery = (wordCount) => {
@@ -79,7 +78,8 @@ export const ChatWorkflowService = {
     translationF,
     workflow,
     onStatusUpdate,
-    searchProvider
+    searchProvider,
+    overrideUserId = null
   ) => {
     // Select workflow implementation based on the `workflow` parameter.
     // Default to DefaultWorkflow when unknown.
@@ -104,19 +104,24 @@ export const ChatWorkflowService = {
       selectedAI,
       translationF,
       onStatusUpdate,
-      searchProvider
+      searchProvider,
+      overrideUserId
     );
   },
-  
-  
+
   checkPIIOnNoContextOrThrow: async (chatId, userMessage, selectedAI) => {
     try {
       // ensure fingerprint is available before sending header
       const fp = await getFingerprint();
+      const extraHeaders = getSessionBypassHeaders();
       const url = getApiUrl('chat-pii-check');
       const response = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-fp-id': fp },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-fp-id': fp,
+          ...extraHeaders
+        },
         body: JSON.stringify({
           message: userMessage,
           chatId,
@@ -136,7 +141,6 @@ export const ChatWorkflowService = {
 
       const result = await response.json();
       const pii = result && Object.prototype.hasOwnProperty.call(result, 'pii') ? result.pii : null;
-
 
       if (result.blocked) {
         await LoggingService.info(chatId, 'ChatWorkflowService Blocked content detected, throwing RedactionError');
@@ -173,11 +177,11 @@ export const ChatWorkflowService = {
     if (hasBlockedContent) {
       throw new RedactionError('Blocked content detected', redactedText, redactedItems);
     }
-  // Run the PII agent check and throw if it detects PII or blocked content.
-  // Use the existing helper which calls the chat-pii-check API and throws RedactionError on issues.
-  await ChatWorkflowService.checkPIIOnNoContextOrThrow(chatId, userMessage, selectedAI);
-  // Return the redacted text and items so callers can use the redacted string
-  return { redactedText, redactedItems };
+    // Run the PII agent check and throw if it detects PII or blocked content.
+    // Use the existing helper which calls the chat-pii-check API and throws RedactionError on issues.
+    await ChatWorkflowService.checkPIIOnNoContextOrThrow(chatId, userMessage, selectedAI);
+    // Return the redacted text and items so callers can use the redacted string
+    return { redactedText, redactedItems };
   },
   // Expose the short-query validation helper so workflows can reuse the centralized logic
   validateShortQueryOrThrow: (conversationHistory, userMessage, lang, department, translationF) => {
@@ -186,16 +190,20 @@ export const ChatWorkflowService = {
   // Expose the status update filter helper so workflows can reuse the centralized display rules
   sendStatusUpdate: (onStatusUpdate, status) => {
     return sendStatusUpdate(onStatusUpdate, status);
-  }
-  ,
+  },
   translateQuestion: async (text, desiredLanguage, selectedAI) => {
     try {
       // ensure fingerprint is available before sending header
       const fp = await getFingerprint();
+      const extraHeaders = getSessionBypassHeaders();
       const url = getApiUrl('chat-translate');
       const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-fp-id': fp },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-fp-id': fp,
+          ...extraHeaders
+        },
         body: JSON.stringify({ text, desired_language: desiredLanguage, selectedAI })
       });
       if (!resp || !resp.ok) {
@@ -203,9 +211,9 @@ export const ChatWorkflowService = {
         await LoggingService.error(null, 'translateQuestion API error', { status: resp && resp.status, errText });
         throw new Error(`translateQuestion API error: status=${resp && resp.status} message=${errText}`);
       }
-  const json = await resp.json();
-  // The API endpoint now returns a normalized shape including originalText
-  return json;
+      const json = await resp.json();
+      // The API endpoint now returns a normalized shape including originalText
+      return json;
     } catch (err) {
       await LoggingService.error(null, 'translateQuestion error', err);
       throw err;
@@ -232,4 +240,3 @@ export class ShortQueryValidation extends Error {
     this.searchUrl = searchUrl;
   }
 }
-

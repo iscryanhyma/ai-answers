@@ -87,6 +87,11 @@ const AdminPage = ({ lang = 'en' }) => {
             </GcdsLink>
           </li>
           <li>
+            <GcdsLink href={`/${lang}/scenario-overrides`}>
+              {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}
+            </GcdsLink>
+          </li>
+          <li>
             <GcdsLink href={`/${lang}/public-eval`}>
               {t('admin.navigation.publicEval', 'Public Evaluation')}
             </GcdsLink>
@@ -122,4 +127,10 @@ const AdminPage = ({ lang = 'en' }) => {
 };
 
 export default AdminPage;
+
+
+
+
+
+
 

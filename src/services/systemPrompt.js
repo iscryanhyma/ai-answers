@@ -59,8 +59,7 @@ const departmentModules = {
   },
 };
 
-
-async function loadSystemPrompt(language = 'en', context, chatId) {
+async function loadSystemPrompt(language = 'en', context, chatId, options = {}) {
   await LoggingService.info(
     'system',
     `Loading system prompt for language: ${language.toUpperCase()}, context: ${context}`
@@ -68,50 +67,64 @@ async function loadSystemPrompt(language = 'en', context, chatId) {
 
   try {
     const { department } = context;
-    
+
     // Use the department directly from context (now using bilingual abbreviations)
     let departmentKey = department;
+    // Default empty content
     let content = { scenarios: '' };
 
-    // Try to load content using the bilingual abbreviation
-    if (departmentKey && departmentModules[departmentKey]) {
-      content = await departmentModules[departmentKey].getContent()
-        .then((result) => {
-          if (chatId) {
-            LoggingService.info(chatId, `Loaded scenario file for department: ${departmentKey}`);
-          }
-          return result;
-        })
-        .catch((error) => {
-          if (chatId) {
-            LoggingService.warn(chatId, `Failed to load content for ${departmentKey}:`, error);
-          }
-          return { scenarios: '' };
-        });
-    } else if (departmentKey && departmentKey.includes('-')) {
-      // Fallback: extract English abbreviation (part before hyphen) for backward compatibility
-      const englishFallback = departmentKey.split('-')[0];
-      if (departmentModules[englishFallback]) {
-        content = await departmentModules[englishFallback].getContent()
+    // If an explicit scenario override is provided, use it immediately and skip loading
+    // department-specific modules. This prevents loading unrelated files when the
+    // override is the authoritative source of scenarios.
+    const { scenarioOverrideText = null } = options || {};
+    if (scenarioOverrideText && typeof scenarioOverrideText === 'string' && scenarioOverrideText.trim().length > 0) {
+      content = { scenarios: scenarioOverrideText };
+      if (chatId) {
+        LoggingService.info(chatId, `Scenario override applied for ${departmentKey || 'unknown-department'}`);
+      } else {
+        LoggingService.info('system', `Scenario override applied for ${departmentKey || 'unknown-department'}`);
+      }
+    } else {
+      // Try to load content using the bilingual abbreviation
+      if (departmentKey && departmentModules[departmentKey]) {
+        content = await departmentModules[departmentKey].getContent()
           .then((result) => {
             if (chatId) {
-              LoggingService.info(chatId, `Loaded scenario file for fallback department: ${englishFallback}`);
+              LoggingService.info(chatId, `Loaded scenario file for department: ${departmentKey}`);
             }
             return result;
           })
           .catch((error) => {
             if (chatId) {
-              LoggingService.warn(chatId, `Failed to load content for fallback ${englishFallback}:`, error);
+              LoggingService.warn(chatId, `Failed to load content for ${departmentKey}:`, error);
             }
             return { scenarios: '' };
           });
+      } else if (departmentKey && departmentKey.includes('-')) {
+        // Fallback: extract English abbreviation (part before hyphen) for backward compatibility
+        const englishFallback = departmentKey.split('-')[0];
+        if (departmentModules[englishFallback]) {
+          content = await departmentModules[englishFallback].getContent()
+            .then((result) => {
+              if (chatId) {
+                LoggingService.info(chatId, `Loaded scenario file for fallback department: ${englishFallback}`);
+              }
+              return result;
+            })
+            .catch((error) => {
+              if (chatId) {
+                LoggingService.warn(chatId, `Failed to load content for fallback ${englishFallback}:`, error);
+              }
+              return { scenarios: '' };
+            });
+        }
       }
     }
 
     const citationInstructions = CITATION_INSTRUCTIONS;
 
     // Inform LLM about the current page language
-    const languageContext = language === 'fr' 
+    const languageContext = language === 'fr'
       ? "<page-language>French</page-language>"
       : "<page-language>English</page-language>";
 

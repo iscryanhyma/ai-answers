@@ -297,7 +297,8 @@
       "sessions": "Active Sessions",
       "chatDashboard": "Chat dashboard",
       "logout": "Sign out",
-      "vector": "Vector Administration"
+      "vector": "Vector Administration",
+      "scenarioOverrides": "Edit scenarios"
     },
     "filters": {
       "title": "Filters - select then Apply to view",
@@ -375,10 +376,10 @@
       "resultsSummary": "Showing {count} chats",
       "totalCount": "Total matching chats: {total}",
       "columns": {
-  "chatId": "Chat ID",
-  "department": "Department",
-  "expertEmail": "Expert email",
-  "creatorEmail": "Creator email",
+        "chatId": "Chat ID",
+        "department": "Department",
+        "expertEmail": "Expert email",
+        "creatorEmail": "Creator email",
         "language": "Language",
         "questionCount": "Questions",
         "createdAt": "Created",
@@ -678,5 +679,40 @@
     "chatIdPlaceholder": "Enter Chat ID",
     "getSimilarChats": "Get Similar Chats",
     "loadingSimilarChats": "Loading similar chats..."
+  },
+  "scenarioOverrides": {
+  "title": "Edit and test scenarios",
+  "description": "Update the department-specific scenario instructions used by AI Answers.",
+      "sections": {
+        "editOverride": "Edit",
+        "visualDiff": "Visual diff (side-by-side)"
+      },
+    "table": {
+      "department": "Department",
+      "defaultLabel": "Original scenario text",
+      "overrideLabel": "Edited text",
+      "enabled": "Use edits",
+      "showDiff": "Show diff",
+      "hideDiff": "Hide diff",
+      "diffLabel": "Diff",
+  "lastUpdated": "Last updated"
+    },
+    "status": {
+      "saving": "Saving...",
+      "saveSuccess": "Edits saved.",
+      "saveError": "Unable to save edits.",
+      "loadError": "Unable to load edits."
+    },
+    "buttons": {
+      "save": "Save edits",
+      "reset": "Reset"
+    },
+    "error": {
+      "fallback": "An error occurred while loading this page."
+    },
+    "empty": {
+      "never": "Never",
+      "defaultMissing": "No default text available."
+    }
   }
 }

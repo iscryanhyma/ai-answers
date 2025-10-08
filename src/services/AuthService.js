@@ -1,21 +1,53 @@
 import { getApiUrl } from '../utils/apiToUrl.js';
 
 class AuthService {
-  static unauthorizedCallback = null; // <-- Add this
+  static unauthorizedCallback = null;
 
-    // Send user details (token) with every request, no logout or 401 handling
-    static async fetchWithUser(url, options = {}) {
-      const token = this.getToken();
-      const headers = { ...options.headers };
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-      const method = (options.method || 'GET').toUpperCase();
-      if (['POST', 'PUT', 'PATCH'].includes(method) && options.body && !headers['Content-Type']) {
-        headers['Content-Type'] = 'application/json';
-      }
-      return fetch(url, { ...options, headers });
+  static decodeTokenPayload(token) {
+    if (!token) {
+      return null;
     }
+    try {
+      const payload = token.split('.')[1];
+      if (!payload) {
+        return null;
+      }
+      const normalized = payload.replace(/-/g, '+').replace(/_/g, '/');
+      let decoded;
+      if (typeof atob === 'function') {
+        decoded = atob(normalized);
+      } else if (typeof Buffer !== 'undefined') {
+        decoded = Buffer.from(normalized, 'base64').toString('utf-8');
+      } else {
+        return null;
+      }
+      return JSON.parse(decoded);
+    } catch (error) {
+      console.error('decodeTokenPayload error:', error);
+      return null;
+    }
+  }
+
+  static getUserId() {
+    const token = this.getToken();
+    const payload = this.decodeTokenPayload(token);
+    return payload && payload.userId ? payload.userId : null;
+  }
+
+  // Send user details (token) with every request, no logout or 401 handling
+  static async fetchWithUser(url, options = {}) {
+    const token = this.getToken();
+    const headers = { ...options.headers };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const method = (options.method || 'GET').toUpperCase();
+    if (['POST', 'PUT', 'PATCH'].includes(method) && options.body && !headers['Content-Type']) {
+      headers['Content-Type'] = 'application/json';
+    }
+    return fetch(url, { ...options, headers });
+  }
+
   static setUnauthorizedCallback(cb) {
     this.unauthorizedCallback = cb;
   }
@@ -34,7 +66,21 @@ class AuthService {
 
   static getUser() {
     const userStr = localStorage.getItem('user');
-    return userStr ? JSON.parse(userStr) : null;
+    if (!userStr) {
+      const fallbackId = this.getUserId();
+      return fallbackId ? { userId: fallbackId } : null;
+    }
+    try {
+      const user = JSON.parse(userStr);
+      const userId = this.getUserId();
+      if (userId && !user.userId) {
+        user.userId = userId;
+      }
+      return user;
+    } catch (error) {
+      console.error('getUser parse error:', error);
+      return null;
+    }
   }
 
   static removeToken() {
@@ -44,27 +90,21 @@ class AuthService {
         localStorage.removeItem('user');
       }
     } catch (e) {
-      // ignore storage errors
       console.warn('removeToken error', e);
     }
   }
 
   static logout() {
-    // Remove known auth keys
     this.removeToken();
 
-    // Attempt to notify server to clear HttpOnly cookies (fire-and-forget)
     try {
-      // Use configured API URL helper so the endpoint resolution is consistent
       const logoutUrl = getApiUrl('user-auth-logout');
-      // Fire-and-forget, don't await; ignore errors
       fetch(logoutUrl, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } })
         .catch(() => {});
     } catch (e) {
       // ignore
     }
 
-    // Clear all client-side storage and cookies (non-HttpOnly)
     this.clearClientStorage();
   }
 
@@ -74,7 +114,6 @@ class AuthService {
     try {
       if (typeof window === 'undefined') return;
 
-      // Clear storages
       try {
         if (window.localStorage) window.localStorage.clear();
       } catch (e) {
@@ -86,22 +125,18 @@ class AuthService {
         console.warn('sessionStorage.clear() failed', e);
       }
 
-      // Clear non-HttpOnly cookies by expiring them
       if (typeof document !== 'undefined' && document.cookie) {
         const cookies = document.cookie.split(';');
         for (const cookie of cookies) {
           const eqPos = cookie.indexOf('=');
           const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-          // Set cookie with past expiry for all paths and current domain
           try {
-            document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
-            // Also attempt to clear cookie for current domain/host variations
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
             try {
               const hostParts = window.location.hostname.split('.');
-              // progressively try domain variations
               for (let i = 0; i <= hostParts.length - 1; i++) {
                 const domain = hostParts.slice(i).join('.');
-                document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=' + domain;
+                document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=${domain}`;
               }
             } catch (domErr) {
               // ignore domain clear errors
@@ -119,16 +154,16 @@ class AuthService {
   static isAuthenticated() {
     const token = this.getToken();
     const user = this.getUser();
-    
+
     if (!token || !user || !user.active) {
       return false;
     }
-    
+
     if (this.isTokenExpired()) {
       this.logout();
       return false;
     }
-    
+
     return true;
   }
 
@@ -137,14 +172,11 @@ class AuthService {
     if (!token) {
       return true;
     }
-    
+
     try {
-      // JWT tokens are in format: header.payload.signature
-      // We need to decode the payload to check expiration
       const payload = token.split('.')[1];
       const decoded = JSON.parse(atob(payload));
-      
-      // Check if exp field exists and token is expired
+
       if (decoded.exp) {
         const currentTime = Date.now() / 1000;
         return decoded.exp < currentTime;
@@ -152,7 +184,7 @@ class AuthService {
       return false;
     } catch (error) {
       console.error('Error checking token expiration:', error);
-      return true; // If there's an error parsing, assume token is invalid
+      return true;
     }
   }
 
@@ -200,7 +232,6 @@ class AuthService {
   }
 
   static isPublicRoute(pathname) {
-    // Define public routes that do not require authentication
     const publicRoutes = ['/', '/signin', '/signup', '/about', '/contact'];
     return publicRoutes.some(route => pathname.startsWith(route));
   }
@@ -214,18 +245,14 @@ class AuthService {
     const method = (options.method || 'GET').toUpperCase();
     const hasBody = !!options.body;
 
-    // Start with authentication header
     let combinedHeaders = { ...this.getAuthHeader() };
 
-    // Add Content-Type: application/json by default for relevant methods with a body,
-    // but only if not already specified in options.headers.
     if (['POST', 'PUT', 'PATCH'].includes(method) && hasBody) {
       if (!(options.headers && options.headers['Content-Type'])) {
         combinedHeaders['Content-Type'] = 'application/json';
       }
     }
 
-    // Merge with any headers passed in options, allowing options.headers to override
     combinedHeaders = { ...combinedHeaders, ...options.headers };
 
     const response = await fetch(url, { ...options, headers: combinedHeaders });
@@ -233,7 +260,7 @@ class AuthService {
     if (response.status === 401) {
       this.logout();
       if (typeof this.unauthorizedCallback === 'function') {
-        this.unauthorizedCallback(); // Notify context/provider
+        this.unauthorizedCallback();
       }
     }
 

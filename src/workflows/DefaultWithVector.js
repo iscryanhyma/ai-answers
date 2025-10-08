@@ -24,7 +24,8 @@ export class DefaultWithVector {
     selectedAI,
     translationF,
     onStatusUpdate,
-    searchProvider
+    searchProvider,
+    overrideUserId = null
   ) {
     const startTime = Date.now();
     await LoggingService.info(chatId, 'Starting DefaultWithVector with data:', {
@@ -125,7 +126,8 @@ export class DefaultWithVector {
       lang,
       context,
       referringUrl,
-      chatId
+      chatId,
+      overrideUserId
     );
     await LoggingService.info(chatId, 'Answer Received:', { answer });
     let finalCitationUrl,
@@ -346,3 +348,4 @@ export class DefaultWithVector {
     return null;
   }
 }
+
