@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 import DataStoreService from '../../services/DataStoreService.js';
 import SessionService from '../../services/SessionService.js';
+import AuthService from '../../services/AuthService.js';
 // Utility functions go here, before the component
 const extractSentences = (paragraph) => {
   const sentenceRegex = /<s-?\d+>(.*?)<\/s-?\d+>/g;
@@ -323,6 +324,7 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
       try {
         const aiMessageId = messageIdCounter.current++;
         startMs = Date.now();
+        const overrideUserId = (AuthService.getUserId ? AuthService.getUserId() : (AuthService.getUser()?.userId ?? null));
         const interaction = await ChatWorkflowService.processResponse(
           chatId,
           userMessage,
@@ -335,7 +337,8 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
           t,
           workflow,
           updateStatusWithTimer,  // Pass our new status handler
-          selectedSearch  // Add this parameter
+          selectedSearch,  // Add this parameter
+          overrideUserId
         );
         const latencyMs = Date.now() - startMs;
 
@@ -576,3 +579,5 @@ const ChatAppContainer = ({ lang = 'en', chatId, readOnly = false, initialMessag
 };
 
 export default ChatAppContainer;
+
+

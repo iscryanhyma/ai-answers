@@ -3,8 +3,8 @@
 import loadSystemPrompt from './systemPrompt.js';
 import { getProviderApiUrl } from '../utils/apiToUrl.js';
 import ClientLoggingService from './ClientLoggingService.js';
+import ScenarioOverrideClient from './ScenarioOverrideClient.js';
 import { getFingerprint } from '../utils/fingerprint.js';
-
 
 const AnswerService = {
   prepareMessage: async (
@@ -13,11 +13,24 @@ const AnswerService = {
     lang = 'en',
     context,
     referringUrl,
-    chatId
+    chatId,
+    overrideUserId = null
   ) => {
     ClientLoggingService.info(chatId, `Processing message in ${lang.toUpperCase()}`);
 
-    const SYSTEM_PROMPT = await loadSystemPrompt(lang, context, chatId);
+    let scenarioOverrideText = null;
+    if (overrideUserId && context && context.department) {
+      try {
+        scenarioOverrideText = await ScenarioOverrideClient.getOverrideForDepartment(context.department);
+        if (scenarioOverrideText) {
+          ClientLoggingService.info(chatId, `Applying scenario override for ${context.department}`, { overrideUserId });
+        }
+      } catch (error) {
+        ClientLoggingService.warn(chatId, `Failed to load scenario override for ${context.department}`, { error: error?.message });
+      }
+    }
+
+    const SYSTEM_PROMPT = await loadSystemPrompt(lang, context, chatId, { scenarioOverrideText });
     const { translatedQuestion, outputLang } = context;
     const header = `\n<output-lang>${outputLang || ''}</output-lang>`;
     let message = `${translatedQuestion}${header}`;
@@ -42,7 +55,8 @@ const AnswerService = {
     lang = 'en',
     context,
     referringUrl,
-    chatId
+    chatId,
+    overrideUserId = null
   ) => {
     try {
       const messagePayload = await AnswerService.prepareMessage(
@@ -51,7 +65,8 @@ const AnswerService = {
         lang,
         context,
         referringUrl,
-        chatId
+        chatId,
+        overrideUserId
       );
 
       const fp = await getFingerprint();
@@ -116,12 +131,10 @@ const AnswerService = {
     let citationUrl = null;
     let confidenceRating = null;
 
-
     const preliminaryMatch = /<preliminary-checks>([\s\S]*?)<\/preliminary-checks>/s.exec(text);
     if (preliminaryMatch) {
       preliminaryChecks = preliminaryMatch[1].trim();
       content = content.replace(/<preliminary-checks>[\s\S]*?<\/preliminary-checks>/s, '').trim();
-
     }
 
     // Extract citation information before processing answers
@@ -152,7 +165,6 @@ const AnswerService = {
     content = content.replace(/<confidence>(.*?)<\/confidence>/s, '').trim();
 
     // Check for special tags in either english-answer or answer content
-    // These can appear in any order and don't need to wrap the entire content
     const specialTags = {
       'not-gc': /<not-gc>([\s\S]*?)<\/not-gc>/,
       'pt-muni': /<pt-muni>([\s\S]*?)<\/pt-muni>/,
@@ -161,20 +173,18 @@ const AnswerService = {
 
     // Check each special tag type and extract their content
     for (const [type, regex] of Object.entries(specialTags)) {
-      // Check both englishAnswer and content for the tag
-      const englishMatch = englishAnswer && regex.exec(englishAnswer);
-      const contentMatch = content && regex.exec(content);
+      const englishTagMatch = englishAnswer && regex.exec(englishAnswer);
+      const contentTagMatch = content && regex.exec(content);
 
-      if (englishMatch || contentMatch) {
+      if (englishTagMatch || contentTagMatch) {
         answerType = type;
-        // Preserve the content inside the tags
-        if (englishMatch) {
-          englishAnswer = englishMatch[1].trim();
+        if (englishTagMatch) {
+          englishAnswer = englishTagMatch[1].trim();
         }
-        if (contentMatch) {
-          content = contentMatch[1].trim();
+        if (contentTagMatch) {
+          content = contentTagMatch[1].trim();
         }
-        break; // First matching tag type wins
+        break;
       }
     }
 
@@ -184,7 +194,6 @@ const AnswerService = {
     if (confidenceMatch) {
       confidenceRating = confidenceMatch[1].trim();
     }
-
 
     const paragraphs = content.split(/\n+/).map(paragraph => paragraph.trim()).filter(paragraph => paragraph !== '');
     const sentences = AnswerService.parseSentences(content);
@@ -201,12 +210,8 @@ const AnswerService = {
       sentences,
     };
 
-   
-
     return result;
   },
-
-
 };
 
 export default AnswerService;
