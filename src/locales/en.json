@@ -297,7 +297,8 @@
       "sessions": "Active Sessions",
       "chatDashboard": "Chat dashboard",
       "logout": "Sign out",
-      "vector": "Vector Administration"
+      "vector": "Vector Administration",
+      "scenarioOverrides": "Scenario overrides"
     },
     "filters": {
       "title": "Filters - select then Apply to view",
@@ -375,10 +376,10 @@
       "resultsSummary": "Showing {count} chats",
       "totalCount": "Total matching chats: {total}",
       "columns": {
-  "chatId": "Chat ID",
-  "department": "Department",
-  "expertEmail": "Expert email",
-  "creatorEmail": "Creator email",
+        "chatId": "Chat ID",
+        "department": "Department",
+        "expertEmail": "Expert email",
+        "creatorEmail": "Creator email",
         "language": "Language",
         "questionCount": "Questions",
         "createdAt": "Created",
@@ -678,5 +679,40 @@
     "chatIdPlaceholder": "Enter Chat ID",
     "getSimilarChats": "Get Similar Chats",
     "loadingSimilarChats": "Loading similar chats..."
+  },
+  "scenarioOverrides": {
+  "title": "Scenario overrides",
+  "description": "Update the department-specific scenario instructions used by AI Answers.",
+      "sections": {
+        "editOverride": "Edit override",
+        "visualDiff": "Visual diff (side-by-side)"
+      },
+    "table": {
+      "department": "Department",
+      "defaultLabel": "Default scenario text",
+      "overrideLabel": "Override text",
+      "enabled": "Use override",
+      "showDiff": "Show diff",
+      "hideDiff": "Hide diff",
+      "diffLabel": "Diff",
+  "lastUpdated": "Last updated"
+    },
+    "status": {
+      "saving": "Saving...",
+      "saveSuccess": "Override saved.",
+      "saveError": "Unable to save override.",
+      "loadError": "Unable to load overrides."
+    },
+    "buttons": {
+      "save": "Save override",
+      "reset": "Reset"
+    },
+    "error": {
+      "fallback": "An error occurred while loading this page."
+    },
+    "empty": {
+      "never": "Never",
+      "defaultMissing": "No default text available."
+    }
   }
 }

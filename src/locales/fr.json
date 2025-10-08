@@ -341,7 +341,8 @@
       "publicEval": "Évaluation publique",
       "sessions": "Sessions actives",
       "logout": "Se déconnecter",
-      "vector": "Administration des vecteurs"
+      "vector": "Administration des vecteurs",
+      "scenarioOverrides": "Remplacements de scénarios"
     },
     "filters": {
       "title": "Filtres - sélectionnez puis Appliquer pour voir",
@@ -419,10 +420,10 @@
       "resultsSummary": "Affichage de {count} chats",
       "totalCount": "Total des chats correspondants : {total}",
       "columns": {
-  "chatId": "ID de chat",
-  "department": "Ministère",
-  "expertEmail": "Courriel de l'expert",
-  "creatorEmail": "Courriel du créateur",
+        "chatId": "ID de chat",
+        "department": "Ministère",
+        "expertEmail": "Courriel de l'expert",
+        "creatorEmail": "Courriel du créateur",
         "language": "Langue",
         "questionCount": "Questions",
         "createdAt": "Créé",
@@ -686,5 +687,40 @@
     "chatIdPlaceholder": "Entrez l'ID du chat",
     "getSimilarChats": "Obtenir les chats similaires",
     "loadingSimilarChats": "Chargement des chats similaires..."
+  },
+  "scenarioOverrides": {
+  "title": "Remplacements de scénarios",
+  "description": "Mettre à jour les instructions de scénario propres au ministère utilisées par AI Answers.",
+      "sections": {
+        "editOverride": "Modifier le remplacement",
+        "visualDiff": "Différence visuelle (côte à côte)"
+      },
+    "table": {
+      "department": "Ministère",
+      "defaultLabel": "Texte du scénario par défaut",
+      "overrideLabel": "Texte de remplacement",
+      "enabled": "Utiliser le remplacement",
+      "showDiff": "Afficher la différence",
+      "hideDiff": "Masquer la différence",
+      "diffLabel": "Différence",
+  "lastUpdated": "Dernière mise à jour"
+    },
+    "status": {
+      "saving": "Enregistrement...",
+      "saveSuccess": "Remplacement enregistré.",
+      "saveError": "Impossible d’enregistrer le remplacement.",
+      "loadError": "Impossible de charger les remplacements."
+    },
+    "buttons": {
+      "save": "Enregistrer le remplacement",
+      "reset": "Réinitialiser"
+    },
+    "error": {
+      "fallback": "Une erreur est survenue lors du chargement de cette page."
+    },
+    "empty": {
+      "never": "Jamais",
+      "defaultMissing": "Texte par défaut indisponible."
+    }
   }
 }
