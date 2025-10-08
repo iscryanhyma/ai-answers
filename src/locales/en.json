@@ -298,7 +298,7 @@
       "chatDashboard": "Chat dashboard",
       "logout": "Sign out",
       "vector": "Vector Administration",
-      "scenarioOverrides": "Scenario overrides"
+      "scenarioOverrides": "Edit scenarios"
     },
     "filters": {
       "title": "Filters - select then Apply to view",
@@ -681,17 +681,17 @@
     "loadingSimilarChats": "Loading similar chats..."
   },
   "scenarioOverrides": {
-  "title": "Scenario overrides",
+  "title": "Edit and test scenarios",
   "description": "Update the department-specific scenario instructions used by AI Answers.",
       "sections": {
-        "editOverride": "Edit override",
+        "editOverride": "Edit",
         "visualDiff": "Visual diff (side-by-side)"
       },
     "table": {
       "department": "Department",
-      "defaultLabel": "Default scenario text",
-      "overrideLabel": "Override text",
-      "enabled": "Use override",
+      "defaultLabel": "Original scenario text",
+      "overrideLabel": "Edited text",
+      "enabled": "Use edits",
       "showDiff": "Show diff",
       "hideDiff": "Hide diff",
       "diffLabel": "Diff",
@@ -699,12 +699,12 @@
     },
     "status": {
       "saving": "Saving...",
-      "saveSuccess": "Override saved.",
-      "saveError": "Unable to save override.",
-      "loadError": "Unable to load overrides."
+      "saveSuccess": "Edits saved.",
+      "saveError": "Unable to save edits.",
+      "loadError": "Unable to load edits."
     },
     "buttons": {
-      "save": "Save override",
+      "save": "Save edits",
       "reset": "Reset"
     },
     "error": {
