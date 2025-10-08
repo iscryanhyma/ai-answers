@@ -24,7 +24,8 @@ export class DefaultWorkflow {
     selectedAI,
     translationF,
     onStatusUpdate,
-    searchProvider
+    searchProvider,
+    overrideUserId = null
   ) {
     const startTime = Date.now();
     await LoggingService.info(chatId, 'Starting DefaultWorkflow with data:', {
@@ -91,7 +92,8 @@ export class DefaultWorkflow {
       lang,
       context,
       referringUrl,
-      chatId
+      chatId,
+      overrideUserId
     );
     await LoggingService.info(chatId, 'Answer Received:', { answer });
     let finalCitationUrl,
@@ -151,3 +153,4 @@ export class DefaultWorkflow {
     };
   }
 }
+
