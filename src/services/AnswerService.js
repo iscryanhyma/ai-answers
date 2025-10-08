@@ -5,6 +5,7 @@ import { getProviderApiUrl } from '../utils/apiToUrl.js';
 import ClientLoggingService from './ClientLoggingService.js';
 import ScenarioOverrideService from './ScenarioOverrideService.js';
 import { getFingerprint } from '../utils/fingerprint.js';
+import getSessionBypassHeaders from './sessionHeaders.js';
 
 const AnswerService = {
   prepareMessage: async (
@@ -70,11 +71,13 @@ const AnswerService = {
       );
 
       const fp = await getFingerprint();
+      const extraHeaders = getSessionBypassHeaders();
       const response = await fetch(getProviderApiUrl(provider, 'message'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-fp-id': fp,
+          ...extraHeaders,
         },
         body: JSON.stringify(messagePayload),
       });

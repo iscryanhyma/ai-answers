@@ -209,6 +209,9 @@ export function ensureSession(req, res) {
 export function withSession(handler) {
   return async function (req, res) {
     try {
+      if (shouldBypassSession(req)) {
+        return handler(req, res);
+      }
       const ok = await ensureSession(req, res);
       if (!ok) return; // middleware already handled the response
       return handler(req, res);
@@ -249,4 +252,35 @@ function appendSetCookie(res, cookie) {
   res.setHeader('Set-Cookie', [current, cookie]);
 }
 
+function hasAdminBearerAuth(req) {
+  try {
+    const header = req?.headers?.authorization || req?.headers?.Authorization;
+    if (!header || typeof header !== 'string') return false;
+    const [scheme, token] = header.trim().split(/\s+/);
+    if (!token || scheme.toLowerCase() !== 'bearer') return false;
+    try {
+      const decoded = jwt.verify(token, secretKey);
+      return decoded && decoded.role === 'admin';
+    } catch (e) {
+      return false;
+    }
+  } catch (e) {
+    return false;
+  }
+}
 
+function shouldBypassSession(req) {
+  try {
+    const bypassHeader = req?.headers?.['x-session-bypass'];
+    if (!hasAdminBearerAuth(req)) return false;
+    if (typeof bypassHeader === 'string') {
+      return bypassHeader === '1' || bypassHeader.toLowerCase() === 'true';
+    }
+    if (Array.isArray(bypassHeader)) {
+      return bypassHeader.some((v) => typeof v === 'string' && (v === '1' || v.toLowerCase() === 'true'));
+    }
+  } catch (e) {
+    // ignore and fall through to enforce session
+  }
+  return false;
+}
