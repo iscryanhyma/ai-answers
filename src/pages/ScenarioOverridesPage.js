@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { GcdsContainer, GcdsText, GcdsLink } from '@cdssnc/gcds-components-react';
-import ScenarioOverrideClient from '../services/ScenarioOverrideClient.js';
+import ScenarioOverrideService from '../services/ScenarioOverrideService.js';
 import AuthService from '../services/AuthService.js';
 import { useTranslations } from '../hooks/useTranslations.js';
 import { usePageContext } from '../hooks/usePageParam.js';
@@ -121,7 +121,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
       try { console.log('ScenarioOverridesPage: loading overrides...'); } catch (e) { /* ignore */ }
       setLoading(true);
       try {
-        const data = await ScenarioOverrideClient.listOverrides();
+  const data = await ScenarioOverrideService.listOverrides();
   if (!isMounted) return;
   try { console.log('Auth user during load:', AuthService.getUser()); } catch (e) { /* ignore */ }
   try { console.log('Raw listOverrides response:', data); } catch (e) { /* ignore */ }
@@ -274,7 +274,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
     try {
       try { console.log('handleSave invoked for', row.departmentKey, { payloadText, enabled: Boolean(row.enabled) }); } catch (e) { /* ignore */ }
       try { console.log('Saving override', { departmentKey: row.departmentKey, payloadText, enabled: Boolean(row.enabled) }); } catch (e) { /* ignore */ }
-      const response = await ScenarioOverrideClient.saveOverride({
+      const response = await ScenarioOverrideService.saveOverride({
         departmentKey: row.departmentKey,
         overrideText: payloadText,
         enabled: Boolean(row.enabled),

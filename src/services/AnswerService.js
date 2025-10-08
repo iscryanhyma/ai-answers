@@ -3,7 +3,7 @@
 import loadSystemPrompt from './systemPrompt.js';
 import { getProviderApiUrl } from '../utils/apiToUrl.js';
 import ClientLoggingService from './ClientLoggingService.js';
-import ScenarioOverrideClient from './ScenarioOverrideClient.js';
+import ScenarioOverrideService from './ScenarioOverrideService.js';
 import { getFingerprint } from '../utils/fingerprint.js';
 
 const AnswerService = {
@@ -21,7 +21,7 @@ const AnswerService = {
     let scenarioOverrideText = null;
     if (overrideUserId && context && context.department) {
       try {
-        scenarioOverrideText = await ScenarioOverrideClient.getOverrideForDepartment(context.department);
+        scenarioOverrideText = await ScenarioOverrideService.getOverrideForDepartment(context.department);
         if (scenarioOverrideText) {
           ClientLoggingService.info(chatId, `Applying scenario override for ${context.department}`, { overrideUserId });
         }
