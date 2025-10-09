@@ -3,6 +3,8 @@ import GCNotifyService from './GCNotifyService.js';
 import { User } from '../models/user.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import { authenticator } from 'otplib';
+// Configure TOTP: 30 second step and accept +/-2 window to tolerate small clock skew / boundary timing
+authenticator.options = { step: 30, window: 2 };
 import crypto from 'crypto';
 
 dotenv.config();
@@ -42,6 +44,15 @@ async function send2FACode({ userOrId, templateId = process.env.GC_NOTIFY_2FA_TE
 
   const code = authenticator.generate(user.twoFASecret);
 
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      const masked = user.twoFASecret ? `${String(user.twoFASecret).slice(0, 4)}...${String(user.twoFASecret).slice(-4)}` : '(none)';
+      ServerLoggingService.debug(`2FA send timestamp=${new Date().toISOString()} email=${user.email} maskedSecret=${masked} generated=${code}`, 'twofa-service');
+    } catch (e) {
+      // ignore logging errors
+    }
+  }
+
   // Personalisation expected by the 2FA template:
   // Hi ((name)),
   //
@@ -49,7 +60,8 @@ async function send2FACode({ userOrId, templateId = process.env.GC_NOTIFY_2FA_TE
   //
   // ((verify_code)), please update
   const personalisation = {
-    name: user.name || '',
+    // Template expects a name field; leave blank to match notify template expectations
+    name: '',
     verify_code: code,
   };
 
@@ -73,9 +85,25 @@ async function verify2FACode({ userOrId, code } = {}) {
 
   if (!user) return { success: false, reason: 'not_found' };
 
+
   if (!user.twoFASecret) return { success: false, reason: 'no_secret' };
 
-  const isValid = authenticator.check(String(code), user.twoFASecret);
+  // Sanitize inputs: trim whitespace/newlines which can accidentally appear
+  const token = String(code).trim();
+  const secret = String(user.twoFASecret).trim();
+
+  // Optional debug logging in non-production to help trace issues (do not log full secret in prod)
+  if (process.env.NODE_ENV !== 'production') {
+    try {
+      const masked = secret ? `${secret.slice(0, 4)}...${secret.slice(-4)}` : '(none)';
+      const expected = authenticator.generate(secret);
+      ServerLoggingService.debug(`2FA verify timestamp=${new Date().toISOString()} token=${token} expected=${expected} secret=${masked}`, 'twofa-service');
+    } catch (e) {
+      // ignore logging errors
+    }
+  }
+
+  const isValid = authenticator.check(token, secret, { window: 2, step: 30 });
   if (!isValid) return { success: false, reason: 'mismatch' };
 
   return { success: true };

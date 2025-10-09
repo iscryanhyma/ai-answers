@@ -1,5 +1,5 @@
 import { User } from '../../models/user.js';
-import dbConnect from './db-connect.js';
+import dbConnect from '../db/db-connect.js';
 import TwoFAService from '../../services/TwoFAService.js';
 
 const loginHandler = async (req, res) => {

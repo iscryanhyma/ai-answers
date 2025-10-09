@@ -1,6 +1,6 @@
 import { User } from '../../models/user.js';
 import { generateToken } from '../../middleware/auth.js';
-import dbConnect from './db-connect.js';
+import dbConnect from '../db/db-connect.js';
 
 const signupHandler = async (req, res) => {
   try {

@@ -496,15 +496,16 @@
       "signupLink": "Créer un compte"
     }
       ,
-      "2fa": {
-        "title": "Vérification à deux facteurs",
-        "code": "Code de vérification",
-        "verify": "Vérifier le code",
-        "resend": "Renvoyer le code",
-        "send": "Envoyer le code 2FA",
-        "sendError": "Impossible d'envoyer le code 2FA",
-        "invalidCode": "Code de vérification invalide"
-      }
+  "2fa": {
+    "title": "Vérification en deux étapes",
+    "code": "Code de vérification",
+    "verify": "Vérifier le code",
+    "resend": "Renvoyer le code",
+  "sentToEmail": "Un code de vérification a été envoyé à votre adresse courriel.",
+    "send": "Envoyer le code de vérification",
+    "sendError": "Impossible d'envoyer le code de vérification",
+    "invalidCode": "Code de vérification invalide"
+  }
   },
   "users": {
     "title": "Gérer les comptes utilisateurs",

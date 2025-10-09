@@ -1,6 +1,22 @@
 import { Logs } from '../models/logs.js';
 import dbConnect from '../api/db//db-connect.js';
 import { SettingsService } from './SettingsService.js';
+import util from 'util';
+
+// Safe stringify that avoids throwing on circular refs. Prefer JSON when possible,
+// otherwise fall back to util.inspect which gives a readable representation.
+function safeStringify(obj) {
+    if (obj === null || obj === undefined) return '';
+    try {
+        return JSON.stringify(obj);
+    } catch (e) {
+        try {
+            return util.inspect(obj, { depth: 4, breakLength: 120 });
+        } catch (e2) {
+            return String(obj);
+        }
+    }
+}
 
 class LogQueue {
     constructor() {
@@ -46,8 +62,8 @@ class LogQueue {
             while (this.queue.length > 0) {
                 const entry = this.queue[0];
                 try {
-                     await this.processLogEntry(entry);
-                     this.queue.shift(); // Remove only after successful processing
+                    await this.processLogEntry(entry);
+                    this.queue.shift(); // Remove only after successful processing
                 } catch (error) {
                     console.error('Error processing log entry:', error);
                     // Move failed entry to end of queue to retry later
@@ -80,14 +96,21 @@ class LogQueue {
         try {
             await dbConnect();
             // If data is null/undefined, use empty string, otherwise process it
-            const processedData = data ? JSON.stringify(data) : '';
-            const parsedData = processedData ? JSON.parse(processedData) : '';
+            const processedData = data ? safeStringify(data) : '';
+
+            // Try to parse back to an object if processedData starts as JSON; otherwise keep string
+            let metadata;
+            try {
+                metadata = processedData && processedData[0] === '{' ? JSON.parse(processedData) : processedData;
+            } catch (e) {
+                metadata = processedData;
+            }
 
             const log = new Logs({
                 chatId,
                 logLevel: level,
-                message: typeof message === 'object' ? JSON.stringify(message) : message,
-                metadata: parsedData
+                message: typeof message === 'object' ? safeStringify(message) : message,
+                metadata
             });
             await log.save();
         } catch (error) {
@@ -116,12 +139,13 @@ process.on('SIGTERM', async () => {
 const ServerLoggingService = {
     log: async (level, message, chatId = 'system', data = {}) => {
         const logChatsSetting = await SettingsService.get('logChatsToDatabase');
-        if (!logChatsSetting || logChatsSetting === 'no') {
+        console[level](`[${level.toUpperCase()}][${chatId}] ${message}`, data);
+        if (logChatsSetting !== 'no') {
             // Log directly to console and bypass queue
-            console[level](`[${level.toUpperCase()}][${chatId}] ${message}`, data);
-            return;
+            logQueue.add({ level, message, chatId, data });
+
         }
-        logQueue.add({ level, message, chatId, data });
+
     },
 
     getLogs: async ({ level = null, chatId = null, skip = 0, limit = 100 }) => {
@@ -141,7 +165,7 @@ const ServerLoggingService = {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
-            
+
         const total = await Logs.countDocuments(query);
         const hasMore = total > skip + logs.length;
 
