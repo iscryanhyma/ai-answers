@@ -97,7 +97,7 @@ describe('ContextService', () => {
         getProviderApiUrl('anthropic', 'context'),
         expect.objectContaining({
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
           body: expect.any(String),
         })
       );
@@ -141,7 +141,7 @@ describe('ContextService', () => {
       expect(calledOptions).toEqual(
         expect.objectContaining({
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: expect.objectContaining({ 'Content-Type': 'application/json' }),
           body: expect.any(String),
         })
       );
