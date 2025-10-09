@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.46.1](https://github.com/cds-snc/ai-answers/compare/v1.46.0...v1.46.1) (2025-10-09)
+
+
+### Bug Fixes
+
+* add check in step 3 ([1a092c7](https://github.com/cds-snc/ai-answers/commit/1a092c7ed65751d0d476c89029fea2ee07e44d95))
+* prompt-clarifying-question-section ([b20e46d](https://github.com/cds-snc/ai-answers/commit/b20e46daf3eef971ae2a014d77a00f1e4d158fcf))
+* remove fr words ([bdac1d7](https://github.com/cds-snc/ai-answers/commit/bdac1d7a6a7b749923041bc226a5a59289980fce))
+* remove fr words ([8827735](https://github.com/cds-snc/ai-answers/commit/8827735aace5d6db32e1cb0f1df340e56c212331))
+
 ## [1.46.0](https://github.com/cds-snc/ai-answers/compare/v1.45.0...v1.46.0) (2025-10-08)
 
 
