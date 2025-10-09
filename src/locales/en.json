@@ -430,6 +430,16 @@
       "submitting": "Signing in...",
       "signupLink": "Create an account"
     }
+      ,
+      "2fa": {
+        "title": "Two-factor verification",
+        "code": "Verification code",
+        "verify": "Verify code",
+        "resend": "Resend code",
+        "send": "Send 2FA code",
+        "sendError": "Failed to send 2FA code",
+        "invalidCode": "Invalid verification code"
+      }
   },
   "signup": {
     "title": "Create an account",
