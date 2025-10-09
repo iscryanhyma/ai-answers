@@ -21,7 +21,22 @@ const userSchema = new mongoose.Schema({
   active: {
     type: Boolean,
     default: true
+  },
+  // Two factor authentication fields
+  twoFACode: {
+    type: String,
+    default: null,
+  },
+  twoFAExpires: {
+    type: Date,
+    default: null,
   }
+  ,
+  // If using otplib TOTP flow, store a per-user secret
+  twoFASecret: {
+    type: String,
+    default: null,
+  },
 }, {
   timestamps: true,
   versionKey: false,
