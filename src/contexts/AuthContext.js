@@ -60,7 +60,16 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const data = await AuthService.login(email, password);
-      // Update the user state
+      // If twoFA is required, do not set currentUser yet -- caller should prompt for code
+      if (data && data.twoFA) {
+        return {
+          user: data.user,
+          twoFA: true,
+          defaultRoute: getDefaultRouteForRole(data.user.role)
+        };
+      }
+
+      // Update the user state for normal login
       await Promise.resolve(setCurrentUser(data.user));
       return {
         user: data.user,
@@ -125,6 +134,7 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     loading,
     login,
+    refreshUser: () => setCurrentUser(AuthService.getUser()),
     signup,
     logout,
     isAdmin,

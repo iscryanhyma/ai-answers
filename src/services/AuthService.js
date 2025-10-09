@@ -98,7 +98,7 @@ class AuthService {
     this.removeToken();
 
     try {
-      const logoutUrl = getApiUrl('user-auth-logout');
+      const logoutUrl = getApiUrl('auth-logout');
       fetch(logoutUrl, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' } })
         .catch(() => {});
     } catch (e) {
@@ -194,7 +194,7 @@ class AuthService {
   }
 
   static async signup(email, password) {
-    const response = await fetch(getApiUrl('db-auth-signup'), {
+    const response = await fetch(getApiUrl('auth-signup'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -213,7 +213,7 @@ class AuthService {
   }
 
   static async login(email, password) {
-    const response = await fetch(getApiUrl('db-auth-login'), {
+    const response = await fetch(getApiUrl('auth-login'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -226,9 +226,55 @@ class AuthService {
     }
 
     const data = await response.json();
+    // If backend indicates twoFA is required, do not set token yet
+    if (data && data.twoFA) {
+      // Return the user info without setting token
+      return data;
+    }
+
+    // Store token and user for normal flows
     this.setToken(data.token);
     this.setUser(data.user);
     return data;
+  }
+
+  static async verify2FA(email, code) {
+    const response = await fetch(getApiUrl('auth-verify-2fa'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code }),
+    });
+
+    if (!response.ok) {
+      const json = await response.json().catch(() => ({}));
+      throw new Error(json.message || json.reason || '2FA verify failed');
+    }
+
+    const data = await response.json();
+    if (data.token) {
+      this.setToken(data.token);
+      this.setUser(data.user);
+    }
+    return data;
+  }
+
+  // Send a 2FA code to the user's email using the canonical endpoint only.
+  static async send2FA(email) {
+    if (!email) throw new Error('Email required');
+
+    const url = getApiUrl('auth-send-2fa');
+    const resp = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    if (!resp.ok) {
+      const json = await resp.json().catch(() => ({}));
+      throw new Error(json.message || 'Failed to send 2FA');
+    }
+
+    return await resp.json();
   }
 
   static isPublicRoute(pathname) {
