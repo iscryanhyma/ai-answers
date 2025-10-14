@@ -57,6 +57,11 @@ output "google_api_key_arn" {
   value       = aws_ssm_parameter.google_api_key.arn
 }
 
+output "gc_notify_api_key_arn" {
+  description = "ARN of the GC Notify API key parameter"
+  value       = aws_ssm_parameter.gc_notify_api_key.arn
+}
+
 output "google_search_engine_id_arn" {
   description = "ARN of the Google Search Engine ID parameter"
   value       = aws_ssm_parameter.google_search_engine_id.arn

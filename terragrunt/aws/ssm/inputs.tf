@@ -56,6 +56,12 @@ variable "google_api_key" {
   type        = string
 }
 
+variable "gc_notify_api_key" {
+  description = "The GC Notify API key"
+  sensitive   = true
+  type        = string
+}
+
 variable "google_search_engine_id" {
   description = "The Google Search Engine ID"
   sensitive   = true

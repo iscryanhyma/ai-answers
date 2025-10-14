@@ -15,7 +15,7 @@ echo "Deploying AI Answers function: $FULL_FUNCTION_NAME"
 # Fetch environment variables from SSM Parameter Store
 echo "Fetching environment variables from SSM Parameter Store..."
 # The parameter names to fetch
-PARAMETER_NAMES="docdb_uri azure_openai_api_key azure_openai_endpoint azure_openai_api_version canada_ca_search_uri canada_ca_search_api_key jwt_secret_key user_agent google_api_key google_search_engine_id"
+PARAMETER_NAMES="docdb_uri azure_openai_api_key azure_openai_endpoint azure_openai_api_version canada_ca_search_uri canada_ca_search_api_key jwt_secret_key user_agent google_api_key gc_notify_api_key google_search_engine_id"
 
 # Fetch all parameters in one go
 PARAMETERS_JSON=$(aws ssm get-parameters --names $PARAMETER_NAMES --with-decryption --query 'Parameters' --output json)
@@ -37,6 +37,7 @@ CANADA_CA_SEARCH_API_KEY=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name==
 JWT_SECRET_KEY=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="jwt_secret_key") | .Value')
 USER_AGENT=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="user_agent") | .Value')
 GOOGLE_API_KEY=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="google_api_key") | .Value')
+GC_NOTIFY_API_KEY=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="gc_notify_api_key") | .Value')
 GOOGLE_SEARCH_ENGINE_ID=$(echo "$PARAMETERS_JSON" | jq -r '.[] | select(.Name=="google_search_engine_id") | .Value')
 
 # Validate that all required parameters were extracted
@@ -120,7 +121,7 @@ if check_function_exists "$FULL_FUNCTION_NAME"; then
     --function-name "$FULL_FUNCTION_NAME" \
     --timeout 300 \
     $VPC_CONFIG \
-    --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" > /dev/null 2>&1; then
+    --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GC_NOTIFY_API_KEY=$GC_NOTIFY_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" > /dev/null 2>&1; then
     echo "Error: Failed to update function configuration"
     exit 1
   fi
@@ -139,7 +140,7 @@ else
     --memory-size 1024 \
     $VPC_CONFIG \
     --code ImageUri="${REGISTRY}/${IMAGE}:${IMAGE_TAG}" \
-    --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" \
+    --environment "Variables={NODE_ENV=production,PORT=3001,AWS_LAMBDA_EXEC_WRAPPER=/opt/extensions/lambda-adapter,RUST_LOG=info,READINESS_CHECK_PATH=/health,READINESS_CHECK_PORT=3001,READINESS_CHECK_PROTOCOL=http,READINESS_CHECK_MAX_WAIT=60,READINESS_CHECK_INTERVAL=1,DOCDB_URI=$DOCDB_URI,AZURE_OPENAI_API_KEY=$AZURE_OPENAI_API_KEY,AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT,AZURE_OPENAI_API_VERSION=$AZURE_OPENAI_API_VERSION,CANADA_CA_SEARCH_URI=$CANADA_CA_SEARCH_URI,CANADA_CA_SEARCH_API_KEY=$CANADA_CA_SEARCH_API_KEY,JWT_SECRET_KEY=$JWT_SECRET_KEY,USER_AGENT=$USER_AGENT,GOOGLE_API_KEY=$GOOGLE_API_KEY,GC_NOTIFY_API_KEY=$GC_NOTIFY_API_KEY,GOOGLE_SEARCH_ENGINE_ID=$GOOGLE_SEARCH_ENGINE_ID}" \
     --description "$GITHUB_REPOSITORY/pull/$PR_NUMBER - AI Answers PR Review Environment" > /dev/null 2>&1; then
     echo "Error: Failed to create Lambda function"
     exit 1
