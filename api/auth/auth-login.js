@@ -43,7 +43,7 @@ const loginHandler = async (req, res) => {
     }
 
     const enabledSetting = await SettingsService.get('twoFA.enabled');
-    const twoFAEnabled = SettingsService.toBoolean(enabledSetting, true);
+    const twoFAEnabled = SettingsService.toBoolean(enabledSetting, false);
 
     if (!twoFAEnabled) {
       const token = generateToken(user);

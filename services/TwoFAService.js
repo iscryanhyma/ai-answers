@@ -21,7 +21,7 @@ async function getTwoFATemplateId(explicitTemplateId) {
 
 async function ensureTwoFAEnabled() {
   const enabledSetting = await SettingsService.get('twoFA.enabled');
-  return SettingsService.toBoolean(enabledSetting, true);
+  return SettingsService.toBoolean(enabledSetting, false);
 }
 
 async function send2FACode({ userOrId, templateId } = {}) {
