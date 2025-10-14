@@ -22,6 +22,17 @@ class SettingsServiceClass {
     await Setting.findOneAndUpdate({ key }, { value }, { upsert: true });
     this.cache[key] = value;
   }
+
+  toBoolean(value, defaultValue = true) {
+    if (value === undefined || value === null || value === '') return defaultValue;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    const normalized = String(value).trim().toLowerCase();
+    if (!normalized) return defaultValue;
+    if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+    if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+    return defaultValue;
+  }
 }
 
 export const SettingsService = new SettingsServiceClass();

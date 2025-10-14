@@ -1,6 +1,8 @@
 import { User } from '../../models/user.js';
 import dbConnect from '../db/db-connect.js';
 import TwoFAService from '../../services/TwoFAService.js';
+import { SettingsService } from '../../services/SettingsService.js';
+import { generateToken } from '../../middleware/auth.js';
 
 const loginHandler = async (req, res) => {
   try {
@@ -40,9 +42,35 @@ const loginHandler = async (req, res) => {
       });
     }
 
+    const enabledSetting = await SettingsService.get('twoFA.enabled');
+    const twoFAEnabled = SettingsService.toBoolean(enabledSetting, true);
+
+    if (!twoFAEnabled) {
+      const token = generateToken(user);
+      return res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        token,
+        user: {
+          email: user.email,
+          role: user.role,
+          active: user.active,
+          createdAt: user.createdAt
+        }
+      });
+    }
+
     // Instead of issuing token immediately, require 2FA verification.
     // Send a 2FA code to the user's email and return a twoFA-required response.
-    await TwoFAService.send2FACode({ userOrId: user });
+    const templateId = await SettingsService.get('twoFA.templateId');
+    const sendResult = await TwoFAService.send2FACode({ userOrId: user, templateId });
+    if (!sendResult.success) {
+      console.error('TwoFAService failed to send code', sendResult);
+      return res.status(500).json({
+        success: false,
+        message: 'Error during login'
+      });
+    }
     res.status(200).json({
       success: true,
       twoFA: true,
