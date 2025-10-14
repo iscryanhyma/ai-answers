@@ -497,7 +497,7 @@
     }
       ,
   "2fa": {
-    "title": "Vérification en deux étapes",
+    "title": "Authentification à deux facteurs",
     "code": "Code de vérification",
     "verify": "Vérifier le code",
     "resend": "Renvoyer le code",

@@ -432,7 +432,7 @@
     }
       ,
   "2fa": {
-    "title": "Two-step verification",
+    "title": "Two-factor authentication",
     "code": "Verification code",
     "verify": "Verify code",
     "resend": "Resend code",

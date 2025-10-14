@@ -1,6 +1,7 @@
 import dbConnect from '../db/db-connect.js';
 import { User } from '../../models/user.js';
 import TwoFAService from '../../services/TwoFAService.js';
+import { generateToken } from '../../middleware/auth.js';
 
 const verify2FAHandler = async (req, res) => {
   try {
@@ -12,7 +13,20 @@ const verify2FAHandler = async (req, res) => {
     if (!user) return res.status(404).json({ success: false, message: 'user not found' });
 
     const result = await TwoFAService.verify2FACode({ userOrId: user, code });
-    if (result.success) return res.status(200).json({ success: true });
+    if (result.success) {
+      // On successful 2FA verification, issue a JWT token the same way signup/login endpoints do
+      const token = generateToken(user);
+      return res.status(200).json({
+        success: true,
+        token,
+        user: {
+          email: user.email,
+          role: user.role,
+          active: user.active,
+          createdAt: user.createdAt
+        }
+      });
+    }
     return res.status(401).json({ success: false, reason: result.reason || 'invalid' });
   } catch (err) {
     console.error('user-verify-2fa handler error', err);

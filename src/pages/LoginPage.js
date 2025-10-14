@@ -8,7 +8,7 @@ import styles from '../styles/auth.module.css';
 const LoginPage = ({ lang = 'en' }) => {
   const { t } = useTranslations(lang);
   const navigate = useNavigate();
-  const { login, refreshUser } = useAuth();
+  const { login, refreshUser, getDefaultRouteForRole } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -51,8 +51,14 @@ const LoginPage = ({ lang = 'en' }) => {
       // backend method remains verify2FA
       const data = await AuthService.verify2FA(email, code);
       // AuthService stores token and user; refresh context
-      await Promise.resolve(refreshUser());
-      const defaultRoute = data?.defaultRoute || '/';
+      await refreshUser();
+      // Prefer explicit defaultRoute from the verify response if present
+      let defaultRoute = data?.defaultRoute;
+      // Otherwise compute from returned user role (or fallback to '/')
+      if (!defaultRoute && data?.user?.role) {
+        defaultRoute = getDefaultRouteForRole(data.user.role);
+      }
+      if (!defaultRoute) defaultRoute = '/';
       navigate(defaultRoute);
     } catch (err) {
       setTwoStepError(t('login.2fa.invalidCode') || 'Invalid verification code');
@@ -82,7 +88,7 @@ const LoginPage = ({ lang = 'en' }) => {
       {/* When in 2FA flow show only the 2FA UI */}
       {showTwoStep ? (
         <div className={styles.twofa_container}>
-          <h2>{t('login.2fa.title') || 'Two-step verification'}</h2>
+          <h2>{t('login.2fa.title') || 'Two-factor authentication'}</h2>
           <p className={styles.info_message}>{t('login.2fa.sentToEmail') || 'A verification code will be sent to your email.'}</p>
           {twoStepError && <div className={styles.error_message}>{twoStepError}</div>}
           <div className={styles.form_group}>
