@@ -1,13 +1,10 @@
-import dotenv from 'dotenv';
 import GCNotifyService from './GCNotifyService.js';
 import { User } from '../models/user.js';
 import ServerLoggingService from './ServerLoggingService.js';
 import { authenticator } from 'otplib';
 // Configure TOTP: 30 second step and accept +/-2 window to tolerate small clock skew / boundary timing
 authenticator.options = { step: 30, window: 2 };
-import crypto from 'crypto';
-
-dotenv.config();
+import { SettingsService } from './SettingsService.js';
 
 // When using TOTP we do not store transient codes. We store a per-user secret.
 
@@ -15,7 +12,19 @@ function generateSecret() {
   return authenticator.generateSecret();
 }
 
-async function send2FACode({ userOrId, templateId = process.env.GC_NOTIFY_2FA_TEMPLATE_ID } = {}) {
+async function getTwoFATemplateId(explicitTemplateId) {
+  if (explicitTemplateId) return explicitTemplateId;
+  const configured = await SettingsService.get('twoFA.templateId');
+  if (configured && String(configured).trim()) return String(configured).trim();
+  return process.env.GC_NOTIFY_2FA_TEMPLATE_ID || null;
+}
+
+async function ensureTwoFAEnabled() {
+  const enabledSetting = await SettingsService.get('twoFA.enabled');
+  return SettingsService.toBoolean(enabledSetting, true);
+}
+
+async function send2FACode({ userOrId, templateId } = {}) {
   let user = null;
   if (typeof userOrId === 'string' || userOrId instanceof String) {
     user = await User.findById(userOrId);
@@ -31,7 +40,15 @@ async function send2FACode({ userOrId, templateId = process.env.GC_NOTIFY_2FA_TE
     throw new Error('User has no email');
   }
 
-  if (!templateId) {
+  const twoFAEnabled = await ensureTwoFAEnabled();
+  if (!twoFAEnabled) {
+    ServerLoggingService.info('2FA disabled; skipping code send', 'twofa-service', { user: user._id });
+    return { success: false, reason: 'twofa_disabled' };
+  }
+
+  const resolvedTemplateId = await getTwoFATemplateId(templateId);
+
+  if (!resolvedTemplateId) {
     ServerLoggingService.error('GC 2FA template id missing', 'twofa-service');
     throw new Error('GC_NOTIFY_2FA_TEMPLATE_ID missing');
   }
@@ -69,7 +86,7 @@ async function send2FACode({ userOrId, templateId = process.env.GC_NOTIFY_2FA_TE
   const res = await GCNotifyService.sendEmail({
     email: user.email,
     personalisation,
-    templateId,
+    templateId: resolvedTemplateId,
   });
 
   return { success: res.success, codeSent: code, notifyResponse: res };
@@ -85,8 +102,13 @@ async function verify2FACode({ userOrId, code } = {}) {
 
   if (!user) return { success: false, reason: 'not_found' };
 
-
   if (!user.twoFASecret) return { success: false, reason: 'no_secret' };
+
+  const twoFAEnabled = await ensureTwoFAEnabled();
+  if (!twoFAEnabled) {
+    ServerLoggingService.info('2FA disabled; skipping verification', 'twofa-service', { user: user._id });
+    return { success: false, reason: 'twofa_disabled' };
+  }
 
   // Sanitize inputs: trim whitespace/newlines which can accidentally appear
   const token = String(code).trim();

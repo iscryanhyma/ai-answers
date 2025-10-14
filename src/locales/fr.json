@@ -552,6 +552,11 @@
       "azure": "Azure OpenAI"
     },
     "logChatsToDatabaseLabel": "Journaliser les conversations dans la base de données",
+    "twoFA": {
+      "title": "Authentification à deux facteurs",
+      "enabledLabel": "Exiger l'authentification à deux facteurs pour la connexion",
+      "templateLabel": "ID de modèle GC Notify pour les courriels 2FA"
+    },
     "session": {
       "title": "Paramètres de session",
       "ttlMinutes": "Durée de vie par défaut de la session (minutes — ex. 60 = 1 heure)",

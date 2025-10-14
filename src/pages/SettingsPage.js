@@ -22,6 +22,12 @@ const SettingsPage = ({ lang = 'en' }) => {
   const [logChats, setLogChats] = useState('no');
   const [savingLogChats, setSavingLogChats] = useState(false);
 
+  // Two-factor authentication settings
+  const [twoFAEnabled, setTwoFAEnabled] = useState('false');
+  const [savingTwoFAEnabled, setSavingTwoFAEnabled] = useState(false);
+  const [twoFATemplateId, setTwoFATemplateId] = useState('');
+  const [savingTwoFATemplateId, setSavingTwoFATemplateId] = useState(false);
+
   // Session-related settings
   const [sessionTTL, setSessionTTL] = useState(60); // minutes
   const [savingSessionTTL, setSavingSessionTTL] = useState(false);
@@ -48,6 +54,10 @@ const SettingsPage = ({ lang = 'en' }) => {
       // Load logChats setting
       const logChatsSetting = await DataStoreService.getSetting('logChatsToDatabase', 'no');
       setLogChats(logChatsSetting);
+      const twoFAEnabledSetting = await DataStoreService.getSetting('twoFA.enabled', 'false');
+      setTwoFAEnabled(String(twoFAEnabledSetting ?? 'false'));
+      const twoFATemplateSetting = await DataStoreService.getSetting('twoFA.templateId', '');
+      setTwoFATemplateId(twoFATemplateSetting ?? '');
       // Load session settings
       const ttl = await DataStoreService.getSetting('session.defaultTTLMinutes', '60');
       setSessionTTL(Number(ttl));
@@ -169,6 +179,30 @@ const SettingsPage = ({ lang = 'en' }) => {
     }
   };
 
+  const handleTwoFAEnabledChange = async (e) => {
+    const newValue = e.target.value;
+    setTwoFAEnabled(newValue);
+    setSavingTwoFAEnabled(true);
+    try {
+      await DataStoreService.setSetting('twoFA.enabled', newValue);
+    } finally {
+      setSavingTwoFAEnabled(false);
+    }
+  };
+
+  const handleTwoFATemplateIdChange = (e) => {
+    setTwoFATemplateId(e.target.value);
+  };
+
+  const handleTwoFATemplateIdBlur = async () => {
+    setSavingTwoFATemplateId(true);
+    try {
+      await DataStoreService.setSetting('twoFA.templateId', twoFATemplateId);
+    } finally {
+      setSavingTwoFATemplateId(false);
+    }
+  };
+
   return (
     <GcdsContainer size="xl" mainContainer centered tag="main" className="mb-600">
       <h1 className="mb-400">{t('settings.title', 'Settings')}</h1>
@@ -228,11 +262,38 @@ const SettingsPage = ({ lang = 'en' }) => {
         id="log-chats-db"
         value={logChats}
         onChange={handleLogChatsChange}
-        disabled={savingLogChats}
+      disabled={savingLogChats}
       >
         <option value="yes">{t('common.yes', 'Yes')}</option>
         <option value="no">{t('common.no', 'No')}</option>
       </select>
+
+      <h2 className="mt-600 mb-200">{t('settings.twoFA.title', 'Two-factor authentication')}</h2>
+
+      <label htmlFor="twofa-enabled" className="mb-200 display-block mt-200">
+        {t('settings.twoFA.enabledLabel', 'Require two-factor authentication for login')}
+      </label>
+      <select
+        id="twofa-enabled"
+        value={twoFAEnabled}
+        onChange={handleTwoFAEnabledChange}
+        disabled={savingTwoFAEnabled}
+      >
+        <option value="true">{t('common.yes', 'Yes')}</option>
+        <option value="false">{t('common.no', 'No')}</option>
+      </select>
+
+      <label htmlFor="twofa-template" className="mb-200 display-block mt-400">
+        {t('settings.twoFA.templateLabel', 'GC Notify template ID for 2FA emails')}
+      </label>
+      <input
+        id="twofa-template"
+        type="text"
+        value={twoFATemplateId}
+        onChange={handleTwoFATemplateIdChange}
+        onBlur={handleTwoFATemplateIdBlur}
+        disabled={savingTwoFATemplateId}
+      />
 
       <h2 className="mt-600 mb-200">{t('settings.session.title', 'Session settings')}</h2>
 

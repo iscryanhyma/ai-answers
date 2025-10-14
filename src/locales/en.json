@@ -508,6 +508,11 @@
       "azure": "Azure OpenAI"
     },
     "logChatsToDatabaseLabel": "Log chats to database",
+    "twoFA": {
+      "title": "Two-factor authentication",
+      "enabledLabel": "Require two-factor authentication for login",
+      "templateLabel": "GC Notify template ID for 2FA emails"
+    },
     "session": {
       "title": "Session settings",
       "ttlMinutes": "Default session TTL (minutes — e.g. 60 = 1 hour)",
