@@ -118,6 +118,11 @@ variable "google_api_key_arn" {
   type        = string
 }
 
+variable "gc_notify_api_key_arn" {
+  description = "ARN of the GC Notify API key parameter"
+  type        = string
+}
+
 variable "google_search_engine_id_arn" {
   description = "ARN of the Google Search Engine ID parameter"
   type        = string

@@ -66,6 +66,7 @@ data "aws_iam_policy_document" "ai_answers_lambda_parameter_store" {
       var.jwt_secret_key_arn,
       var.user_agent_arn,
       var.google_api_key_arn,
+      var.gc_notify_api_key_arn,
       var.google_search_engine_id_arn
     ]
   }

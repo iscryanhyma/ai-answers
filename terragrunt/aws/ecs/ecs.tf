@@ -37,6 +37,10 @@ locals {
       "valueFrom" = var.google_api_key_arn
     },
     {
+      "name"      = "GC_NOTIFY_API_KEY"
+      "valueFrom" = var.gc_notify_api_key_arn
+    },
+    {
       "name"      = "GOOGLE_SEARCH_ENGINE_ID"
       "valueFrom" = var.google_search_engine_id_arn
     }

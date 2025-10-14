@@ -107,6 +107,17 @@ resource "aws_ssm_parameter" "google_api_key" {
   }
 }
 
+resource "aws_ssm_parameter" "gc_notify_api_key" {
+  name  = "gc_notify_api_key"
+  type  = "SecureString"
+  value = var.gc_notify_api_key
+
+  tags = {
+    CostCentre = var.billing_code
+    Terraform  = true
+  }
+}
+
 resource "aws_ssm_parameter" "google_search_engine_id" {
   name  = "google_search_engine_id"
   type  = "SecureString"

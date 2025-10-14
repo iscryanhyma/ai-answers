@@ -42,6 +42,7 @@ dependency "ssm" {
     user_agent_arn               = ""
     jwt_secret_key_arn           = ""
     google_api_key_arn           = ""
+    gc_notify_api_key_arn        = ""
     google_search_engine_id_arn  = ""
   }
 }
@@ -63,5 +64,6 @@ inputs = {
   jwt_secret_key_arn                     = dependency.ssm.outputs.jwt_secret_key_arn
   user_agent_arn                         = dependency.ssm.outputs.user_agent_arn
   google_api_key_arn                     = dependency.ssm.outputs.google_api_key_arn
+  gc_notify_api_key_arn                  = dependency.ssm.outputs.gc_notify_api_key_arn
   google_search_engine_id_arn            = dependency.ssm.outputs.google_search_engine_id_arn
 }

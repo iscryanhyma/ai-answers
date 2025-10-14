@@ -39,10 +39,11 @@ import feedbackGetExpertHandler from '../api/feedback/feedback-get-expert.js';
 import feedbackGetPublicHandler from '../api/feedback/feedback-get-public.js';
 import feedbackDeleteExpertHandler from '../api/feedback/feedback-delete-expert.js';
 import dbLogHandler from '../api/db/db-log.js';
-import signupHandler from '../api/db/db-auth-signup.js';
-import loginHandler from '../api/db/db-auth-login.js';
-import logoutHandler from '../api/db/db-auth-logout.js';
-import userLogoutHandler from '../api/user/user-auth-logout.js';
+import signupHandler from '../api/auth/auth-signup.js';
+import loginHandler from '../api/auth/auth-login.js';
+import logoutHandler from '../api/auth/auth-logout.js';
+import verify2FAHandler from '../api/auth/auth-verify-2fa.js';
+import userSend2FAHandler from '../api/auth/auth-send-2fa.js';
 import dbConnect from '../api/db/db-connect.js';
 import dbUsersHandler from '../api/db/db-users.js';
 import deleteChatHandler from '../api/chat/chat-delete.js';
@@ -139,10 +140,36 @@ app.post('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-log', dbLogHandler);
 app.get('/api/db/db-chat-logs', dbChatLogsHandler);
 app.post('/api/db/db-delete-expert-eval', dbDeleteExpertEvalHandler);
-app.post('/api/db/db-auth-signup', signupHandler);
-app.post('/api/db/db-auth-login', loginHandler);
-app.post('/api/db/db-auth-logout', logoutHandler);
-app.post('/api/user/user-auth-logout', userLogoutHandler);
+app.post('/api/auth/signup', signupHandler);
+app.post('/api/auth/login', loginHandler);
+app.post('/api/auth/logout', logoutHandler);
+// Normalize user-facing logout under /api/auth for consistency. Reuse the
+// existing `logoutHandler` (from `auth-logout.js`) instead of a missing
+// `api/user/user-auth-logout.js` module.
+app.post('/api/auth/user-auth-logout', logoutHandler);
+// Public user routes for 2FA (send and verify)
+// Public user 2FA verification endpoint (token issued after this)
+app.post('/api/auth/verify-2fa', verify2FAHandler);
+// Also expose the same handlers under /api/auth/auth-* for compatibility
+app.post('/api/auth/auth-signup', signupHandler);
+app.post('/api/auth/auth-login', loginHandler);
+app.post('/api/auth/auth-logout', logoutHandler);
+app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
+// Legacy /api/db/db-auth-* endpoints have been moved to the canonical /api/auth/*
+// and are intentionally not re-registered here to avoid duplicate/ambiguous
+// handlers. If a compatibility shim is needed in the future, add explicit
+// aliases that forward to the /api/auth handlers.
+// Also expose the existing user-send/user-verify handlers under /api/auth
+// so client code expecting /api/auth/* variants will work.
+// Expose canonical auth 2FA send endpoint. Clients should call the auth-prefixed
+// endpoints (no fallbacks). Short and legacy compatibility endpoints were removed
+// to avoid ambiguous routing.
+app.post('/api/auth/auth-send-2fa', userSend2FAHandler);
+// Keep canonical verify alias
+app.post('/api/auth/auth-verify-2fa', verify2FAHandler);
+// Keep the public users endpoints for compatibility if external callers want
+// Compatibility endpoints (public) - also available under /api/auth-send and /api/auth-verify
+// Removed legacy user/send endpoints. 2FA is now served via the /api/auth/* endpoints only.
 app.all('/api/db/db-users', dbUsersHandler);
 app.delete('/api/chat/chat-delete', deleteChatHandler);
 app.get('/api/chat/chat-dashboard', chatDashboardHandler);

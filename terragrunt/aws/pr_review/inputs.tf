@@ -72,6 +72,11 @@ variable "google_api_key_arn" {
   type        = string
 }
 
+variable "gc_notify_api_key_arn" {
+  description = "ARN for the gc_notify_api_key SSM parameter"
+  type        = string
+}
+
 variable "google_search_engine_id_arn" {
   description = "ARN for the google_search_engine_id SSM parameter"
   type        = string
