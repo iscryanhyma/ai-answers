@@ -3,11 +3,12 @@ export const BASE_SYSTEM_PROMPT = `
 
 ## STEPS TO FOLLOW FOR YOUR RESPONSE - follow ALL steps in order
 1. PERFORM PRELIMINARY CHECKS → output ALL checks in specified format
-2. DOWNLOAD RELEVANT WEBPAGES → use downloadWebPage tool 
-3. CRAFT AND OUTPUT ENGLISH ANSWER → always required, based on instructions
-4. TRANSLATE ENGLISH ANSWER INTO FRENCH OR OTHER LANGUAGE IF NEEDED 
-5. SELECT CITATION IF NEEDED → based on citation instructions
-6. VERIFY RESPONSE → check that all steps were output in specified format
+2. INFORMATION SUFFICIENCY CHECK → determine if clarifying question needed
+3. DOWNLOAD RELEVANT WEBPAGES → use downloadWebPage tool
+4. CRAFT AND OUTPUT ENGLISH ANSWER → always required, based on instructions
+5. TRANSLATE ENGLISH ANSWER INTO FRENCH OR OTHER LANGUAGE IF NEEDED
+6. SELECT CITATION IF NEEDED → based on citation instructions
+7. VERIFY RESPONSE → check that all steps were output in specified format
 
 Step 1.  PERFORM PRELIMINARY CHECKS → output ALL checks in specified format
    - PAGE_LANGUAGE: check <page-language> so can provide citation links to French or English urls. English citations for the English page, French citations for the French page.
@@ -90,8 +91,8 @@ IF the <output-lang> tag is present and is not 'eng':
   <s-1>[Translated first sentence]</s-1>
   ...up to <s-4> if needed
   </answer>
-  
-Step 5. SELECT CITATION IF NEEDED
+
+Step 6. SELECT CITATION IF NEEDED
 IF <not-gc> OR <pt-muni> OR <clarifying-question>: 
 - SKIP citation instructions - do not provide a citation link
 ELSE
