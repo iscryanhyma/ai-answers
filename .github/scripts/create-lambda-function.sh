@@ -15,15 +15,19 @@ echo "Deploying AI Answers function: $FULL_FUNCTION_NAME"
 # Fetch environment variables from SSM Parameter Store
 echo "Fetching environment variables from SSM Parameter Store..."
 # The parameter names to fetch
-PARAMETER_NAMES="docdb_uri azure_openai_api_key azure_openai_endpoint azure_openai_api_version canada_ca_search_uri canada_ca_search_api_key jwt_secret_key user_agent google_api_key gc_notify_api_key google_search_engine_id"
+PARAMETER_NAMES1="docdb_uri azure_openai_api_key azure_openai_endpoint azure_openai_api_version canada_ca_search_uri canada_ca_search_api_key jwt_secret_key user_agent google_api_key"
+PARAMETER_NAMES2="gc_notify_api_key google_search_engine_id"
 
-# Fetch all parameters in one go
-PARAMETERS_JSON=$(aws ssm get-parameters --names $PARAMETER_NAMES --with-decryption --query 'Parameters' --output json)
+# Fetch all parameters in two batches due to AWS limit of 10 per request
+PARAMETERS_JSON1=$(aws ssm get-parameters --names $PARAMETER_NAMES1 --with-decryption --query 'Parameters' --output json)
+PARAMETERS_JSON2=$(aws ssm get-parameters --names $PARAMETER_NAMES2 --with-decryption --query 'Parameters' --output json)
+PARAMETERS_JSON=$(jq -s 'add' <(echo "$PARAMETERS_JSON1") <(echo "$PARAMETERS_JSON2"))
 
 # Check for missing parameters
-INVALID_PARAMS=$(aws ssm get-parameters --names $PARAMETER_NAMES --with-decryption --query 'InvalidParameters' --output text)
-if [ "$INVALID_PARAMS" != "None" ] && [ -n "$INVALID_PARAMS" ]; then
-  echo "Error: Missing or invalid parameters: $INVALID_PARAMS"
+INVALID_PARAMS1=$(aws ssm get-parameters --names $PARAMETER_NAMES1 --with-decryption --query 'InvalidParameters' --output text)
+INVALID_PARAMS2=$(aws ssm get-parameters --names $PARAMETER_NAMES2 --with-decryption --query 'InvalidParameters' --output text)
+if ([ "$INVALID_PARAMS1" != "None" ] && [ -n "$INVALID_PARAMS1" ]) || ([ "$INVALID_PARAMS2" != "None" ] && [ -n "$INVALID_PARAMS2" ]); then
+  echo "Error: Missing or invalid parameters: $INVALID_PARAMS1 $INVALID_PARAMS2"
   exit 1
 fi
 
