@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.47.0](https://github.com/cds-snc/ai-answers/compare/v1.46.1...v1.47.0) (2025-10-14)
+
+
+### Features
+
+* Add GC Notify API key support across Lambda functions and Terraform configurations ([6a84885](https://github.com/cds-snc/ai-answers/commit/6a848859d137c53575bcffd9cbb95a68e3bd46c8))
+* Add two-step verification support in login flow ([1106529](https://github.com/cds-snc/ai-answers/commit/110652988a7c589d344c84d6b5534ec68c630a0b))
+* Disable two-factor authentication by default in settings ([9dfb58c](https://github.com/cds-snc/ai-answers/commit/9dfb58c6f2c6af21f36d259454e5bd83a04dd92f))
+* Disable two-factor authentication by default in settings ([05ff867](https://github.com/cds-snc/ai-answers/commit/05ff8672242c708ffe69396fb475b8f64b938a04))
+* Implement two-factor authentication settings and logic across authentication flows ([ecc1ae3](https://github.com/cds-snc/ai-answers/commit/ecc1ae3a9bbc26c62b7bf9d74f0ca9a928947088))
+* Refactor PR review workflow to include Terraform apply step and environment variables ([198eb67](https://github.com/cds-snc/ai-answers/commit/198eb6784b95f343738da0889945d4f6aa53c966))
+* Remove Terraform apply step from PR review workflow ([be12769](https://github.com/cds-snc/ai-answers/commit/be12769adbbcb5854800df48886a18f031729c0b))
+* Remove Terraform apply step from PR review workflow ([2b85a47](https://github.com/cds-snc/ai-answers/commit/2b85a475405006538305582ea6147c17bfd73d60))
+
 ## [1.46.1](https://github.com/cds-snc/ai-answers/compare/v1.46.0...v1.46.1) (2025-10-09)
 
 
