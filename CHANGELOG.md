@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.48.0](https://github.com/cds-snc/ai-answers/compare/v1.47.0...v1.48.0) (2025-10-15)
+
+
+### Features
+
+* Split SSM parameter fetching into two batches to handle AWS limits ([fff56e3](https://github.com/cds-snc/ai-answers/commit/fff56e3f051cf484adc86c2b9283501a0ede81d8))
+* Split SSM parameter fetching into two batches to handle AWS limits ([bfc8b9c](https://github.com/cds-snc/ai-answers/commit/bfc8b9c0353e38bcf823976966566f489a115755))
+
+
+### Bug Fixes
+
+* hybrid-work section ([7a1ca2c](https://github.com/cds-snc/ai-answers/commit/7a1ca2cd1f76b7f1ed6aaf4aa3530cf0dfa866be))
+* locale-fixes ([b2821fa](https://github.com/cds-snc/ai-answers/commit/b2821fa93064f001828fa6d27fb9a142fd9c19e4))
+* locale-fixes ([f84487c](https://github.com/cds-snc/ai-answers/commit/f84487c0bfd547c13b0b0ca0bb85617bb217ab95))
+* move all into new step 2 ([e6d0571](https://github.com/cds-snc/ai-answers/commit/e6d0571a1f041d3a1c03e0bfcfdb5e2d7dbf4595))
+* move temporary changes into section ([4d19c57](https://github.com/cds-snc/ai-answers/commit/4d19c57553c28decf9fe3aa445c1f50f857d6119))
+* move-clarifying-question-check ([dc1f53c](https://github.com/cds-snc/ai-answers/commit/dc1f53c3a7dafd4defc5c792960916a7cb2e736e))
+* step numbers ([fbccd1a](https://github.com/cds-snc/ai-answers/commit/fbccd1ae6940a2ab2d9ab128884866477931e92b))
+
 ## [1.47.0](https://github.com/cds-snc/ai-answers/compare/v1.46.1...v1.47.0) (2025-10-14)
 
 
