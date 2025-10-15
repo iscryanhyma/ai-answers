@@ -40,6 +40,31 @@ const AdminPage = ({ lang = 'en' }) => {
               {t('admin.navigation.aiAnswers', 'AI Answers')}
             </GcdsLink>
           </li>
+          <li>
+            <GcdsLink href={`/${lang}/chat-dashboard`}>
+              {t('admin.navigation.chatDashboard', 'Chat dashboard')}
+            </GcdsLink>
+          </li>
+          <li>
+            <GcdsLink href={`/${lang}/metrics`}>
+              {t('admin.navigation.metrics', 'View performance metrics')}
+            </GcdsLink>
+          </li>
+          <li>
+            <GcdsLink href={`/${lang}/public-eval`}>
+              {t('admin.navigation.publicEval', 'Public Evaluation')}
+            </GcdsLink>
+          </li>
+          <li>
+            <GcdsLink href={`/${lang}/scenario-overrides`}>
+              {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}
+            </GcdsLink>
+          </li>
+          <li>
+            <GcdsLink href={`/${lang}/chat-viewer`}>
+              {t('admin.navigation.chatViewer')}
+            </GcdsLink>
+          </li>
 
           {/* Admin-only links */}
           <RoleBasedContent roles={["admin"]}>
@@ -81,31 +106,6 @@ const AdminPage = ({ lang = 'en' }) => {
           </RoleBasedContent>
 
           {/* Links for both roles */}
-          <li>
-            <GcdsLink href={`/${lang}/chat-viewer`}>
-              {t('admin.navigation.chatViewer')}
-            </GcdsLink>
-          </li>
-          <li>
-            <GcdsLink href={`/${lang}/scenario-overrides`}>
-              {t('admin.navigation.scenarioOverrides', 'Scenario overrides')}
-            </GcdsLink>
-          </li>
-          <li>
-            <GcdsLink href={`/${lang}/public-eval`}>
-              {t('admin.navigation.publicEval', 'Public Evaluation')}
-            </GcdsLink>
-          </li>
-          <li>
-            <GcdsLink href={`/${lang}/metrics`}>
-              {t('admin.navigation.metrics', 'View performance metrics')}
-            </GcdsLink>
-          </li>
-          <li>
-            <GcdsLink href={`/${lang}/chat-dashboard`}>
-              {t('admin.navigation.chatDashboard', 'Chat dashboard')}
-            </GcdsLink>
-          </li>
           <li>
             <GcdsLink href="#" onClick={handleLogout}>
               {t('admin.navigation.logout', 'Logout')}
