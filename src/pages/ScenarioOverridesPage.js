@@ -304,7 +304,8 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
   };
 
   const pageTitle = t('scenarioOverrides.title', 'Scenario overrides');
-  const description = t('scenarioOverrides.description', 'Update the department-specific scenario instructions used by the chatbot.');
+  const description1 = t('scenarioOverrides.description1', 'Edit your department scenario and test the changes. Open the Edit window, make your changes, and when you\'re ready to test, check the Apply edits button. To test, go back to your admin menu, and use the select the top \'Use AI Answers...\' option. It will apply your changes.');
+  const description2 = t('scenarioOverrides.description2', 'If you\'re happy with the changes, alert the DTO team and they\'ll push the changes into the live AI Answers version.');
   const loadingLabel = t('scenarioOverrides.status.saving', 'Saving...');
   const emptyLabel = t('scenarioOverrides.empty.never', 'Never');
 
@@ -318,7 +319,8 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
           {t('common.backToAdmin', 'Back to Admin')}
         </GcdsLink>
       </nav>
-      <GcdsText className="mb-400">{description}</GcdsText>
+      <GcdsText className="mb-200">{description1}</GcdsText>
+      <GcdsText className="mb-400">{description2}</GcdsText>
 
       {loading && <p>{loadingLabel}</p>}
 
@@ -342,18 +344,6 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
             </header>
 
             {/* original default details removed — default is shown in the left diff column */}
-
-            <div className="mb-200">
-              <label style={{ marginRight: '1rem', display: 'inline-flex', alignItems: 'center' }}>
-                <input
-                  type="checkbox"
-                  checked={row.enabled}
-                  onChange={(event) => handleFieldChange(index, { enabled: event.target.checked })}
-                />
-                <span style={{ marginLeft: '0.5rem' }}>{t('scenarioOverrides.table.enabled', 'Use override')}</span>
-              </label>
-              {/* per-override saving indicator moved into the edit summary to avoid layout jumps */}
-            </div>
 
             {row.error && (
               <p style={{ color: '#d3080c' }}>{row.error}</p>
@@ -380,7 +370,7 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
               </div>
             </details>
 
-            <details className="mb-400" open={row.diffOpen} onToggle={(e) => handleFieldChange(index, { diffOpen: e.target.open })}>
+            <details className="mb-200" open={row.diffOpen} onToggle={(e) => handleFieldChange(index, { diffOpen: e.target.open })}>
               <summary style={{ cursor: 'pointer' }}>{t('scenarioOverrides.sections.visualDiff', 'Visual diff (side-by-side)')}</summary>
               <div style={{ marginTop: '0.5rem', border: '1px solid #e1e1e1', borderRadius: '4px', padding: '0.5rem', overflowX: 'auto' }}>
                 <div style={{ display: 'flex', gap: '1rem' }}>
@@ -400,6 +390,18 @@ const ScenarioOverridesPage = ({ lang = 'en' }) => {
                 </div>
               </div>
             </details>
+
+            <div className="mb-400">
+              <label style={{ marginRight: '1rem', display: 'inline-flex', alignItems: 'center' }}>
+                <input
+                  type="checkbox"
+                  checked={row.enabled}
+                  onChange={(event) => handleFieldChange(index, { enabled: event.target.checked })}
+                />
+                <span style={{ marginLeft: '0.5rem' }}>{t('scenarioOverrides.table.enabled', 'Use override')}</span>
+              </label>
+              {/* per-override saving indicator moved into the edit summary to avoid layout jumps */}
+            </div>
           </section>
         );
       })}

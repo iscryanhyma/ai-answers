@@ -102,6 +102,13 @@
         "hint": "Conseil : Ajoutez des détails pour que votre question soit claire et complète.",
         "loadingHint": "L'IA peut faire des erreurs, vérifiez toujours la réponse."
       },
+      "textarea": {
+        "ariaLabel": {
+          "first": "Posez une question sur Canada point ca",
+          "followon": "Posez une question de suivi ou répondez",
+          "skipfo": "Passer pour poser une autre question"
+        }
+      },
       "buttons": {
         "send": "Envoyer",
         "reload": "Actualiser la page"
@@ -324,7 +331,7 @@
     "refreshPending": "Patientez..."
   },
   "admin": {
-    "title": "Tableau de bord d'administration de Réponses IA",
+    "title": "Administration de Réponses IA",
     "partnerTitle": "Tableau de bord partenaire Réponses IA",
     "backToAdmin": "Retour à l'administration",
     "navigation": {
@@ -338,7 +345,7 @@
       "database": "Gérer la base de données",
       "eval": "Administration des évaluations",
       "metrics": "Voir les métriques de performance",
-      "publicEval": "Évaluation publique",
+      "publicEval": "Évaluer/voir un chat public",
       "sessions": "Sessions actives",
       "logout": "Se déconnecter",
       "vector": "Administration des vecteurs",
@@ -432,14 +439,24 @@
       }
     },
     "deleteChat": {
-      "title": "Supprimer une conversation avec des rétroactions incorrectes",
+      "title": "Supprimer un chat des journaux",
       "idLabel": "ID de chat",
-      "button": "Supprimer la conversation",
+      "button": "Supprimer le chat",
       "confirm": "Confirmer la suppression",
       "cancel": "Annuler",
       "loading": "Suppression en cours...",
-      "success": "Conversation supprimée avec succès",
-      "error": "Échec de la suppression de la conversation : "
+      "success": "Chat supprimé avec succès",
+      "error": "Échec de la suppression du chat : "
+    },
+    "deleteExpertEval": {
+      "title": "Supprimer une évaluation d'expert",
+      "idLabel": "ID de chat",
+      "button": "Supprimer l'évaluation d'expert",
+      "confirm": "Confirmer la suppression",
+      "cancel": "Annuler",
+      "loading": "Suppression en cours...",
+      "success": "Évaluation d'expert supprimée avec succès",
+      "error": "Échec de la suppression de l'évaluation d'expert : "
     },
     "chatLogs": {
       "title": "Télécharger les journaux de chat récents",
@@ -706,7 +723,8 @@
   },
   "scenarioOverrides": {
   "title": "Remplacements de scénarios",
-  "description": "Mettre à jour les instructions de scénario propres au ministère utilisées par AI Answers.",
+  "description1": "Modifiez le scénario de votre ministère et testez les changements. Ouvrez la fenêtre de modification, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez le bouton Appliquer les modifications. Pour tester, retournez à votre menu d'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications.",
+  "description2": "Si vous êtes satisfait des modifications, alertez l'équipe DTO et ils déploieront les changements dans la version en direct de Réponses IA.",
       "sections": {
         "editOverride": "Modifier le remplacement",
         "visualDiff": "Différence visuelle (côte à côte)"
@@ -715,7 +733,7 @@
       "department": "Ministère",
       "defaultLabel": "Texte du scénario par défaut",
       "overrideLabel": "Texte de remplacement",
-      "enabled": "Utiliser le remplacement",
+      "enabled": "Appliquer les modifications",
       "showDiff": "Afficher la différence",
       "hideDiff": "Masquer la différence",
       "diffLabel": "Différence",
