@@ -293,7 +293,7 @@
       "ariaLabel": "Admin Navigation",
       "title": "Admin Menu",
       "partnerMenu": "Partner Menu",
-      "aiAnswers": "Use AI Answers with expert feedback options",
+      "aiAnswers": "Use AI Answers with evaluation options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
       "chatViewer": "View full trace for a chat",
