@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.48.1](https://github.com/cds-snc/ai-answers/compare/v1.48.0...v1.48.1) (2025-10-16)
+
+
+### Bug Fixes
+
+* prompt and locales ([4ee5572](https://github.com/cds-snc/ai-answers/commit/4ee557217aa108e280af55bff16cde323a304bc1))
+* prompt and locales ([2e1b260](https://github.com/cds-snc/ai-answers/commit/2e1b26023e960861bf71eb139cc2ce39fffd5390))
+
 ## [1.48.0](https://github.com/cds-snc/ai-answers/compare/v1.47.0...v1.48.0) (2025-10-15)
 
 
