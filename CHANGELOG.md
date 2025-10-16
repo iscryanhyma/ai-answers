@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.48.2](https://github.com/cds-snc/ai-answers/compare/v1.48.1...v1.48.2) (2025-10-16)
+
+
+### Bug Fixes
+
+* consistent french terminology ([7338c98](https://github.com/cds-snc/ai-answers/commit/7338c9863da1706905aa02a828add1b374b0d981))
+* eval vs feedback ([ed6536c](https://github.com/cds-snc/ai-answers/commit/ed6536c4ad4f540835e12587fa64275cb48a97dd))
+* hc scenario ([5ecf8af](https://github.com/cds-snc/ai-answers/commit/5ecf8af9d5e98635c3b1efb9c524ee2f15a16f62))
+* try to fix health provincial issue ([8b33ce1](https://github.com/cds-snc/ai-answers/commit/8b33ce168228512ec28508581efab487dda317cd))
+
 ## [1.48.1](https://github.com/cds-snc/ai-answers/compare/v1.48.0...v1.48.1) (2025-10-16)
 
 
