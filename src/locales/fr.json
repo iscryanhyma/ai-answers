@@ -223,7 +223,7 @@
         "answerImprovement": "Comment la réponse pourrait-elle être améliorée (facultatif)?",
         "betterCitation": "Meilleure URL de citation pour Canada.ca ou gc.ca (facultatif) :"
       },
-      "submit": "Soumettre",
+      "submit": "Soumettre l'évaluation",
       "errors": {
         "invalidUrl": "Veuillez entrer une URL canada.ca ou gc.ca valide"
       },
