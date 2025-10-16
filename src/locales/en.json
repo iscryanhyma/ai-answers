@@ -296,13 +296,13 @@
       "aiAnswers": "Use AI Answers with expert feedback options",
       "batches": "View and manage batches",
       "users": "Manage user accounts",
-      "chatViewer": "View full interaction for a Chat ID",
+      "chatViewer": "View full trace for a chat",
       "database": "Manage the database",
       "eval": "Evaluation administration",
       "metrics": "View performance metrics",
-      "publicEval": "Evaluate/view a public chat",
+      "publicEval": "Evaluate a public chat",
       "sessions": "Active sessions",
-      "chatDashboard": "Chat dashboard",
+      "chatDashboard": "View chats",
       "logout": "Sign out",
       "vector": "Vector administration",
       "scenarioOverrides": "Edit scenarios"
@@ -395,7 +395,7 @@
       }
     },
     "chatLogs": {
-      "title": "Download recent chat logs",
+      "title": "Download chat logs",
       "timeRange": "Time range",
       "last1Day": "Last 1 day",
       "last7Days": "Last 7 days",
@@ -715,8 +715,8 @@
   },
   "scenarioOverrides": {
   "title": "Edit and test scenarios",
-  "description1": "Edit your department scenario and test the changes. Open the Edit window, make your changes, and when you're ready to test, check the Apply edits button. To test, go back to your admin menu, and use the select the top 'Use AI Answers...' option. It will apply your changes.",
-  "description2": "If you're happy with the changes, alert the DTO team and they'll push the changes into the live AI Answers version.",
+  "description1": "Click Edit for your department's scenario, make your changes, and when you're ready to test, check the Apply edits box. To test, click Back to admin, and select the top 'Use AI Answers...' option. It will apply your changes locally so that you can test.",
+  "description2": "If you're happy with the changes, alert the DTO team, copy the edited version for them, and they'll push the changes into the live AI Answers product.",
       "sections": {
         "editOverride": "Edit",
         "visualDiff": "Visual diff (side-by-side)"

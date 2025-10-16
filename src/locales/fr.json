@@ -341,12 +341,13 @@
       "aiAnswers": "Utiliser Réponses IA avec les options de rétroaction d'expert",
       "batches": "Voir et gérer les lots",
       "users": "Gérer les comptes utilisateurs",
-      "chatViewer": "Voir le journal complet pour un ID de chat",
+      "chatViewer": "Voir la trace complète d'un chat",
       "database": "Gérer la base de données",
       "eval": "Administration des évaluations",
       "metrics": "Voir les métriques de performance",
-      "publicEval": "Évaluer/voir un chat public",
+      "publicEval": "Évaluer un chat public",
       "sessions": "Sessions actives",
+      "chatDashboard": "Voir les chats",
       "logout": "Se déconnecter",
       "vector": "Administration des vecteurs",
       "scenarioOverrides": "Remplacements de scénarios"
@@ -459,7 +460,7 @@
       "error": "Échec de la suppression de l'évaluation d'expert : "
     },
     "chatLogs": {
-      "title": "Télécharger les journaux de chat récents",
+      "title": "Télécharger les journaux de chat",
       "timeRange": "Plage de temps",
       "last1Day": "Dernier jour",
       "last7Days": "7 derniers jours",
@@ -723,8 +724,8 @@
   },
   "scenarioOverrides": {
   "title": "Remplacements de scénarios",
-  "description1": "Modifiez le scénario de votre ministère et testez les changements. Ouvrez la fenêtre de modification, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez le bouton Appliquer les modifications. Pour tester, retournez à votre menu d'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications.",
-  "description2": "Si vous êtes satisfait des modifications, alertez l'équipe DTO et ils déploieront les changements dans la version en direct de Réponses IA.",
+  "description1": "Cliquez sur Modifier pour le scénario de votre ministère, effectuez vos changements, et lorsque vous êtes prêt à tester, cochez la case Appliquer les modifications. Pour tester, cliquez sur Retour à l'administration et sélectionnez l'option 'Utiliser Réponses IA...' en haut. Cela appliquera vos modifications localement afin que vous puissiez tester.",
+  "description2": "Si vous êtes satisfait des modifications, alertez l'équipe DTO, copiez la version modifiée pour eux, et ils déploieront les changements dans le produit Réponses IA en direct.",
       "sections": {
         "editOverride": "Modifier le remplacement",
         "visualDiff": "Différence visuelle (côte à côte)"
