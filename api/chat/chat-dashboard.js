@@ -56,7 +56,8 @@ async function chatDashboardHandler(req, res) {
       length: lengthParam,
       orderBy: orderByParam,
       orderDir: orderDirParam,
-      draw: drawParam
+      draw: drawParam,
+      search: searchParam
     } = req.query;
 
     const dateRange = getDateRange({ startDate, endDate, filterType, presetValue });
@@ -183,6 +184,9 @@ async function chatDashboardHandler(req, res) {
       pipeline.push({ $match: { $and: andFilters } });
     }
 
+    // Handle search parameter for chatId (after grouping, so applied separately)
+    const searchFilter = searchParam ? { chatId: { $regex: escapeRegex(searchParam), $options: 'i' } } : null;
+
     pipeline.push({
       $group: {
         _id: '$_id',
@@ -257,6 +261,11 @@ async function chatDashboardHandler(req, res) {
       }
     });
 
+
+    // Apply search filter if present (after $project stage)
+    if (searchFilter) {
+      pipeline.push({ $match: searchFilter });
+    }
 
     // Keep a copy of pipeline before adding sort/limit to calculate totalCount
     const pipelineBeforeSortLimit = pipeline.slice();

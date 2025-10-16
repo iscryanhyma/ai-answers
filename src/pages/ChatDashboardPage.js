@@ -274,10 +274,14 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
               processing: true,
               serverSide: true,
               paging: true,
-              searching: false,
+              searching: true,
               ordering: true,
               order: [[4, 'desc']], // default to date desc
               stateSave: true,
+              language: {
+                search: t('admin.chatDashboard.searchLabel', 'Search by Chat ID:'),
+                searchPlaceholder: t('admin.chatDashboard.searchPlaceholder', 'Enter chat ID...')
+              },
               stateSaveCallback: function (settings, data) {
                 try {
                   if (typeof window !== 'undefined' && window.localStorage) {
@@ -308,6 +312,7 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                   const dtOrder = Array.isArray(dtParams.order) && dtParams.order.length > 0 ? dtParams.order[0] : { column: 4, dir: 'desc' };
                   const orderBy = orderByForColumn(dtOrder.column);
                   const orderDir = dtOrder.dir || 'desc';
+                  const searchValue = (dtParams.search && dtParams.search.value) || '';
                   const query = {
                     ...filtersRef.current,
                     start: dtParams.start || 0,
@@ -316,6 +321,9 @@ const ChatDashboardPage = ({ lang = 'en' }) => {
                     orderDir,
                     draw: dtParams.draw || 0
                   };
+                  if (searchValue) {
+                    query.search = searchValue;
+                  }
                   const result = await DashboardService.getChatDashboard(query);
                   setRecordsTotal(result?.recordsTotal || 0);
                   setRecordsFiltered(result?.recordsFiltered || 0);
