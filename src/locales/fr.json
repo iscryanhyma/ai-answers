@@ -427,6 +427,8 @@
       "noResults": "Appliquez des filtres pour charger les interactions de chat.",
       "resultsSummary": "Affichage de {count} chats",
       "totalCount": "Total des chats correspondants : {total}",
+      "searchLabel": "Rechercher par ID de chat :",
+      "searchPlaceholder": "Entrez l'ID de chat...",
       "columns": {
         "chatId": "ID de chat",
         "department": "Ministère",

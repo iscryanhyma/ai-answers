@@ -382,6 +382,8 @@
       "noResults": "Apply filters to load chat interactions.",
       "resultsSummary": "Showing {count} chats",
       "totalCount": "Total matching chats: {total}",
+      "searchLabel": "Search by Chat ID:",
+      "searchPlaceholder": "Enter chat ID...",
       "columns": {
         "chatId": "Chat ID",
         "department": "Department",
