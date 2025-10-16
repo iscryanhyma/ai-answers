@@ -447,7 +447,7 @@ const ChatInterface = ({
                       }
                       onSkip={focusTextarea}
                       skipButtonLabel={safeT(
-                        "homepage.textarea.ariaLabel.skipfo"
+                        "homepage.chat.textarea.ariaLabel.skipfo"
                       )}
                     />
                   )}
