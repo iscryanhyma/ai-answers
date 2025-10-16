@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.49.0](https://github.com/cds-snc/ai-answers/compare/v1.48.2...v1.49.0) (2025-10-16)
+
+
+### Features
+
+* add-chatID-search to data table ([0c26ca0](https://github.com/cds-snc/ai-answers/commit/0c26ca08afe34a2076992c997452585cfda6e018))
+* add-chatID-search to data table ([9d4c39d](https://github.com/cds-snc/ai-answers/commit/9d4c39d95c02560b2eda1ebcd1a5d30171dc0cde))
+
+
+### Bug Fixes
+
+* add to locales files ([add106d](https://github.com/cds-snc/ai-answers/commit/add106da159398354f42bc992228330eb613e2f4))
+
 ## [1.48.2](https://github.com/cds-snc/ai-answers/compare/v1.48.1...v1.48.2) (2025-10-16)
 
 
