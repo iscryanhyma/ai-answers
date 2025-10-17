@@ -28,18 +28,31 @@ const SUPPORTED_DEPARTMENTS = {
   },
 };
 
+async function safeLoad(loader) {
+  try {
+    const text = await loader();
+    if (typeof text === 'string') {
+      return text;
+    }
+    return '';
+  } catch (error) {
+    console.error('Failed to load default scenario text:', error);
+    return '';
+  }
+}
+
 async function loadDefaultScenarios(departmentKey) {
   if (departmentKey) {
     const loader = SUPPORTED_DEPARTMENTS[departmentKey];
     if (!loader) {
-      return null;
+      return '';
     }
-    return loader();
+    return safeLoad(loader);
   }
 
   const entries = await Promise.all(
     Object.entries(SUPPORTED_DEPARTMENTS).map(async ([key, loader]) => {
-      const text = await loader();
+      const text = await safeLoad(loader);
       return [key, text];
     })
   );
@@ -59,13 +72,10 @@ async function handler(req, res) {
       const defaults = await loadDefaultScenarios(departmentKey);
 
       if (departmentKey) {
-        if (!defaults) {
-          return res.status(404).json({ message: 'Unsupported department' });
-        }
         const override = await ScenarioOverrideService.getActiveOverride(userId, departmentKey);
         return res.status(200).json({
           departmentKey,
-          defaultText: defaults,
+          defaultText: typeof defaults === 'string' ? defaults : '',
           override: override ? {
             overrideText: override.overrideText,
             enabled: override.enabled,
@@ -80,7 +90,14 @@ async function handler(req, res) {
         return acc;
       }, {});
 
-      const payload = Object.entries(defaults).map(([key, defaultText]) => {
+      const defaultEntries = defaults && typeof defaults === 'object' ? defaults : {};
+      const departmentKeys = new Set([
+        ...Object.keys(defaultEntries),
+        ...overrides.map((item) => item.departmentKey).filter(Boolean),
+      ]);
+
+      const payload = Array.from(departmentKeys).map((key) => {
+        const defaultText = defaultEntries[key] || '';
         const override = overridesByKey[key];
         return {
           departmentKey: key,
@@ -101,7 +118,7 @@ async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { departmentKey, overrideText, enabled = true } = req.body || {};
-      if (!departmentKey || !SUPPORTED_DEPARTMENTS[departmentKey]) {
+      if (!departmentKey || typeof departmentKey !== 'string') {
         return res.status(400).json({ message: 'Invalid department key' });
       }
       if (typeof overrideText !== 'string' || !overrideText.trim()) {
@@ -131,7 +148,7 @@ async function handler(req, res) {
   if (req.method === 'DELETE') {
     try {
       const { departmentKey } = req.query || {};
-      if (!departmentKey || !SUPPORTED_DEPARTMENTS[departmentKey]) {
+      if (!departmentKey || typeof departmentKey !== 'string') {
         return res.status(400).json({ message: 'Invalid department key' });
       }
       await ScenarioOverrideService.deleteOverride(userId, departmentKey);
